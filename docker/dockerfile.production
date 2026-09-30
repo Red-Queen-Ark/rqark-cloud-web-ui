@@ -1,0 +1,33 @@
+FROM oven/bun:1 AS base
+WORKDIR /app
+COPY . .
+
+FROM base AS builder
+RUN bun install --frozen-lockfile
+
+# Vite substitutes these into index.html and inlines them into the bundle, so
+# they are build inputs, not container environment. They sit after `bun install`
+# so that changing the app name does not invalidate the install layer. Pass them
+# with `--build-arg`, or let compose read them out of .env (docker-compose.yml).
+# .env itself stays out of the build context, which is why the build cannot just
+# read them from disk; see .dockerignore.
+ARG VITE_APP_NAME
+ARG VITE_APP_DESCRIPTION
+ARG VITE_API_BASE_URL
+ENV VITE_APP_NAME=$VITE_APP_NAME \
+    VITE_APP_DESCRIPTION=$VITE_APP_DESCRIPTION \
+    VITE_API_BASE_URL=$VITE_API_BASE_URL
+RUN bun run build
+
+FROM nginx:1.23.1-alpine
+
+WORKDIR /www
+
+COPY --from=builder /app/dist/ .
+
+# Production build: the nginx config proxies /api to the backend by its compose
+# service name on the shared `rqark-project` network, so this image must be run
+# on that network next to the backend. See nginx.production.conf.
+COPY ./nginx.production.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 80
