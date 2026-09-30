@@ -1,0 +1,39 @@
+<!doctype html>
+<html class="h-full w-full overflow-hidden" lang="en">
+  <head>
+    <script>
+      (function () {
+        try {
+          var r = localStorage.getItem('themeStore');
+          if (r) {
+            var s = JSON.parse(r);
+            var mode = s.mode || 'light';
+            // 'system' is resolved here as well, so the first paint already
+            // matches the OS instead of flashing the light theme.
+            if (mode === 'system') {
+              mode = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            }
+            document.documentElement.setAttribute('data-theme', (s.family || 'base') + '-' + mode);
+            document.documentElement.style.colorScheme = mode;
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" sizes="any" href="/favicon.ico" />
+    <link rel="apple-touch-icon" type="image/png" href="/apple-touch-icon-180x180.png" />
+    <link rel="shortcut icon" type="image/png" href="/logo.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport" />
+    <meta name="theme-color" content="#ffffff" />
+    <meta name="description" content="%VITE_APP_DESCRIPTION%" />
+    <title>%VITE_APP_NAME%</title>
+  </head>
+  <body class="h-dvh w-full overflow-hidden">
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

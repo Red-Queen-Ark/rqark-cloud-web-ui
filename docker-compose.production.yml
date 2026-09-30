@@ -1,0 +1,19 @@
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: ./docker/dockerfile.production
+      args:
+        VITE_APP_NAME: ${VITE_APP_NAME:?VITE_APP_NAME is not set in .env}
+        VITE_APP_DESCRIPTION: ${VITE_APP_DESCRIPTION:-}
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-/api}
+    container_name: ${PROJECT_NAME}-frontend
+    networks:
+      - rqark-project
+    ports:
+      - 7778:80
+
+networks:
+  rqark-project:
+    name: rqark-project
+    external: true
