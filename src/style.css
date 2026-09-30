@@ -1,0 +1,21 @@
+@import 'tailwindcss';
+@plugin 'daisyui';
+@import './css/base.css';
+@import './css/animation.css';
+@import './css/theme.css';
+
+@layer base {
+  html,
+  body,
+  #app {
+    height: 100%;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply font-sans;
+  }
+}

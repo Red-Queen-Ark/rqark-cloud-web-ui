@@ -1,0 +1,15 @@
+export const login = {
+  title: 'Login',
+  subtitle: 'Welcome back, please enter your details.',
+  promo: 'Efficient, reliable, and designed for modern operations.',
+  username: 'Username or email',
+  password: 'Password',
+  usernamePlaceholder: 'Enter your username or email',
+  passwordPlaceholder: '••••••••',
+  submit: 'Sign In',
+  forgotPassword: 'Forgot password?',
+  error: 'Invalid credentials',
+  emptyFields: 'Please enter your username and password',
+  noAccount: 'No account yet?',
+  register: 'Create one',
+};

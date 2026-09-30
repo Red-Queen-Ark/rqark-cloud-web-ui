@@ -1,0 +1,15 @@
+export const login = {
+  title: '登录',
+  subtitle: '欢迎回来，请输入你的资料。',
+  promo: '高效、可靠，为现代营运而设计。',
+  username: '用户名或邮箱',
+  password: '密码',
+  usernamePlaceholder: '输入用户名或邮箱',
+  passwordPlaceholder: '••••••••',
+  submit: '登录',
+  forgotPassword: '忘记密码？',
+  error: '登录资料无效',
+  emptyFields: '请输入用户名和密码',
+  noAccount: '还没有账号？',
+  register: '立即注册',
+};

@@ -1,0 +1,22 @@
+.flex-center {
+  @apply flex place-items-center justify-center;
+}
+
+/* The app shell never scrolls the page; regions scroll instead. */
+.scrollbar-thin {
+  scrollbar-width: thin;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: var(--color-base-300);
+  border-radius: 2px;
+}

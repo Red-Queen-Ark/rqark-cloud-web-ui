@@ -1,0 +1,50 @@
+<template>
+  <div class="relative h-full">
+    <div class="absolute right-4 top-4 z-50 flex gap-1">
+      <LanguageSwitcher />
+      <ThemeSwitcher />
+    </div>
+    <LoginBox v-model:username="username" v-model:password="password" :loading="loading" @login="login" />
+  </div>
+</template>
+
+<script setup lang="ts">
+import LoginBox from '@/components/Login/LoginBox.vue';
+import LanguageSwitcher from '@/components/LanguageSwitcher.vue';
+import ThemeSwitcher from '@/components/ThemeSwitcher.vue';
+import { useAlertStore } from '@/stores/alertStore';
+import { useAuthStore } from '@/stores/authStore';
+import { ref } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { useRoute, useRouter } from 'vue-router';
+
+const authStore = useAuthStore();
+const alertStore = useAlertStore();
+const router = useRouter();
+const route = useRoute();
+const { t } = useI18n();
+
+const username = ref<string>('');
+const password = ref<string>('');
+const loading = ref(false);
+
+async function login() {
+  if (!username.value || !password.value) {
+    alertStore.addItem({ level: 'warning', message: t('login.emptyFields') });
+    return;
+  }
+
+  loading.value = true;
+  const { ok } = await authStore.login({ login: username.value, password: password.value });
+  loading.value = false;
+
+  if (!ok) {
+    // The backend answers every credential failure with the same 401, so a
+    // single localized message is enough.
+    alertStore.addItem({ level: 'error', message: t('login.error') });
+    return;
+  }
+
+  router.push({ name: 'home', params: { lang: route.params.lang as string } });
+}
+</script>

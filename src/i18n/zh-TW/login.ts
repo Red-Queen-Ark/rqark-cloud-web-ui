@@ -1,0 +1,15 @@
+export const login = {
+  title: '登入',
+  subtitle: '歡迎回來，請輸入你的資料。',
+  promo: '高效、可靠，為現代營運而設計。',
+  username: '用戶名稱或電郵',
+  password: '密碼',
+  usernamePlaceholder: '輸入用戶名稱或電郵',
+  passwordPlaceholder: '••••••••',
+  submit: '登入',
+  forgotPassword: '忘記密碼？',
+  error: '登入資料無效',
+  emptyFields: '請輸入用戶名稱同密碼',
+  noAccount: '仲未有帳號？',
+  register: '立即註冊',
+};
