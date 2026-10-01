@@ -16,10 +16,9 @@
         <!-- daisyUI 5 gives .menu `width: fit-content`, which collapses the row
              highlight to the label width inside a stretched flex column. -->
         <ul class="menu menu-md w-full scrollbar-thin flex-1 gap-1 overflow-y-auto p-2">
-          <li v-for="item in visibleItems" :key="item.pageId">
+          <SidebarChatSessionsList />
+          <!-- <li v-for="item in visibleItems" :key="item.pageId">
             <RouterLink :to="{ name: item.pageId }" :class="{ 'menu-active': isActive(item) }">
-              <!-- `fill`/`stroke` switch per item: the outline set is stroked,
-                   Material Symbols glyphs are painted shapes. -->
               <svg
                 class="h-4 w-4"
                 viewBox="0 0 24 24"
@@ -34,7 +33,7 @@
               </svg>
               {{ t(item.i18nKey) }}
             </RouterLink>
-          </li>
+          </li> -->
         </ul>
 
         <div class="border-base-300 shrink-0 border-t p-2">
@@ -57,6 +56,7 @@ import { siderItemFor } from '@/config/siderbar';
 import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
+import SidebarChatSessionsList from './Chat/SidebarChatSessionsList.vue';
 
 const props = defineProps<{
   buttonLabel: string;
