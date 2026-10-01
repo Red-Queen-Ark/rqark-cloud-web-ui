@@ -42,6 +42,9 @@ export default defineConfig(({ mode }) => {
   const appName = env.VITE_APP_NAME ?? '';
   const appDescription = env.VITE_APP_DESCRIPTION ?? '';
   const apiProxyTarget = env.VITE_API_PROXY_TARGET || 'http://localhost:7302';
+  // The chat socket lives on the agent cloud, which is a second service on its
+  // own port, so it is addressed separately from the data cloud API.
+  const agentApiProxyTarget = env.VITE_AGENT_API_PROXY_TARGET || 'http://localhost:8000';
 
   // index.html carries `%VITE_APP_NAME%` and the PWA manifest takes the same
   // name. Vite substitutes the placeholder only when the variable is set and
@@ -61,9 +64,19 @@ export default defineConfig(({ mode }) => {
     server: {
       // The backend sends no CORS headers, so the dev server proxies /api to it.
       proxy: {
+        // The data cloud serves the REST API only.
         '/api': {
           target: apiProxyTarget,
           changeOrigin: true,
+        },
+        // The chat session is a WebSocket on the agent cloud, a second service,
+        // so it gets its own prefix rather than riding /api. The rewrite maps
+        // the prefix onto the agent cloud's own /api prefix.
+        '/agent-api': {
+          target: agentApiProxyTarget,
+          changeOrigin: true,
+          ws: true,
+          rewrite: (path) => path.replace(/^\/agent-api/, '/api'),
         },
       },
     },
