@@ -209,8 +209,9 @@ test('an empty session offers no messages rather than an empty thread', async ({
   await waitForShellStyles(page);
 
   await expect(page.getByText('This session has no messages yet.')).toBeVisible();
-  // A session with no title says so, rather than showing a blank row.
-  await expect(page.getByText('Untitled session')).toBeVisible();
+  // A session with no title says so, rather than showing a blank row. Scoped to
+  // the metadata: the sidebar lists the same session under the same label.
+  await expect(page.getByRole('definition').filter({ hasText: 'Untitled session' })).toBeVisible();
 });
 
 test('the page follows the language prefix', async ({ page }) => {

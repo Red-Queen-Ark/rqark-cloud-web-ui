@@ -12,6 +12,7 @@ import { dashboard } from './dashboard';
 import { agents } from './agents';
 import { providers } from './providers';
 import { apiKeys } from './apiKeys';
+import { chat } from './chat';
 import { sessions } from './sessions';
 import { users } from './users';
 import { groups } from './groups';
@@ -32,6 +33,7 @@ export const basis = {
   agents,
   providers,
   apiKeys,
+  chat,
   sessions,
   users,
   groups,

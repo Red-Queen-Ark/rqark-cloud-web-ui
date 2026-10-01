@@ -11,6 +11,7 @@ import HomePage from '@/pages/HomePage.vue';
 import SessionPage from '@/pages/SessionPage.vue';
 import SessionDetailPage from '@/pages/SessionDetailPage.vue';
 import SettingsPage from '@/pages/SettingsPage.vue';
+import ChatPage from '@/pages/ChatPage.vue';
 
 const routes = [
   {
@@ -66,6 +67,7 @@ const routes = [
         component: LangLayout,
         children: [
           { path: '', component: HomePage, name: 'home' },
+          { path: 'chat/:uuid', component: ChatPage, name: 'chat' },
           { path: 'sessions', component: SessionPage, name: 'sessions' },
           { path: 'sessions/:uuid', component: SessionDetailPage, name: 'sessionDetail' },
           { path: 'settings', component: SettingsPage, name: 'settings' },
