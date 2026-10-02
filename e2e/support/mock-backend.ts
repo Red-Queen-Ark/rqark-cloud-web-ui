@@ -276,6 +276,10 @@ export async function mockBackend(page_: Page, options: MockBackendOptions = {})
         return json(route, 201, created);
       }
 
+      if (path === '/agents/names' && method === 'GET') {
+        return json(route, 200, state.agents.map((agent) => agent.name).sort());
+      }
+
       const agentMatch = /^\/agents\/([^/]+)$/.exec(path);
       if (agentMatch) {
         const agent = state.agents.find((candidate) => candidate.id === agentMatch[1]);
@@ -314,6 +318,14 @@ export async function mockBackend(page_: Page, options: MockBackendOptions = {})
         Object.assign(created, body);
         state.providers.push(created);
         return json(route, 201, created);
+      }
+
+      if (path === '/providers/models' && method === 'GET') {
+        return json(
+          route,
+          200,
+          state.providers.map((provider) => ({ name: provider.name, model_name: provider.model_name })),
+        );
       }
 
       const providerMatch = /^\/providers\/([^/]+)$/.exec(path);

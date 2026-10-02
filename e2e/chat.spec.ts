@@ -15,15 +15,10 @@ const second: MockSession = {
   updated_at: '2026-04-05T06:07:08Z',
 };
 
-/** The chat upgrades to a WebSocket, which has to be routed separately from fetch. */
 function socketPath(url: string): string {
   return new URL(url).pathname;
 }
 
-// The socket is intercepted before it leaves the browser, so this asserts the
-// url the app builds. The prefix is what the dev server and the reverse proxy
-// forward to the agent cloud; `/api` belongs to the data cloud and carries no
-// socket, so a url under it would be a regression this file cannot see.
 const SOCKET_PREFIX = '/agent-api/chat/ws/';
 
 test('opens the socket of the session in the url', async ({ page }) => {
@@ -36,12 +31,9 @@ test('opens the socket of the session in the url', async ({ page }) => {
   });
 
   await page.goto(`/en/chat/${first.id}`);
-  // The page is still an empty container, so it has no box to be "visible": what
-  // this waits for is the route having rendered the chat component at all.
   await expect(page.getByTestId('chat-page')).toBeAttached();
 
   await expect.poll(() => opened.map(socketPath)).toEqual([`${SOCKET_PREFIX}${first.id}`]);
-  // The handshake carries the session token the backend asks for by name.
   expect(new URL(opened[0]).searchParams.get('token')).toBe('access-token');
 });
 
@@ -62,7 +54,31 @@ test('moves to the socket of the session it switches to', async ({ page }) => {
   await sessions.getByRole('link', { name: 'Second chat' }).click();
 
   await expect(page).toHaveURL(new RegExp(`/en/chat/${second.id}$`));
-  // Reusing the page must not leave the previous session's socket as the one
-  // carrying the conversation.
   await expect.poll(() => opened.map(socketPath)).toEqual([`${SOCKET_PREFIX}${first.id}`, `${SOCKET_PREFIX}${second.id}`]);
+});
+
+test('sends what was typed as the turn the agent cloud resolves', async ({ page }) => {
+  await mockBackend(page, {
+    session: boss,
+    sessions: [first, second],
+    agents: [{ id: 'agent-1', name: 'researcher', description: '', created_at: '2026-01-01T00:00:00Z' }],
+    providers: [{ id: 'provider-1', name: 'openai', model_name: 'gpt-5', created_at: '2026-01-01T00:00:00Z' }],
+  });
+  await seedSession(page);
+
+  const sent: string[] = [];
+  await page.routeWebSocket(/\/agent-api\/chat\/ws\//, (ws) => {
+    ws.onMessage((message) => sent.push(String(message)));
+  });
+
+  await page.goto(`/en/chat/${first.id}`);
+  await expect(page.getByTestId('chat-page')).toBeAttached();
+
+  const input = page.getByTestId('chat-input');
+  await expect(input).toBeEnabled();
+  await input.fill('hello there');
+  await page.getByTestId('chat-send').click();
+
+  await expect.poll(() => sent).toEqual([JSON.stringify({ content: 'hello there', provider: 'openai', agent: 'researcher' })]);
+  await expect(input).toHaveValue('');
 });
