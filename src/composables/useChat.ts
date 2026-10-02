@@ -1,5 +1,5 @@
 import { onScopeDispose, ref, toValue, watch, type MaybeRefOrGetter } from 'vue';
-import { getAgents, getProviders } from '@/api';
+import { getAgentsNames, getProvidersModels, type ApiProviderSummaryDto } from '@/api';
 import { useAuthStore } from '@/stores/authStore';
 
 export type ChatSessionId = string | null | undefined;
@@ -15,7 +15,7 @@ function chatSocketUrl(sessionId: string, token: string): string {
 export function useChat(sessionId: MaybeRefOrGetter<ChatSessionId>) {
   const authStore = useAuthStore();
   const agents = ref<string[]>([]);
-  const providers = ref<{ name: string; model_name: string }[]>([]);
+  const providers = ref<ApiProviderSummaryDto[]>([]);
   const ws = ref<WebSocket>();
 
   async function load() {
@@ -25,18 +25,16 @@ export function useChat(sessionId: MaybeRefOrGetter<ChatSessionId>) {
   }
 
   async function loadAgents() {
-    const res = await getAgents();
+    const res = await getAgentsNames();
     if (res.data) {
-      agents.value = res.data.map((e) => e.name ?? '');
+      agents.value = res.data
     }
   }
 
   async function loadProviders() {
-    const res = await getProviders();
+    const res = await getProvidersModels();
     if (res.data) {
-      providers.value = res.data.map((e) => {
-        return { name: e.name ?? '', model_name: e.model_name ?? '' };
-      });
+      providers.value = res.data
     }
   }
 

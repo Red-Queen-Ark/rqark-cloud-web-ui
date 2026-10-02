@@ -126,6 +126,11 @@ export type ApiProviderDto = {
     updated_at?: string;
 };
 
+export type ApiProviderSummaryDto = {
+    model_name?: string;
+    name?: string;
+};
+
 export type ApiRefreshRequest = {
     refresh_token?: string;
 };
@@ -357,6 +362,35 @@ export type PostAgentsResponses = {
 };
 
 export type PostAgentsResponse = PostAgentsResponses[keyof PostAgentsResponses];
+
+export type GetAgentsNamesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/agents/names';
+};
+
+export type GetAgentsNamesErrors = {
+    /**
+     * Unauthorized
+     */
+    401: UtilsErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: UtilsErrorResponse;
+};
+
+export type GetAgentsNamesError = GetAgentsNamesErrors[keyof GetAgentsNamesErrors];
+
+export type GetAgentsNamesResponses = {
+    /**
+     * OK
+     */
+    200: Array<string>;
+};
+
+export type GetAgentsNamesResponse = GetAgentsNamesResponses[keyof GetAgentsNamesResponses];
 
 export type DeleteAgentsByUuidData = {
     body?: never;
@@ -1250,6 +1284,35 @@ export type PostProvidersResponses = {
 };
 
 export type PostProvidersResponse = PostProvidersResponses[keyof PostProvidersResponses];
+
+export type GetProvidersModelsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/providers/models';
+};
+
+export type GetProvidersModelsErrors = {
+    /**
+     * Unauthorized
+     */
+    401: UtilsErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: UtilsErrorResponse;
+};
+
+export type GetProvidersModelsError = GetProvidersModelsErrors[keyof GetProvidersModelsErrors];
+
+export type GetProvidersModelsResponses = {
+    /**
+     * OK
+     */
+    200: Array<ApiProviderSummaryDto>;
+};
+
+export type GetProvidersModelsResponse = GetProvidersModelsResponses[keyof GetProvidersModelsResponses];
 
 export type DeleteProvidersByUuidData = {
     body?: never;
