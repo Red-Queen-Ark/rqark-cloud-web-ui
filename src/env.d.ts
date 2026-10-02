@@ -13,6 +13,10 @@ interface ImportMetaEnv {
   readonly VITE_API_BASE_URL?: string;
   /** Dev server proxy target for /api. */
   readonly VITE_API_PROXY_TARGET?: string;
+  /** Base URL the chat socket is addressed under. Defaults to /agent-api. */
+  readonly VITE_AGENT_API_BASE_URL?: string;
+  /** Dev server proxy target for /agent-api (the agent cloud, which serves the chat socket). */
+  readonly VITE_AGENT_API_PROXY_TARGET?: string;
   /** Swagger document consumed by `bun run api-client`. */
   readonly VITE_API_SPEC_URL?: string;
 }
