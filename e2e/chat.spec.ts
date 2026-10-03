@@ -1,5 +1,5 @@
-import { expect, test } from '@playwright/test';
-import { boss, mockBackend, seedSession, type MockSession } from './support/mock-backend';
+import { expect, test, type Locator, type Page, type WebSocketRoute } from '@playwright/test';
+import { boss, mockBackend, seedSession, type MockAgent, type MockProvider, type MockSession } from './support/mock-backend';
 import { waitForShellStyles } from './support/styles';
 
 const first: MockSession = {
@@ -21,6 +21,37 @@ function socketPath(url: string): string {
 }
 
 const SOCKET_PREFIX = '/agent-api/chat/ws/';
+
+const turnTimestamp = '2026-05-06T07:08:09Z';
+
+const agent: MockAgent = { id: 'agent-1', name: 'researcher', description: '', created_at: '2026-01-01T00:00:00Z' };
+
+const provider: MockProvider = { id: 'provider-1', name: 'openai', model_name: 'gpt-5', created_at: '2026-01-01T00:00:00Z' };
+
+function frame(payload: unknown): string {
+  return JSON.stringify({ agent_id: 'researcher:session', path: [], payload });
+}
+
+async function openTurn(page: Page, session: MockSession): Promise<{ socket: WebSocketRoute; history: Locator }> {
+  await mockBackend(page, { session: boss, sessions: [session], agents: [agent], providers: [provider] });
+  await seedSession(page);
+
+  let socket: WebSocketRoute | undefined;
+  await page.routeWebSocket(/\/agent-api\/chat\/ws\//, (ws) => {
+    socket = ws;
+  });
+
+  await page.goto(`/en/chat/${session.id}`);
+  await expect(page.getByTestId('chat-page')).toBeAttached();
+  await expect.poll(() => socket !== undefined).toBe(true);
+
+  const input = page.getByTestId('chat-input');
+  await expect(input).toBeEnabled();
+  await input.fill('hello there');
+  await page.getByTestId('chat-send').click();
+
+  return { socket: socket as WebSocketRoute, history: page.locator('#chat-history') };
+}
 
 test('opens the socket of the session in the url', async ({ page }) => {
   await mockBackend(page, { session: boss, sessions: [first, second] });
@@ -96,4 +127,59 @@ test('sends what was typed as the turn the agent cloud resolves', async ({ page 
 
   await expect.poll(() => sent).toEqual([JSON.stringify({ content: 'hello there', provider: 'openai', agent: 'researcher' })]);
   await expect(input).toBeEmpty();
+});
+
+test('shows the turn and the answer as the agent streams them', async ({ page }) => {
+  const { socket, history } = await openTurn(page, first);
+
+  socket.send(frame({ role: 'user', content: [{ type: 'text', text: 'hello there' }], created_at: turnTimestamp }));
+  await expect(history).toContainText('hello there');
+
+  socket.send(frame({ type: 'content', content: 'It is ' }));
+  await expect(history).toContainText('It is');
+
+  socket.send(frame({ type: 'content', content: 'sunny.' }));
+  await expect(history).toContainText('It is sunny.');
+
+  socket.send(frame({ role: 'assistant', content: 'It is sunny.', created_at: turnTimestamp }));
+  await expect(history).toContainText('It is sunny.');
+});
+
+test('shows the reasoning the agent streamed', async ({ page }) => {
+  const { socket, history } = await openTurn(page, first);
+
+  socket.send(frame({ type: 'reasoning_content', content: 'Let me check the sky.' }));
+
+  await expect(history.getByText('think')).toBeVisible();
+  await expect(history).toContainText('Let me check the sky.');
+});
+
+test('shows the tool calls the agent made and the result of each', async ({ page }) => {
+  const { socket, history } = await openTurn(page, first);
+
+  socket.send(frame({ type: 'content', content: 'Checking.' }));
+  socket.send(
+    frame({
+      role: 'assistant',
+      content: 'Checking.',
+      created_at: turnTimestamp,
+      tool_calls: [{ id: 'call_1', type: 'function', function: { name: 'plan_update', arguments: '{}' } }],
+    }),
+  );
+  await expect(history).toContainText('use plan_update');
+
+  const result = { role: 'tool', tool_call_id: 'call_1', content: 'plan updated', created_at: turnTimestamp };
+  socket.send(frame(result));
+  socket.send(frame(result));
+
+  await expect(history.getByText('plan_update - result')).toHaveCount(1);
+  await expect(history).toContainText('plan updated');
+});
+
+test('surfaces a stream error in the alert stack', async ({ page }) => {
+  const { socket } = await openTurn(page, first);
+
+  socket.send(frame({ type: 'error', content: 'APIConnectionError: Connection error.' }));
+
+  await expect(page.getByRole('alert')).toContainText('APIConnectionError: Connection error.');
 });

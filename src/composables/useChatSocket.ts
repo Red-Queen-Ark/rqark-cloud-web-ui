@@ -1,16 +1,20 @@
 import { onScopeDispose, reactive, ref, toValue, watch, type MaybeRefOrGetter } from 'vue';
 import { getAgentsNames, getProvidersModels, getSessionsByUuidMessages, type ApiProviderSummaryDto } from '@/api';
+import { useAlertStore } from '@/stores/alertStore';
 import { useAuthStore } from '@/stores/authStore';
+import { applyChatPayload, chatPayloadError, openChatStream } from '@/utils/chatStream';
 
 export type ChatSessionId = string | null | undefined;
 
 export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
   const authStore = useAuthStore();
+  const alertStore = useAlertStore();
   const agents = ref<string[]>([]);
   const providers = ref<ApiProviderSummaryDto[]>([]);
   const ws = ref<WebSocket>();
   const status = ref<string>('Waiting');
   const history = ref<ChatHistoryEntry[]>([]);
+  let stream = openChatStream();
 
   async function load() {
     connect();
@@ -36,13 +40,34 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
   async function loadHistory() {
     const id = toValue(sessionId);
     if (!id) {
-      history.value = [];
+      replace([]);
       return;
     }
     const res = await getSessionsByUuidMessages({ path: { uuid: id } });
     if (res.data) {
-      history.value = res.data as unknown as ChatHistoryEntry[];
+      replace(res.data as unknown as ChatHistoryEntry[]);
     }
+  }
+
+  function replace(messages: ChatHistoryEntry[]) {
+    stream = openChatStream(messages);
+    history.value = stream.messages;
+  }
+
+  function receive(data: string) {
+    let envelope: ChatEnvelope;
+    try {
+      envelope = JSON.parse(data) as ChatEnvelope;
+    } catch {
+      return;
+    }
+    const error = chatPayloadError(envelope.payload);
+    if (error) {
+      alertStore.addItem({ level: 'error', message: error });
+      return;
+    }
+    stream = applyChatPayload(stream, envelope.agent_id, envelope.payload);
+    history.value = stream.messages;
   }
 
   function chatSocketUrl(sessionId: string, token: string): string {
@@ -64,8 +89,11 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
     ws.value.onopen = () => {
       status.value = 'Connected';
     };
-    // eslint-disable-next-line no-console
-    ws.value.onmessage = (event) => console.log(event);
+    ws.value.onmessage = (event) => {
+      if (typeof event.data === 'string') {
+        receive(event.data);
+      }
+    };
   }
 
   function disconnect() {
