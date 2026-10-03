@@ -8,22 +8,18 @@
       :class="active ? 'text-neutral-content/70 hover:bg-neutral-content/10 active:bg-neutral-content/10' : 'text-base-content/60'"
       :title="t('chat.more')"
     >
-      <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a2 2 0 110 4 2 2 0 010-4zM10 8a2 2 0 110 4 2 2 0 010-4zM10 14a2 2 0 110 4 2 2 0 010-4z" /></svg>
+      <EllipsisVerticalIcon class="h-4 w-4" />
     </button>
     <ul tabindex="0" data-testid="sidebar-chat-session-menu" class="dropdown-content menu bg-base-200 rounded-box z-50 w-44 p-1 shadow-md">
       <li>
         <button data-testid="sidebar-chat-session-edit" @click="choose('edit')">
-          <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-          </svg>
+          <PencilIcon class="h-3 w-3" />
           {{ t('chat.edit') }}
         </button>
       </li>
       <li>
         <button data-testid="sidebar-chat-session-delete" class="text-error" @click="choose('delete')">
-          <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-          </svg>
+          <TrashIcon class="h-3 w-3" />
           {{ t('chat.delete') }}
         </button>
       </li>
@@ -37,6 +33,9 @@
 
 <script setup lang="ts">
 import { deleteSessionsByUuid } from '@/api';
+import EllipsisVerticalIcon from '@/components/svg/EllipsisVerticalIcon.vue';
+import PencilIcon from '@/components/svg/PencilIcon.vue';
+import TrashIcon from '@/components/svg/TrashIcon.vue';
 import FormModal from '@/components/FormModal.vue';
 import { useApiError } from '@/composables/useApiError';
 import { useAlertStore } from '@/stores/alertStore';

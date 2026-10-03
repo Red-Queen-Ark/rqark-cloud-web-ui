@@ -38,9 +38,7 @@
 
         <div class="border-base-300 shrink-0 border-t p-2">
           <button class="btn btn-ghost btn-sm text-error w-full justify-start gap-2" @click="logout">
-            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
-            </svg>
+            <LogoutIcon class="h-4 w-4" />
             {{ t('nav.logout') }}
           </button>
         </div>
@@ -50,6 +48,7 @@
 </template>
 
 <script setup lang="ts">
+import LogoutIcon from '@/components/svg/LogoutIcon.vue';
 import { useAuthStore } from '@/stores/authStore';
 import type { SiderItem } from '@/config/siderbar';
 import { siderItemFor } from '@/config/siderbar';

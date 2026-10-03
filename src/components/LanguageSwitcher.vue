@@ -1,13 +1,9 @@
 <template>
   <div id="language-switcher" class="dropdown dropdown-end">
     <button id="language-switcher-btn" tabindex="0" class="btn btn-ghost btn-sm gap-1 px-1 sm:px-2" :aria-label="t('nav.switchLanguage')">
-      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <path d="M12 21a9 9 0 100-18 9 9 0 000 18zm0 0c2.5-2.5 3.75-5.5 3.75-9S14.5 5.5 12 3m0 18c-2.5-2.5-3.75-5.5-3.75-9S9.5 5.5 12 3M3.5 9h17M3.5 15h17" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
-      </svg>
+      <GlobeIcon class="h-4 w-4" />
       <span>{{ current.short }}</span>
-      <svg class="hidden h-3 w-3 opacity-50 sm:block" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
-      </svg>
+      <ChevronDownIcon class="hidden h-3 w-3 opacity-50 sm:block" />
     </button>
 
     <ul tabindex="0" class="dropdown-content menu bg-base-200 border-base-300 rounded-box z-50 mt-2 w-44 border shadow-lg">
@@ -22,6 +18,8 @@
 </template>
 
 <script setup lang="ts">
+import ChevronDownIcon from '@/components/svg/ChevronDownIcon.vue';
+import GlobeIcon from '@/components/svg/GlobeIcon.vue';
 import { LANGUAGES, languageOption } from '@/config/languages';
 import { computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';

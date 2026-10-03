@@ -18,14 +18,10 @@
           <div v-if="editingId === session.id" class="absolute inset-0 flex! items-center gap-1 px-3">
             <input v-model="editTitle" :data-edit-id="session.id" type="text" class="input input-sm w-full min-w-0" :placeholder="t('chat.titlePlaceholder')" @keydown="handleEditKeydown($event, session.id)" @blur="saveEdit(session.id)" />
             <button data-testid="sidebar-chat-rename-save" class="btn btn-ghost btn-sm btn-square text-success" :title="t('chat.edit')" @mousedown.prevent @click="saveEdit(session.id)">
-              <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-              </svg>
+              <CheckIcon class="h-3.5 w-3.5" />
             </button>
             <button data-testid="sidebar-chat-rename-cancel" class="btn btn-ghost btn-sm btn-square text-error" :title="t('chat.cancel')" @mousedown.prevent @click="cancelEdit">
-              <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              <CloseIcon class="h-3.5 w-3.5" />
             </button>
           </div>
         </template>
@@ -37,6 +33,8 @@
 
 <script setup lang="ts">
 import { getSessions, putSessionsByUuid, type ApiSessionDto } from '@/api';
+import CheckIcon from '@/components/svg/CheckIcon.vue';
+import CloseIcon from '@/components/svg/CloseIcon.vue';
 import SidebarChatSessionMenu from '@/components/Chat/SidebarChatSessionMenu.vue';
 import { useApiError } from '@/composables/useApiError';
 import { useAlertStore } from '@/stores/alertStore';
