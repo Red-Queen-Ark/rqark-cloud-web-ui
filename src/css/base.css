@@ -2,6 +2,22 @@
   @apply flex place-items-center justify-center;
 }
 
+#app {
+  position: relative;
+  top: var(--vv-offset-top, 0px);
+}
+
+.chat-input-dock {
+  bottom: calc(var(--keyboard-inset, 0px) + var(--spacing, 0.25rem) * 2);
+  transition: bottom 120ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-input-dock {
+    transition: none;
+  }
+}
+
 /* The app shell never scrolls the page; regions scroll instead. */
 .scrollbar-thin {
   scrollbar-width: thin;
