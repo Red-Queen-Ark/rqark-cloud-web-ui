@@ -1,7 +1,7 @@
 <template>
   <div id="auth-panel" class="bg-base-300 flex h-full overflow-y-auto">
     <!-- Desktop left promo -->
-    <div class="border-base-300 relative hidden overflow-hidden border-r lg:flex lg:flex-[2]">
+    <div class="border-base-300 relative hidden overflow-hidden border-r lg:flex lg:flex-2">
       <div class="absolute inset-0 opacity-10" :style="gridStyleContent"></div>
       <div class="pointer-events-none absolute right-0 top-0 h-full w-full opacity-25" :style="radialGradientCenter"></div>
       <div class="relative z-10 flex w-full flex-col items-center justify-center p-10">
