@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vite
 import { effectScope, nextTick, ref, type EffectScope } from 'vue';
 import { useChatSocket } from './useChatSocket';
 
-vi.mock('@/api', () => ({ getAgentsNames: vi.fn(), getProvidersModels: vi.fn() }));
+vi.mock('@/api', () => ({ getAgentsNames: vi.fn(), getProvidersModels: vi.fn(), getSessionsByUuidMessages: vi.fn() }));
 
 class FakeSocket {
   public static opened: string[] = [];
@@ -59,6 +59,7 @@ describe('useChatSocket', () => {
     vi.clearAllMocks();
     (api.getAgentsNames as Mock).mockResolvedValue({ data: ['researcher'] });
     (api.getProvidersModels as Mock).mockResolvedValue({ data: [{ name: 'openai', model_name: 'gpt-5' }] });
+    (api.getSessionsByUuidMessages as Mock).mockResolvedValue({ data: [] });
     useAuthStore().setTokens('access-token', 'refresh-token');
   });
 
@@ -86,6 +87,26 @@ describe('useChatSocket', () => {
     // would ever ask for the second session's socket.
     expect(FakeSocket.opened.map(socketPath)).toEqual(['/agent-api/chat/ws/session-a', '/agent-api/chat/ws/session-b']);
     expect(FakeSocket.closed.map(socketPath)).toEqual(['/agent-api/chat/ws/session-a']);
+  });
+
+  it('loads the session history it is given', async () => {
+    (api.getSessionsByUuidMessages as Mock).mockResolvedValue({
+      data: [{ seq: 1, role: 'user', data: { content: 'hi' } }],
+    });
+
+    const chatSocket = openChat(ref('session-a'));
+    await chatSocket.load();
+
+    expect(api.getSessionsByUuidMessages).toHaveBeenCalledWith({ path: { uuid: 'session-a' } });
+    expect(chatSocket.history).toEqual([{ seq: 1, role: 'user', data: { content: 'hi' } }]);
+  });
+
+  it('loads no history when there is no session', async () => {
+    const chatSocket = openChat(ref(undefined));
+    await chatSocket.load();
+
+    expect(api.getSessionsByUuidMessages).not.toHaveBeenCalled();
+    expect(chatSocket.history).toEqual([]);
   });
 
   it('sends the turn the agent cloud resolves', async () => {
