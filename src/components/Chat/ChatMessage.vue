@@ -24,7 +24,7 @@ const toolResult = computed<Record<string, ChatToolMessage>>(() => {
   const res: Record<string, ChatToolMessage> = {};
   for (const msg of props.messages) {
     if (msg.role === 'tool') {
-      res[msg.data.tool_call_id] = msg.data
+      res[msg.data.tool_call_id] = msg.data;
     }
   }
   return res;
