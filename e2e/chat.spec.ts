@@ -80,5 +80,5 @@ test('sends what was typed as the turn the agent cloud resolves', async ({ page 
   await page.getByTestId('chat-send').click();
 
   await expect.poll(() => sent).toEqual([JSON.stringify({ content: 'hello there', provider: 'openai', agent: 'researcher' })]);
-  await expect(input).toHaveValue('');
+  await expect(input).toBeEmpty();
 });

@@ -4,6 +4,8 @@ export const chat = {
   loadError: '无法加载 Session 列表',
   inputPlaceholder: '输入消息',
   send: '发送',
+  noProviders: '没有 Provider',
+  noAgents: '没有 Agent',
   more: '更多',
   edit: '编辑标题',
   delete: '删除',

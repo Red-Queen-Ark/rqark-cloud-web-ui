@@ -2,11 +2,31 @@ import { mount } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createMemoryHistory, createRouter, type Router } from 'vue-router';
 import { defineComponent, toValue } from 'vue';
+import { i18n } from '@/i18n';
 import ChatPage from './ChatPage.vue';
 
-const useChatMock = vi.hoisted(() => vi.fn(() => ({ load: vi.fn(), agents: { value: [] }, providers: { value: [] }, ws: { value: undefined }, connect: vi.fn(), disconnect: vi.fn() })));
+const socket = vi.hoisted(() => ({
+  load: vi.fn(),
+  send: vi.fn(),
+  sessionId: undefined as unknown,
+  agentsValue: ['researcher'],
+  providersValue: [{ name: 'openai', model_name: 'gpt-5' }],
+}));
 
-vi.mock('@/composables/useChat', () => ({ useChat: useChatMock }));
+vi.mock('@/composables/useChatSocket', async () => {
+  const { reactive, ref } = await import('vue');
+  return {
+    useChatSocket: (sessionId: unknown) => {
+      socket.sessionId = sessionId;
+      return reactive({
+        load: socket.load,
+        send: socket.send,
+        agents: ref(socket.agentsValue),
+        providers: ref(socket.providersValue),
+      });
+    },
+  };
+});
 
 const Blank = defineComponent({ template: '<div />' });
 
@@ -24,7 +44,7 @@ async function mountChat(path: string) {
   const router = createTestRouter();
   await router.push(path);
   await router.isReady();
-  const wrapper = mount(ChatPage, { global: { plugins: [router] } });
+  const wrapper = mount(ChatPage, { global: { plugins: [i18n, router] } });
   return { wrapper, router };
 }
 
@@ -38,30 +58,40 @@ describe('ChatPage', () => {
   it('hands the uuid from the route to the chat', async () => {
     await mountChat('/en/chat/session-a');
 
-    const sessionId = useChatMock.mock.calls[0]?.[0];
-    expect(toValue(sessionId)).toBe('session-a');
+    expect(toValue(socket.sessionId)).toBe('session-a');
   });
 
   it('loads the chat once it is on screen', async () => {
     await mountChat('/en/chat/session-a');
 
-    expect(useChatMock.mock.results[0]?.value.load).toHaveBeenCalled();
+    expect(socket.load).toHaveBeenCalled();
   });
 
   it('keeps naming the current session after the route switches', async () => {
     const { router } = await mountChat('/en/chat/session-a');
-    const sessionId = useChatMock.mock.calls[0]?.[0];
 
     await router.push('/en/chat/session-b');
 
     // The page is reused for the new route, so a one-off read of the param would
     // keep the previous session open.
-    expect(toValue(sessionId)).toBe('session-b');
+    expect(toValue(socket.sessionId)).toBe('session-b');
   });
 
   it('names no session outside a chat url', async () => {
     await mountChat('/en');
 
-    expect(toValue(useChatMock.mock.calls[0]?.[0])).toBeUndefined();
+    expect(toValue(socket.sessionId)).toBeUndefined();
+  });
+
+  it('sends the typed turn with the chosen agent and provider', async () => {
+    const { wrapper } = await mountChat('/en/chat/session-a');
+
+    const input = wrapper.get('[data-testid="chat-input"]');
+    input.element.textContent = 'hello there';
+    await input.trigger('input');
+    await wrapper.get('[data-testid="chat-send"]').trigger('click');
+
+    expect(socket.send).toHaveBeenCalledWith('hello there', 'researcher', 'openai');
+    expect(input.element.textContent).toBe('');
   });
 });

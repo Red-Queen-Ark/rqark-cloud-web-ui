@@ -1,4 +1,4 @@
-import { onScopeDispose, ref, toValue, type MaybeRefOrGetter } from 'vue';
+import { onScopeDispose, reactive, ref, toValue, watch, type MaybeRefOrGetter } from 'vue';
 import { getAgentsNames, getProvidersModels, type ApiProviderSummaryDto } from '@/api';
 import { useAuthStore } from '@/stores/authStore';
 
@@ -60,14 +60,19 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
     ws.value = undefined;
   }
 
+  watch(
+    () => toValue(sessionId),
+    () => connect(),
+  );
+
   function send(content: string, agent: string, provider: string) {
-    const data = JSON.stringify({ content, agent, provider });
+    const data = JSON.stringify({ content, provider, agent });
     ws.value?.send(data);
   }
 
   onScopeDispose(disconnect);
 
-  return {
+  return reactive({
     load,
     agents,
     providers,
@@ -77,5 +82,5 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
     connect,
     disconnect,
     send,
-  };
+  });
 }
