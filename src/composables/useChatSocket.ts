@@ -75,7 +75,7 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
 
   watch(
     () => toValue(sessionId),
-    () => connect(),
+    () => load(),
   );
 
   function send(content: string, agent: string, provider: string) {
