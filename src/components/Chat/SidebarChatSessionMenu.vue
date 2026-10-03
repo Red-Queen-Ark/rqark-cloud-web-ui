@@ -4,7 +4,7 @@
       type="button"
       tabindex="0"
       data-testid="sidebar-chat-session-menu-button"
-      class="btn btn-ghost btn-square  btn-xs border-transparent opacity-100 transition-opacity duration-200 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
+      class="btn btn-ghost btn-square btn-xs border-transparent opacity-100 transition-opacity duration-200 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
       :class="active ? 'text-neutral-content/70 hover:bg-neutral-content/10 active:bg-neutral-content/10' : 'text-base-content/60'"
       :title="t('chat.more')"
     >
