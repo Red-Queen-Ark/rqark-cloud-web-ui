@@ -4,7 +4,9 @@
             <div class="collapse collapse-arrow">
             <input type="checkbox" />
             <div class="collapse-title after:inset-s-1 after:inset-e-auto pe-1 ps-8 p-0">
-                <span></span>
+                <span>
+                    <!-- icon -->
+                </span>
                 <span>{{ tool_call.function.name }}</span>
                 <!-- {{ tool_call.function.arguments }} -->
             </div>
