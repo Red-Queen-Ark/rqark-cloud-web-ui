@@ -1,7 +1,7 @@
 # AGENTS.md
 
 ## General Rules
-
+- 你寫代碼不要寫注解，AI Agent 寫注解太丑，如果發現有注解都是主人寫的。
 - frontend 必須用 `bun`，不可用 npm/pnpm/yarn
 - 不可以運行 git commit/push
 - 最憎硬編碼

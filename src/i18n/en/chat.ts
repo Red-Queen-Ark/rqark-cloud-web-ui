@@ -4,4 +4,12 @@ export const chat = {
   loadError: 'Could not load sessions',
   inputPlaceholder: 'Type a message',
   send: 'Send',
+  more: 'More',
+  edit: 'Edit title',
+  delete: 'Delete',
+  deleteConfirm: 'Delete this conversation?',
+  titlePlaceholder: 'Enter title',
+  cancel: 'Cancel',
+  renameError: 'Could not rename the session',
+  deleteError: 'Could not delete the session',
 };

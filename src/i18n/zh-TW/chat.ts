@@ -4,4 +4,12 @@ export const chat = {
   loadError: '無法載入 Session 清單',
   inputPlaceholder: '輸入訊息',
   send: '傳送',
+  more: '更多',
+  edit: '編輯標題',
+  delete: '刪除',
+  deleteConfirm: '刪除呢個對話？',
+  titlePlaceholder: '輸入標題',
+  cancel: '取消',
+  renameError: '無法重新命名 Session',
+  deleteError: '無法刪除 Session',
 };

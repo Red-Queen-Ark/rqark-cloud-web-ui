@@ -4,4 +4,12 @@ export const chat = {
   loadError: '无法加载 Session 列表',
   inputPlaceholder: '输入消息',
   send: '发送',
+  more: '更多',
+  edit: '编辑标题',
+  delete: '删除',
+  deleteConfirm: '删除这个对话？',
+  titlePlaceholder: '输入标题',
+  cancel: '取消',
+  renameError: '无法重命名 Session',
+  deleteError: '无法删除 Session',
 };
