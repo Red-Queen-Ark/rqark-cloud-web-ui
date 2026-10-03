@@ -1,5 +1,5 @@
 <template>
-  <div data-testid="chat-page" class="space-y-4 flex flex-col">
+  <div data-testid="chat-page" class="space-y-4">
     <ChatInputArea ref="inputArea" :agents="chatSocket.agents" :providers="chatSocket.providers" @submit="handleSubmit" />
   </div>
 </template>

@@ -1,6 +1,6 @@
 <template>
-  <div id="chat-input-area" class="py-2 px-3 bg-base-100 border-t border-base-300 shrink-0 relative">
-    <div class="bg-base-200 rounded-box border border-base-300 shadow-sm">
+  <div id="chat-input-area" class="py-2 px-3 bg-base-100 shrink-0 relative">
+    <div class="bg-base-200 rounded-box border border-base-300">
       <div class="py-2 px-3">
         <div class="min-h-[2.25rem] max-h-32 overflow-y-auto scrollbar-thin">
           <div
