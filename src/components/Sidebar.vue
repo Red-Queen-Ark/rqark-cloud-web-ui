@@ -19,18 +19,7 @@
           <SidebarChatSessionsList />
           <!-- <li v-for="item in visibleItems" :key="item.pageId">
             <RouterLink :to="{ name: item.pageId }" :class="{ 'menu-active': isActive(item) }">
-              <svg
-                class="h-4 w-4"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-                :fill="item.filled ? 'currentColor' : 'none'"
-                :stroke="item.filled ? 'none' : 'currentColor'"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-              >
-                <path :d="item.icon" />
-              </svg>
+              <component :is="item.icon" class="h-4 w-4" />
               {{ t(item.i18nKey) }}
             </RouterLink>
           </li> -->
