@@ -1,9 +1,7 @@
 <template>
   <div data-testid="chat-page">
-    <div class="mb-28">
-      <code>
-        {{ chatSocket.history }}
-      </code>
+    <div id="chat-history" class="mb-28 flex flex-col">
+        <ChatMessage :messages="chatSocket.history" />
     </div>
     <div class="chat-input-dock fixed inset-x-0 z-30 lg:left-72" data-testid="chat-input-dock">
       <ChatInputArea ref="inputArea" :agents="chatSocket.agents" :providers="chatSocket.providers" @submit="handleSubmit" />
@@ -15,6 +13,7 @@
 import { computed, onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import ChatInputArea from '@/components/Chat/ChatInputArea.vue';
+import ChatMessage from '@/components/Chat/ChatMessage.vue';
 import { useChatSocket } from '@/composables/useChatSocket';
 import { useVisualViewportInsets } from '@/composables/useVisualViewportInsets';
 import { useChatStore } from '@/stores/chatStore';
