@@ -1,5 +1,5 @@
 <template>
-    <div class="rounded-xl bg-base-200 w-96 px-4 py-3">
+    <div class="rounded-xl bg-base-200 w-96 px-4 py-2">
         <template v-for="info, index in props.message.content" :key="`user-${info.type}-${index}`">
             <div v-if="info.type === 'text'">
                 {{ info.text }}

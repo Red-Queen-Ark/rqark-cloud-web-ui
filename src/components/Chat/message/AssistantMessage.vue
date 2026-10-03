@@ -1,5 +1,5 @@
 <template>
-    <div v-if="props.message.content" class="w-full px-4 py-3">
+    <div v-if="props.message.content" class="max-w-11/12 px-4 py-2">
         <div v-if="props.message.content">
             {{ props.message.content }}
         </div>

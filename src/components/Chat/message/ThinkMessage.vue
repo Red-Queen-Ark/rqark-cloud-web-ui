@@ -1,5 +1,5 @@
 <template>
-    <div v-if="props.message.reasoning_content" class="w-full px-4 py-3">
+    <div v-if="props.message.reasoning_content" class="w-full px-4 py-2">
         <div class="collapse collapse-arrow">
             <input type="checkbox" />
             <div class="collapse-title after:inset-s-1 after:inset-e-auto pe-1 ps-8 p-0">think</div>
