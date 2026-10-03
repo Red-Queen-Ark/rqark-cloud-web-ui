@@ -52,6 +52,57 @@ test('marks the open chat and follows the selection', async ({ page }) => {
   await expect(active).toHaveText('Older chat');
 });
 
+test('keeps the row menu round and clear of the open chat fill', async ({ page }) => {
+  await mockBackend(page, { session: boss, sessions: [latest, older] });
+  await seedSession(page);
+  await page.goto(`/en/chat/${latest.id}`);
+  await waitForShellStyles(page);
+
+  const sessions = page.getByTestId('sidebar-chat-sessions');
+  const openRow = sessions.locator('li').filter({ has: page.locator('a.menu-active') });
+  const trigger = openRow.getByTestId('sidebar-chat-session-menu-button');
+
+  await trigger.hover();
+
+  // daisyUI paints every direct child of a menu `li` on hover, which squares off
+  // the icon; the trigger's own circle is what should carry that paint.
+  const overlay = openRow.locator('div.absolute');
+  await expect.poll(() => overlay.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgba(0, 0, 0, 0)');
+  await expect.poll(() => trigger.evaluate((el) => getComputedStyle(el).backgroundColor)).not.toBe('rgba(0, 0, 0, 0)');
+
+  const shape = await trigger.evaluate((el) => {
+    const style = getComputedStyle(el);
+    return { width: parseFloat(style.width), height: parseFloat(style.height), radius: parseFloat(style.borderTopLeftRadius) };
+  });
+  expect(shape.width).toBe(shape.height);
+  expect(shape.radius).toBeGreaterThanOrEqual(shape.width / 2);
+
+  // The open row is filled with `neutral`, so its icon has to follow the row's
+  // own foreground rather than the base-content a plain row uses.
+  const openColor = await trigger.evaluate((el) => getComputedStyle(el).color);
+  const plainRow = sessions.locator('li').filter({ hasText: 'Older chat' });
+  const plainColor = await plainRow.getByTestId('sidebar-chat-session-menu-button').evaluate((el) => getComputedStyle(el).color);
+  expect(openColor).not.toBe(plainColor);
+});
+
+test('renames a session from its row menu', async ({ page }) => {
+  const backend = await mockBackend(page, { session: boss, sessions: [latest, older] });
+  await seedSession(page);
+  await page.goto('/en');
+  await waitForShellStyles(page);
+
+  const sessions = page.getByTestId('sidebar-chat-sessions');
+  const row = sessions.locator('li').filter({ hasText: 'Older chat' });
+
+  await row.getByTestId('sidebar-chat-session-menu-button').click();
+  await row.getByTestId('sidebar-chat-session-edit').click();
+  await row.locator('input[type="text"]').fill('Renamed chat');
+  await row.getByTestId('sidebar-chat-rename-save').click();
+
+  await expect(sessions.getByRole('link', { name: 'Renamed chat' })).toBeVisible();
+  expect(backend.writes.find((write) => write.method === 'PUT' && write.path === `/sessions/${older.id}`)?.body).toEqual({ title: 'Renamed chat' });
+});
+
 test('picks up a session started elsewhere without a reload', async ({ page }) => {
   const backend = await mockBackend(page, { session: boss, sessions: [latest] });
   await seedSession(page);
