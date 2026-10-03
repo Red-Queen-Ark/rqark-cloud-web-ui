@@ -9,6 +9,7 @@ import { user } from './user';
 import { theme } from './theme';
 import { alert } from './alert';
 import { dashboard } from './dashboard';
+import { home } from './home';
 import { agents } from './agents';
 import { providers } from './providers';
 import { apiKeys } from './apiKeys';
@@ -30,6 +31,7 @@ export const basis = {
   theme,
   alert,
   dashboard,
+  home,
   agents,
   providers,
   apiKeys,

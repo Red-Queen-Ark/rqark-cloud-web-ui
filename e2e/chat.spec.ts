@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { boss, mockBackend, seedSession, type MockSession } from './support/mock-backend';
+import { waitForShellStyles } from './support/styles';
 
 const first: MockSession = {
   id: 'cccccccc-1111-4111-8111-cccccccccccc',
@@ -55,6 +56,20 @@ test('moves to the socket of the session it switches to', async ({ page }) => {
 
   await expect(page).toHaveURL(new RegExp(`/en/chat/${second.id}$`));
   await expect.poll(() => opened.map(socketPath)).toEqual([`${SOCKET_PREFIX}${first.id}`, `${SOCKET_PREFIX}${second.id}`]);
+});
+
+test('names the open session in the header', async ({ page }) => {
+  await mockBackend(page, { session: boss, sessions: [first, second] });
+  await seedSession(page);
+
+  await page.goto(`/en/chat/${first.id}`);
+  await waitForShellStyles(page);
+
+  await expect(page.locator('header h1')).toHaveText('First chat');
+
+  await page.getByTestId('sidebar-chat-sessions').getByRole('link', { name: 'Second chat' }).click();
+
+  await expect(page.locator('header h1')).toHaveText('Second chat');
 });
 
 test('sends what was typed as the turn the agent cloud resolves', async ({ page }) => {

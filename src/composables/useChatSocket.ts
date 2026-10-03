@@ -80,7 +80,15 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
 
   function send(content: string, agent: string, provider: string) {
     const data = JSON.stringify({ content, provider, agent });
-    ws.value?.send(data);
+    const socket = ws.value;
+    if (!socket) {
+      return;
+    }
+    if (socket.readyState === WebSocket.CONNECTING) {
+      socket.addEventListener('open', () => socket.send(data), { once: true });
+      return;
+    }
+    socket.send(data);
   }
 
   onScopeDispose(disconnect);

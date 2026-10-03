@@ -38,6 +38,7 @@ import CloseIcon from '@/components/svg/CloseIcon.vue';
 import SidebarChatSessionMenu from '@/components/Chat/SidebarChatSessionMenu.vue';
 import { useApiError } from '@/composables/useApiError';
 import { useAlertStore } from '@/stores/alertStore';
+import { useChatStore } from '@/stores/chatStore';
 import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
@@ -50,6 +51,7 @@ const route = useRoute();
 const router = useRouter();
 const alertStore = useAlertStore();
 const apiError = useApiError();
+const chatStore = useChatStore();
 
 const sessions = ref<ApiSessionDto[]>([]);
 const lang = computed(() => route.params.lang as string);
@@ -90,6 +92,7 @@ async function loadSessions() {
   loadFailed = false;
   // The endpoint hands back its own array, so sort a copy rather than it.
   sessions.value = [...data].sort(byRecency);
+  chatStore.setSessionTitles(sessions.value);
 }
 
 function startEdit(session: ApiSessionDto) {
@@ -144,6 +147,7 @@ async function saveEdit(id?: string) {
     const current = sessions.value.find((candidate) => candidate.id === id);
     if (current) {
       current.title = title;
+      chatStore.setSessionTitle(id, title);
     }
     cancelEdit();
   } finally {

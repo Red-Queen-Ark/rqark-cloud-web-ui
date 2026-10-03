@@ -59,6 +59,7 @@ import { useI18n } from 'vue-i18n';
 import { computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '@/stores/authStore';
+import { useChatStore } from '@/stores/chatStore';
 import { siderItemFor } from '@/config/siderbar';
 
 const props = withDefaults(
@@ -72,6 +73,7 @@ const { t } = useI18n();
 const router = useRouter();
 const route = useRoute();
 const authStore = useAuthStore();
+const chatStore = useChatStore();
 
 const drawerId = computed(() => `${props.buttonLabel}-drawer`);
 const displayName = computed(() => authStore.displayName || t('user.display'));
@@ -84,7 +86,26 @@ const initials = computed(() => {
 // The header names the page the user is on, taking both texts from the same
 // navigation entry that renders the sidebar.
 const navItem = computed(() => siderItemFor(route.name as string));
-const pageTitle = computed(() => (navItem.value ? t(navItem.value.i18nKey) : import.meta.env.VITE_APP_NAME || 'App'));
+
+// A chat is not a navigation entry, so the header names the session the route
+// points at instead. The sidebar owns the session list and publishes its
+// titles, which is also what keeps a renamed session in step with the header.
+// An id nothing has listed yet is `undefined` rather than an empty title.
+const sessionTitle = computed(() => {
+  const uuid = route.params.uuid;
+  return route.name === 'chat' && typeof uuid === 'string' ? chatStore.sessionTitles[uuid] : undefined;
+});
+
+const pageTitle = computed(() => {
+  if (navItem.value) {
+    return t(navItem.value.i18nKey);
+  }
+  if (sessionTitle.value !== undefined) {
+    return sessionTitle.value.trim() || t('sessions.untitled');
+  }
+  return import.meta.env.VITE_APP_NAME || 'App';
+});
+
 const pageSubtitle = computed(() => (navItem.value ? t(navItem.value.subtitleKey) : ''));
 
 function logout() {

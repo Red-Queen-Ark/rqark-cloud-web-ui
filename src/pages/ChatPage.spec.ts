@@ -1,8 +1,10 @@
-import { mount } from '@vue/test-utils';
+import { mount, flushPromises } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createMemoryHistory, createRouter, type Router } from 'vue-router';
 import { defineComponent, toValue } from 'vue';
+import { createPinia, setActivePinia, type Pinia } from 'pinia';
 import { i18n } from '@/i18n';
+import { useChatStore } from '@/stores/chatStore';
 import ChatPage from './ChatPage.vue';
 
 const socket = vi.hoisted(() => ({
@@ -40,11 +42,14 @@ function createTestRouter(): Router {
   });
 }
 
+let pinia: Pinia;
+
 async function mountChat(path: string) {
   const router = createTestRouter();
   await router.push(path);
   await router.isReady();
-  const wrapper = mount(ChatPage, { global: { plugins: [i18n, router] } });
+  const wrapper = mount(ChatPage, { global: { plugins: [i18n, router, pinia] } });
+  await flushPromises();
   return { wrapper, router };
 }
 
@@ -53,6 +58,8 @@ describe('ChatPage', () => {
     // The mock is shared, so a call recorded by one test would otherwise be read
     // as the call of the next one.
     vi.clearAllMocks();
+    pinia = createPinia();
+    setActivePinia(pinia);
   });
 
   it('hands the uuid from the route to the chat', async () => {
@@ -93,5 +100,21 @@ describe('ChatPage', () => {
 
     expect(socket.send).toHaveBeenCalledWith('hello there', 'researcher', 'openai');
     expect(input.element.textContent).toBe('');
+  });
+
+  it('sends the turn the start page handed over', async () => {
+    useChatStore().setPendingTurn({ sessionId: 'session-a', content: 'hello there', agent: 'researcher', provider: 'openai' });
+
+    await mountChat('/en/chat/session-a');
+
+    expect(socket.send).toHaveBeenCalledWith('hello there', 'researcher', 'openai');
+  });
+
+  it('leaves a turn meant for another session alone', async () => {
+    useChatStore().setPendingTurn({ sessionId: 'session-b', content: 'hello there', agent: 'researcher', provider: 'openai' });
+
+    await mountChat('/en/chat/session-a');
+
+    expect(socket.send).not.toHaveBeenCalled();
   });
 });

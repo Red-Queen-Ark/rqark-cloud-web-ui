@@ -8,14 +8,18 @@ import { useChatSocket } from './useChatSocket';
 vi.mock('@/api', () => ({ getAgentsNames: vi.fn(), getProvidersModels: vi.fn(), getSessionsByUuidMessages: vi.fn() }));
 
 class FakeSocket {
+  public static CONNECTING = 0;
+  public static OPEN = 1;
   public static opened: string[] = [];
   public static closed: string[] = [];
   public static instances: FakeSocket[] = [];
 
   public url: string;
   public sent: string[] = [];
+  public readyState = FakeSocket.OPEN;
   public onopen: (() => void) | null = null;
   public onmessage: ((event: unknown) => void) | null = null;
+  private listeners: Record<string, (() => void)[]> = {};
 
   public constructor(url: string) {
     this.url = url;
@@ -23,8 +27,17 @@ class FakeSocket {
     FakeSocket.instances.push(this);
   }
 
+  public addEventListener(type: string, listener: () => void) {
+    (this.listeners[type] ??= []).push(listener);
+  }
+
   public close() {
     FakeSocket.closed.push(this.url);
+  }
+
+  public open() {
+    this.readyState = FakeSocket.OPEN;
+    this.listeners.open?.forEach((listener) => listener());
   }
 
   public send(data: string) {
@@ -116,6 +129,21 @@ describe('useChatSocket', () => {
     chatSocket.send('hello', 'researcher', 'openai');
 
     expect(FakeSocket.instances[0]?.sent).toEqual([JSON.stringify({ content: 'hello', provider: 'openai', agent: 'researcher' })]);
+  });
+
+  it('holds a turn until the socket opens', async () => {
+    const chatSocket = openChat(ref('session-a'));
+    await chatSocket.load();
+
+    const socket = FakeSocket.instances[0] as FakeSocket;
+    socket.readyState = FakeSocket.CONNECTING;
+    chatSocket.send('hello', 'researcher', 'openai');
+
+    expect(socket.sent).toEqual([]);
+
+    socket.open();
+
+    expect(socket.sent).toEqual([JSON.stringify({ content: 'hello', provider: 'openai', agent: 'researcher' })]);
   });
 
   it('stops sending to the session it left', async () => {

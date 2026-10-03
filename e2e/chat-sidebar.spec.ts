@@ -128,6 +128,23 @@ test('renames a session from its row menu', async ({ page }) => {
   expect(backend.writes.find((write) => write.method === 'PUT' && write.path === `/sessions/${older.id}`)?.body).toEqual({ title: 'Renamed chat' });
 });
 
+test('renames the session the header is naming', async ({ page }) => {
+  await mockBackend(page, { session: boss, sessions: [latest, older] });
+  await seedSession(page);
+  await page.goto(`/en/chat/${older.id}`);
+  await waitForShellStyles(page);
+
+  await expect(page.locator('header h1')).toHaveText('Older chat');
+
+  const row = page.getByTestId('sidebar-chat-sessions').locator('li').filter({ hasText: 'Older chat' });
+  await row.getByTestId('sidebar-chat-session-menu-button').click();
+  await row.getByTestId('sidebar-chat-session-edit').click();
+  await row.locator('input[type="text"]').fill('Renamed chat');
+  await row.getByTestId('sidebar-chat-rename-save').click();
+
+  await expect(page.locator('header h1')).toHaveText('Renamed chat');
+});
+
 test('picks up a session started elsewhere without a reload', async ({ page }) => {
   const backend = await mockBackend(page, { session: boss, sessions: [latest] });
   await seedSession(page);

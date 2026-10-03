@@ -17,10 +17,12 @@ import { useRoute } from 'vue-router';
 import ChatInputArea from '@/components/Chat/ChatInputArea.vue';
 import { useChatSocket } from '@/composables/useChatSocket';
 import { useVisualViewportInsets } from '@/composables/useVisualViewportInsets';
+import { useChatStore } from '@/stores/chatStore';
 
 const route = useRoute();
 const sessionId = computed(() => (typeof route.params.uuid === 'string' ? route.params.uuid : undefined));
 const chatSocket = useChatSocket(sessionId);
+const chatStore = useChatStore();
 
 useVisualViewportInsets();
 
@@ -31,7 +33,11 @@ function handleSubmit(payload: { content: string; agent: string; provider: strin
   inputArea.value?.clear();
 }
 
-onMounted(() => {
-  chatSocket.load();
+onMounted(async () => {
+  await chatSocket.load();
+  const pending = chatStore.takePendingTurn(sessionId.value ?? '');
+  if (pending) {
+    chatSocket.send(pending.content, pending.agent, pending.provider);
+  }
 });
 </script>
