@@ -9,8 +9,8 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
   const agents = ref<string[]>([]);
   const providers = ref<ApiProviderSummaryDto[]>([]);
   const ws = ref<WebSocket>();
-  const status = ref<string>('Waiting')
-  const data = ref([])
+  const status = ref<string>('Waiting');
+  const data = ref([]);
 
   async function load() {
     connect();
@@ -21,14 +21,14 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
   async function loadAgents() {
     const res = await getAgentsNames();
     if (res.data) {
-      agents.value = res.data
+      agents.value = res.data;
     }
   }
 
   async function loadProviders() {
     const res = await getProvidersModels();
     if (res.data) {
-      providers.value = res.data
+      providers.value = res.data;
     }
   }
 
@@ -49,22 +49,22 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
     }
     ws.value = new WebSocket(chatSocketUrl(id, token));
     ws.value.onopen = () => {
-      status.value = 'Connected'
+      status.value = 'Connected';
     };
     // eslint-disable-next-line no-console
-    ws.value.onmessage = (event) => console.log(event)
+    ws.value.onmessage = (event) => console.log(event);
   }
 
   function disconnect() {
     ws.value?.close();
     ws.value = undefined;
   }
-  
+
   function send(content: string, agent: string, provider: string) {
-    const data = JSON.stringify( { content, agent, provider} )
-    ws.value?.send(data)
+    const data = JSON.stringify({ content, agent, provider });
+    ws.value?.send(data);
   }
-  
+
   onScopeDispose(disconnect);
 
   return {
@@ -76,6 +76,6 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
     data,
     connect,
     disconnect,
-    send
+    send,
   };
 }
