@@ -1,6 +1,6 @@
 <template>
   <div data-testid="chat-page">
-    <div class="">
+    <div class="mb-28">
       <code>
         {{ chatSocket.history }}
       </code>
