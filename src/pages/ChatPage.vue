@@ -1,7 +1,9 @@
 <template>
   <div data-testid="chat-page">
     <div class="">
-      {{ chatSocket.history }}
+      <code>
+        {{ chatSocket.history }}
+      </code>
     </div>
     <div class="chat-input-dock fixed inset-x-0 z-30 lg:left-72" data-testid="chat-input-dock">
       <ChatInputArea ref="inputArea" :agents="chatSocket.agents" :providers="chatSocket.providers" @submit="handleSubmit" />
