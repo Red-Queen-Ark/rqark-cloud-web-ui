@@ -1,6 +1,6 @@
 <template>
   <div v-if="props.message.tool_calls" class="w-full">
-    <div v-for="tool_call in props.message.tool_calls" :key="tool_call.id" class="px-4 py-2">
+    <div v-for="tool_call in props.message.tool_calls" :key="tool_call.id">
       <div class="collapse opacity-50">
         <input type="checkbox" />
         <div class="collapse-title after:inset-s-1 after:inset-e-auto p-0">

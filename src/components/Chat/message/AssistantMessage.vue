@@ -1,5 +1,5 @@
 <template>
-  <div v-if="props.message.content" class="max-w-[90%] px-4 py-2">
+  <div v-if="props.message.content" class="max-w-[90%]">
     <MessageBody :html="renderMarkdown(props.message.content)" :raw="props.message.content" />
   </div>
 </template>

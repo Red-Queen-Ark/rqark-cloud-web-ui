@@ -1,10 +1,10 @@
 <template>
   <template v-for="(message, index) in props.messages" :key="index">
-    <UserMessage v-if="message.role === 'user'" :message="message.data" class="self-end" />
+    <UserMessage v-if="message.role === 'user'" :message="message.data" class="self-end px-4 py-1" />
     <template v-else-if="message.role === 'assistant'">
-      <ThinkMessage :message="message.data" />
-      <AssistantMessage :message="message.data" />
-      <ToolMessage :message="message.data" :tool-result="toolResult" />
+      <ThinkMessage :message="message.data" class="px-4 py-1" />
+      <AssistantMessage :message="message.data" class="px-4 py-1" />
+      <ToolMessage :message="message.data" :tool-result="toolResult" class="px-4 py-1" />
     </template>
   </template>
 </template>
