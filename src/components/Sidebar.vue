@@ -40,7 +40,6 @@
 import LogoutIcon from '@/components/svg/LogoutIcon.vue';
 import { useAuthStore } from '@/stores/authStore';
 import type { SiderItem } from '@/config/siderbar';
-import { siderItemFor } from '@/config/siderbar';
 import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
@@ -59,10 +58,8 @@ const { t } = useI18n();
 const drawerToggle = ref<HTMLInputElement | null>(null);
 const drawerId = computed(() => `${props.buttonLabel}-drawer`);
 const appName = import.meta.env.VITE_APP_NAME || 'App';
+// const visibleItems = computed(() => props.items.filter((item) => !item.superuserOnly || authStore.user?.is_superuser === true));
 
-// The backend answers 403 for a plain token on the admin endpoints, so the
-// entries they back are hidden instead of leading to a rejected page.
-const visibleItems = computed(() => props.items.filter((item) => !item.superuserOnly || authStore.user?.is_superuser === true));
 
 // The drawer overlays the page on small screens, so navigating has to dismiss
 // it. The checkbox is uncontrolled: the hamburger label toggles it natively.
@@ -74,12 +71,11 @@ watch(
     }
   },
 );
-
-function isActive(item: SiderItem): boolean {
-  // The shared lookup rather than a name comparison, so a detail page keeps its
-  // list's entry marked (see `SiderItem.aliases`).
-  return siderItemFor(route.name as string)?.pageId === item.pageId;
-}
+// function isActive(item: SiderItem): boolean {
+//   // The shared lookup rather than a name comparison, so a detail page keeps its
+//   // list's entry marked (see `SiderItem.aliases`).
+//   return siderItemFor(route.name as string)?.pageId === item.pageId;
+// }
 
 function logout() {
   authStore.logout();

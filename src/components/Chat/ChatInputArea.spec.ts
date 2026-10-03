@@ -56,7 +56,8 @@ describe('ChatInputArea', () => {
     input.element.textContent = 'hello';
     await input.trigger('input');
 
-    wrapper.vm.clear();
+    const area = wrapper.vm as unknown as { clear: () => void };
+    area.clear();
     await nextTick();
 
     expect(input.element.textContent).toBe('');
