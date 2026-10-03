@@ -8,7 +8,7 @@
     the point of use, rather than switching `vue/no-v-html` off for every file.
   -->
   <!-- eslint-disable-next-line vue/no-v-html -- output of renderMarkdown(), which sanitises with DOMPurify -->
-  <div v-if="html" class="markdown-body min-w-0 text-sm break-words" v-html="html"></div>
+  <div v-if="html" class="markdown-body min-w-0" v-html="html"></div>
   <pre v-else class="max-w-full font-mono text-xs break-words whitespace-pre-wrap">{{ raw }}</pre>
 </template>
 
