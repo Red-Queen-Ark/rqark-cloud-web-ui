@@ -1,3 +1,5 @@
+import { planItemsFrom, type PlanItem } from '@/config/sessions';
+
 export interface ChatStream {
   messages: ChatHistoryEntry[];
   drafts: Record<string, number>;
@@ -12,6 +14,10 @@ export function chatPayloadError(payload: ChatPayload): string | null {
     return null;
   }
   return payload.content;
+}
+
+export function chatPlanItems(payload: ChatPayload): PlanItem[] | null {
+  return Array.isArray(payload) ? planItemsFrom(payload) : null;
 }
 
 export function applyChatPayload(stream: ChatStream, agentId: string, payload: ChatPayload): ChatStream {

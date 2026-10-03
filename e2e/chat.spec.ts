@@ -182,3 +182,39 @@ test('surfaces a stream error in the alert stack', async ({ page }) => {
 
   await expect(page.getByRole('alert')).toContainText('APIConnectionError: Connection error.');
 });
+
+test('shows the plan the session already holds when the chat opens', async ({ page }) => {
+  await openTurn(page, {
+    ...first,
+    plan_items: [
+      { id: 'p1', content: 'Draft the plan', status: 'completed' },
+      { id: 'p2', content: 'Ship it', status: 'pending' },
+    ],
+  });
+
+  const card = page.getByTestId('chat-plan-card');
+  await expect(card).toBeVisible();
+  await expect(card).toContainText('Draft the plan');
+  await expect(card).toContainText('Completed');
+});
+
+test('replaces the plan as the engine pushes a new one', async ({ page }) => {
+  const { socket } = await openTurn(page, first);
+
+  socket.send(
+    frame([
+      { id: 'p1', content: 'Add the list page', status: 'completed' },
+      { id: 'p2', content: 'Add the detail page', status: 'in_progress' },
+      { id: 'p3', content: 'Ship it', status: 'pending' },
+    ]),
+  );
+
+  const card = page.getByTestId('chat-plan-card');
+  await expect(card).toContainText('Add the list page');
+  await expect(card).toContainText('Add the detail page');
+  await expect(card.getByTestId('chat-plan-footer')).toContainText('3 items · 1 completed · 1 in progress');
+
+  // A plan the engine clears takes the card with it rather than freezing it.
+  socket.send(frame([]));
+  await expect(card).toBeHidden();
+});

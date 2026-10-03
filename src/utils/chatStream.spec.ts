@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyChatPayload, chatPayloadError, openChatStream } from './chatStream';
+import { applyChatPayload, chatPayloadError, chatPlanItems, openChatStream } from './chatStream';
 
 const at = '2026-05-06T07:08:09Z';
 
@@ -98,5 +98,30 @@ describe('applyChatPayload', () => {
   it('drops the plan, which is session state rather than a message', () => {
     const stream = openChatStream();
     expect(applyChatPayload(stream, 'agent', [{ id: '1', content: 'step', status: 'pending', icon: ' ' }])).toBe(stream);
+  });
+});
+
+describe('chatPlanItems', () => {
+  it('reads the plan array into items', () => {
+    const plan = chatPlanItems([
+      { id: 'p1', content: 'Draft the plan', status: 'completed', icon: 'x' },
+      { id: 'p2', content: 'Ship it', status: 'pending', icon: ' ' },
+    ]);
+
+    expect(plan).toEqual([
+      { id: 'p1', content: 'Draft the plan', status: 'completed' },
+      { id: 'p2', content: 'Ship it', status: 'pending' },
+    ]);
+  });
+
+  it('answers null for a message or a chunk', () => {
+    expect(chatPlanItems({ role: 'assistant', content: 'hi', created_at: at })).toBeNull();
+    expect(chatPlanItems({ type: 'content', content: 'hi' })).toBeNull();
+  });
+
+  it('keeps an empty array as an empty plan rather than "no plan"', () => {
+    // The engine clears the plan by replacing it with nothing; that is a plan of
+    // no items, which the card renders as gone, not a payload to fall through.
+    expect(chatPlanItems([])).toEqual([]);
   });
 });

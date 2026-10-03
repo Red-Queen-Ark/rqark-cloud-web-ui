@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vite
 import { effectScope, nextTick, ref, type EffectScope } from 'vue';
 import { useChatSocket } from './useChatSocket';
 
-vi.mock('@/api', () => ({ getAgentsNames: vi.fn(), getProvidersModels: vi.fn(), getSessionsByUuidMessages: vi.fn() }));
+vi.mock('@/api', () => ({ getAgentsNames: vi.fn(), getProvidersModels: vi.fn(), getSessionsByUuid: vi.fn(), getSessionsByUuidMessages: vi.fn() }));
 
 class FakeSocket {
   public static CONNECTING = 0;
@@ -73,6 +73,7 @@ describe('useChatSocket', () => {
     vi.clearAllMocks();
     (api.getAgentsNames as Mock).mockResolvedValue({ data: ['researcher'] });
     (api.getProvidersModels as Mock).mockResolvedValue({ data: [{ name: 'openai', model_name: 'gpt-5' }] });
+    (api.getSessionsByUuid as Mock).mockResolvedValue({ data: { id: 'session-a', plan_items: [] } });
     (api.getSessionsByUuidMessages as Mock).mockResolvedValue({ data: [] });
     useAuthStore().setTokens('access-token', 'refresh-token');
   });
@@ -121,6 +122,38 @@ describe('useChatSocket', () => {
 
     expect(api.getSessionsByUuidMessages).not.toHaveBeenCalled();
     expect(chatSocket.history).toEqual([]);
+    expect(chatSocket.planItems).toEqual([]);
+  });
+
+  it('loads the plan the session endpoint holds', async () => {
+    (api.getSessionsByUuid as Mock).mockResolvedValue({ data: { id: 'session-a', plan_items: [{ id: 'p1', content: 'Draft the plan', status: 'completed' }] } });
+
+    const chatSocket = openChat(ref('session-a'));
+    await chatSocket.load();
+
+    expect(api.getSessionsByUuid).toHaveBeenCalledWith({ path: { uuid: 'session-a' } });
+    expect(chatSocket.planItems).toEqual([{ id: 'p1', content: 'Draft the plan', status: 'completed' }]);
+  });
+
+  it('replaces the plan when the engine pushes a new one', async () => {
+    const chatSocket = openChat(ref('session-a'));
+    await chatSocket.load();
+
+    const socket = FakeSocket.instances[0] as FakeSocket;
+    socket.onmessage?.({ data: JSON.stringify({ agent_id: 'researcher:session-a', path: [], payload: [{ id: 'p1', content: 'Draft', status: 'pending' }] }) });
+
+    expect(chatSocket.planItems).toEqual([{ id: 'p1', content: 'Draft', status: 'pending' }]);
+  });
+
+  it('clears the plan when the engine sends an empty one', async () => {
+    (api.getSessionsByUuid as Mock).mockResolvedValue({ data: { id: 'session-a', plan_items: [{ id: 'p1', content: 'Draft', status: 'pending' }] } });
+    const chatSocket = openChat(ref('session-a'));
+    await chatSocket.load();
+
+    const socket = FakeSocket.instances[0] as FakeSocket;
+    socket.onmessage?.({ data: JSON.stringify({ agent_id: 'researcher:session-a', path: [], payload: [] }) });
+
+    expect(chatSocket.planItems).toEqual([]);
   });
 
   it('sends the turn the agent cloud resolves', async () => {

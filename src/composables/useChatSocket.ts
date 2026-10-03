@@ -1,8 +1,9 @@
 import { onScopeDispose, reactive, ref, toValue, watch, type MaybeRefOrGetter } from 'vue';
-import { getAgentsNames, getProvidersModels, getSessionsByUuidMessages, type ApiProviderSummaryDto } from '@/api';
+import { getAgentsNames, getProvidersModels, getSessionsByUuid, getSessionsByUuidMessages, type ApiProviderSummaryDto } from '@/api';
+import { planItemsFrom, type PlanItem } from '@/config/sessions';
 import { useAlertStore } from '@/stores/alertStore';
 import { useAuthStore } from '@/stores/authStore';
-import { applyChatPayload, chatPayloadError, openChatStream } from '@/utils/chatStream';
+import { applyChatPayload, chatPayloadError, chatPlanItems, openChatStream } from '@/utils/chatStream';
 
 export type ChatSessionId = string | null | undefined;
 
@@ -14,6 +15,7 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
   const ws = ref<WebSocket>();
   const status = ref<string>('Waiting');
   const history = ref<ChatHistoryEntry[]>([]);
+  const planItems = ref<PlanItem[]>([]);
   let stream = openChatStream();
 
   async function load() {
@@ -41,12 +43,16 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
     const id = toValue(sessionId);
     if (!id) {
       replace([]);
+      planItems.value = [];
       return;
     }
-    const res = await getSessionsByUuidMessages({ path: { uuid: id } });
-    if (res.data) {
-      replace(res.data as unknown as ChatHistoryEntry[]);
+    // Two endpoints by design: the messages endpoint answers with nothing else,
+    // and the session endpoint is where the plan is kept. Neither is optional.
+    const [messagesResult, sessionResult] = await Promise.all([getSessionsByUuidMessages({ path: { uuid: id } }), getSessionsByUuid({ path: { uuid: id } })]);
+    if (messagesResult.data) {
+      replace(messagesResult.data as unknown as ChatHistoryEntry[]);
     }
+    planItems.value = planItemsFrom(sessionResult.data?.plan_items);
   }
 
   function replace(messages: ChatHistoryEntry[]) {
@@ -64,6 +70,14 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
     const error = chatPayloadError(envelope.payload);
     if (error) {
       alertStore.addItem({ level: 'error', message: error });
+      return;
+    }
+    // The plan is session state rather than a message: the engine pushes the
+    // whole replaced plan as one array, which is kept beside the history instead
+    // of inside it.
+    const plan = chatPlanItems(envelope.payload);
+    if (plan) {
+      planItems.value = plan;
       return;
     }
     stream = applyChatPayload(stream, envelope.agent_id, envelope.payload);
@@ -141,6 +155,7 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
     status,
     ws,
     history,
+    planItems,
     connect,
     disconnect,
     send,

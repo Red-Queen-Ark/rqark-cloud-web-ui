@@ -1,6 +1,7 @@
 <template>
   <div data-testid="chat-page">
     <div id="chat-history" class="mb-30 md:mx-10 flex flex-col">
+      <ChatPlanCard :items="chatSocket.planItems" />
       <ChatMessage :messages="chatSocket.history" />
     </div>
     <div class="chat-input-dock fixed inset-x-0 z-30 lg:left-72 md:mx-8 mb-2" data-testid="chat-input-dock">
@@ -14,6 +15,7 @@ import { computed, onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import ChatInputArea from '@/components/Chat/ChatInputArea.vue';
 import ChatMessage from '@/components/Chat/ChatMessage.vue';
+import ChatPlanCard from '@/components/Chat/ChatPlanCard.vue';
 import { useChatSocket } from '@/composables/useChatSocket';
 import { useVisualViewportInsets } from '@/composables/useVisualViewportInsets';
 import { useChatStore } from '@/stores/chatStore';

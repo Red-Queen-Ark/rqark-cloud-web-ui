@@ -1,6 +1,10 @@
 export const sessions = {
   untitled: '未命名 Session',
 
+  planTitle: '計劃',
+  planSummary: '共 {total} 項 · 已完成 {completed} · 進行中 {inProgress}',
+  planAllCompleted: '共 {total} 項 · 全部完成',
+
   planStatus: {
     pending: '待處理',
     inProgress: '進行中',
