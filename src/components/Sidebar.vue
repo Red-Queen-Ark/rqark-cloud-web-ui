@@ -60,7 +60,6 @@ const drawerId = computed(() => `${props.buttonLabel}-drawer`);
 const appName = import.meta.env.VITE_APP_NAME || 'App';
 // const visibleItems = computed(() => props.items.filter((item) => !item.superuserOnly || authStore.user?.is_superuser === true));
 
-
 // The drawer overlays the page on small screens, so navigating has to dismiss
 // it. The checkbox is uncontrolled: the hamburger label toggles it natively.
 watch(

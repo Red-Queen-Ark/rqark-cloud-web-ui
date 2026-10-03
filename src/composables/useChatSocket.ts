@@ -85,15 +85,25 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
     if (!id || !token) {
       return;
     }
-    ws.value = new WebSocket(chatSocketUrl(id, token));
-    ws.value.onopen = () => {
+    const socket = new WebSocket(chatSocketUrl(id, token));
+    socket.onopen = () => {
       status.value = 'Connected';
     };
-    ws.value.onmessage = (event) => {
+    socket.onclose = () => {
+      status.value = 'Disconnected';
+      if (ws.value === socket) {
+        ws.value = undefined;
+      }
+    };
+    socket.onerror = () => {
+      status.value = 'Disconnected';
+    };
+    socket.onmessage = (event) => {
       if (typeof event.data === 'string') {
         receive(event.data);
       }
     };
+    ws.value = socket;
   }
 
   function disconnect() {
@@ -114,6 +124,9 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
     }
     if (socket.readyState === WebSocket.CONNECTING) {
       socket.addEventListener('open', () => socket.send(data), { once: true });
+      return;
+    }
+    if (socket.readyState !== WebSocket.OPEN) {
       return;
     }
     socket.send(data);

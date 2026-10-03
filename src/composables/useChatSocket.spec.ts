@@ -10,6 +10,7 @@ vi.mock('@/api', () => ({ getAgentsNames: vi.fn(), getProvidersModels: vi.fn(), 
 class FakeSocket {
   public static CONNECTING = 0;
   public static OPEN = 1;
+  public static CLOSED = 3;
   public static opened: string[] = [];
   public static closed: string[] = [];
   public static instances: FakeSocket[] = [];
@@ -144,6 +145,17 @@ describe('useChatSocket', () => {
     socket.open();
 
     expect(socket.sent).toEqual([JSON.stringify({ content: 'hello', provider: 'openai', agent: 'researcher' })]);
+  });
+
+  it('drops a turn when the socket is closed', async () => {
+    const chatSocket = openChat(ref('session-a'));
+    await chatSocket.load();
+
+    const socket = FakeSocket.instances[0] as FakeSocket;
+    socket.readyState = FakeSocket.CLOSED;
+    chatSocket.send('hello', 'researcher', 'openai');
+
+    expect(socket.sent).toEqual([]);
   });
 
   it('stops sending to the session it left', async () => {
