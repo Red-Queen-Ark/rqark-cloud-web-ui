@@ -1,4 +1,4 @@
-interface ChatSocketToolCall {
+interface ChatToolCall {
   id: string;
   type: 'function';
   function: {
@@ -7,77 +7,95 @@ interface ChatSocketToolCall {
   };
 }
 
-interface ChatSocketReasoningChunk {
+interface ChatReasoningChunk {
   type: 'reasoning_content';
   content: string;
 }
-interface ChatSocketContentChunk {
+interface ChatContentChunk {
   type: 'content';
   content: string;
 }
-interface ChatSocketErrorChunk {
+interface ChatErrorChunk {
   type: 'error';
   content: string;
 }
-interface ChatSocketToolCallsChunk {
+interface ChatToolCallsChunk {
   type: 'tool_calls';
-  content: ChatSocketToolCall[];
+  content: ChatToolCall[];
 }
 
-type ChatSocketChunk = ChatSocketReasoningChunk | ChatSocketContentChunk | ChatSocketErrorChunk | ChatSocketToolCallsChunk;
+type ChatChunk = ChatReasoningChunk | ChatContentChunk | ChatErrorChunk | ChatToolCallsChunk;
 
-interface ChatSocketUserTextContent {
+interface ChatTextPart {
   type: 'text';
   text: string;
 }
-interface ChatSocketUserImageContent {
+interface ChatImagePart {
   type: 'image_url';
   image_url: { url: string };
 }
 
-interface ChatSocketUserMessage {
+interface ChatUserMessage {
   role: 'user';
-  content: (ChatSocketUserTextContent | ChatSocketUserImageContent)[];
+  content: (ChatTextPart | ChatImagePart)[];
   created_at: string;
 }
 
-interface ChatSocketAssistantMessage {
+interface ChatAssistantMessage {
   role: 'assistant';
   content: string;
   created_at: string;
-  tool_calls?: ChatSocketToolCall[];
+  tool_calls?: ChatToolCall[];
   reasoning_content?: string;
 }
 
-interface ChatSocketToolMessage {
+interface ChatToolMessage {
   role: 'tool';
   tool_call_id: string;
   content: string;
   created_at: string;
 }
 
-type ChatSocketMessage = ChatSocketUserMessage | ChatSocketAssistantMessage | ChatSocketToolMessage;
+interface ChatSystemMessage {
+  role: 'system';
+  content: string;
+  created_at: string;
+}
 
-type ChatSocketPlanStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled';
-interface ChatSocketPlanItem {
+interface ChatSummaryMessage {
+  role: 'summary';
+  content: string;
+}
+
+type ChatMessage = ChatUserMessage | ChatAssistantMessage | ChatToolMessage | ChatSystemMessage | ChatSummaryMessage;
+
+type ChatPlanStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled';
+interface ChatPlanItem {
   id: string;
   content: string;
-  status: ChatSocketPlanStatus;
+  status: ChatPlanStatus;
   icon: ' ' | '>' | 'x' | '-';
 }
 
-type ChatSocketPayload = ChatSocketChunk | ChatSocketMessage | ChatSocketPlanItem[];
+type ChatPayload = ChatChunk | ChatMessage | ChatPlanItem[];
 
-interface ChatSocketAgentPayload<T = ChatSocketPayload> {
+interface ChatEnvelope<T = ChatPayload> {
   agent_id: string;
   path: string[];
   payload: T;
 }
 
-type ChatSocketServerMessage = ChatSocketAgentPayload;
+type ChatServerMessage = ChatEnvelope;
 
-interface ChatSocketClientMessage {
+interface ChatClientMessage {
   content: string;
   provider: string;
   agent: string;
 }
+
+type ChatHistoryEntry =
+  | { seq: number; role: 'user'; data: ChatUserMessage; created_at: string }
+  | { seq: number; role: 'assistant'; data: ChatAssistantMessage; created_at: string }
+  | { seq: number; role: 'tool'; data: ChatToolMessage; created_at: string }
+  | { seq: number; role: 'system'; data: ChatSystemMessage; created_at: string }
+  | { seq: number; role: 'summary'; data: ChatSummaryMessage; created_at: null };

@@ -1,5 +1,5 @@
 import { onScopeDispose, reactive, ref, toValue, watch, type MaybeRefOrGetter } from 'vue';
-import { getAgentsNames, getProvidersModels, getSessionsByUuidMessages, type ApiProviderSummaryDto, type ApiSessionMessageDto } from '@/api';
+import { getAgentsNames, getProvidersModels, getSessionsByUuidMessages, type ApiProviderSummaryDto } from '@/api';
 import { useAuthStore } from '@/stores/authStore';
 
 export type ChatSessionId = string | null | undefined;
@@ -10,7 +10,7 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
   const providers = ref<ApiProviderSummaryDto[]>([]);
   const ws = ref<WebSocket>();
   const status = ref<string>('Waiting');
-  const history = ref<ApiSessionMessageDto[]>([]);
+  const history = ref<ChatHistoryEntry[]>([]);
 
   async function load() {
     connect();
@@ -41,7 +41,7 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
     }
     const res = await getSessionsByUuidMessages({ path: { uuid: id } });
     if (res.data) {
-      history.value = res.data;
+      history.value = res.data as unknown as ChatHistoryEntry[];
     }
   }
 
