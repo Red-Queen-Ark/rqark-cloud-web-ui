@@ -1,9 +1,9 @@
 <template>
   <div data-testid="chat-page">
-    <div id="chat-history" class="mb-28 flex flex-col">
+    <div id="chat-history" class="mb-30 md:mx-10 flex flex-col">
       <ChatMessage :messages="chatSocket.history" />
     </div>
-    <div class="chat-input-dock fixed inset-x-0 z-30 lg:left-72" data-testid="chat-input-dock">
+    <div class="chat-input-dock fixed inset-x-0 z-30 lg:left-72 md:mx-8 mb-2" data-testid="chat-input-dock">
       <ChatInputArea ref="inputArea" :agents="chatSocket.agents" :providers="chatSocket.providers" @submit="handleSubmit" />
     </div>
   </div>
