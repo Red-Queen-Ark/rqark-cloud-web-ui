@@ -2,7 +2,7 @@
   <div id="chat-input-area" class="py-2 px-3 bg-base-100 shrink-0 relative">
     <div class="bg-base-200 rounded-box border border-base-300">
       <div class="py-2 px-3">
-        <div class="min-h-[2.25rem] max-h-32 overflow-y-auto scrollbar-thin">
+        <div class="min-h-9 max-h-32 overflow-y-auto scrollbar-thin">
           <div
             id="chat-input-editor"
             ref="inputRef"
