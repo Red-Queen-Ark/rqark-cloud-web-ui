@@ -70,21 +70,13 @@ describe('applyChatPayload', () => {
     expect(contents(stream)).toEqual(['Checking.', 'plan updated', 'Sunny.']);
   });
 
-  it('appends a tool result once, though the socket says it twice', () => {
-    let stream = openChatStream();
-    stream = applyChatPayload(stream, 'agent', tool);
-    stream = applyChatPayload(stream, 'agent', tool);
-
-    expect(stream.messages).toHaveLength(1);
-    expect(stream.messages[0].role).toBe('tool');
-  });
-
-  it('keeps a second tool result that answered a different call', () => {
+  it('appends every tool result the tools produced', () => {
     let stream = openChatStream();
     stream = applyChatPayload(stream, 'agent', tool);
     stream = applyChatPayload(stream, 'agent', { ...tool, tool_call_id: 'call_2' });
 
-    expect(stream.messages).toHaveLength(2);
+    expect(stream.messages.map((message) => message.role)).toEqual(['tool', 'tool']);
+    expect(stream.messages.map((message) => message.seq)).toEqual([0, 1]);
   });
 
   it('numbers the messages it appends after the loaded history', () => {

@@ -42,9 +42,6 @@ function applyMessage(stream: ChatStream, agentId: string, message: ChatMessage)
   if (message.role === 'assistant') {
     return finalizeAssistant(stream, agentId, message);
   }
-  if (message.role === 'tool' && isRepeatTool(stream.messages, message)) {
-    return stream;
-  }
   return { messages: [...stream.messages, messageEntry(stream.messages.length, message)], drafts: withoutDraft(stream.drafts, agentId) };
 }
 
@@ -70,11 +67,6 @@ function finalizeAssistant(stream: ChatStream, agentId: string, message: ChatAss
     return { messages, drafts };
   }
   return { messages: [...stream.messages, messageEntry(stream.messages.length, message)], drafts };
-}
-
-function isRepeatTool(messages: ChatHistoryEntry[], message: ChatToolMessage): boolean {
-  const last = messages[messages.length - 1];
-  return last?.role === 'tool' && last.data.tool_call_id === message.tool_call_id && last.data.created_at === message.created_at;
 }
 
 function withoutDraft(drafts: Record<string, number>, agentId: string): Record<string, number> {

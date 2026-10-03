@@ -170,7 +170,6 @@ test('shows the tool calls the agent made and the result of each', async ({ page
 
   const result = { role: 'tool', tool_call_id: 'call_1', content: 'plan updated', created_at: turnTimestamp };
   socket.send(frame(result));
-  socket.send(frame(result));
 
   await expect(history.getByText('plan_update - result')).toHaveCount(1);
   await expect(history).toContainText('plan updated');
