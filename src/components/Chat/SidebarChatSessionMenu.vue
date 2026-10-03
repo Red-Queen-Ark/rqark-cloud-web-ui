@@ -4,8 +4,8 @@
       type="button"
       tabindex="0"
       data-testid="sidebar-chat-session-menu-button"
-      class="btn btn-ghost btn-circle btn-xs opacity-100 transition-opacity duration-200 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
-      :class="active ? 'text-neutral-content/70' : 'text-base-content/60'"
+      class="btn btn-ghost btn-circle btn-xs border-transparent opacity-100 transition-opacity duration-200 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
+      :class="active ? 'text-neutral-content/70 hover:bg-neutral-content/10 active:bg-neutral-content/10' : 'text-base-content/60'"
       :title="t('chat.more')"
     >
       <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a2 2 0 110 4 2 2 0 010-4zM10 8a2 2 0 110 4 2 2 0 010-4zM10 14a2 2 0 110 4 2 2 0 010-4z" /></svg>

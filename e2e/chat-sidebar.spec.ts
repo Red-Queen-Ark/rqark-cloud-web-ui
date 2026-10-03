@@ -52,6 +52,16 @@ test('marks the open chat and follows the selection', async ({ page }) => {
   await expect(active).toHaveText('Older chat');
 });
 
+/** The alpha daisyUI parks in a computed colour, whatever notation the engine picks. */
+function colorAlpha(color: string): number {
+  const slash = color.lastIndexOf('/');
+  if (slash !== -1) {
+    return parseFloat(color.slice(slash + 1));
+  }
+  const parts = color.match(/[\d.]+/g) ?? [];
+  return parts.length === 4 ? parseFloat(parts[3]) : 1;
+}
+
 test('keeps the row menu round and clear of the open chat fill', async ({ page }) => {
   await mockBackend(page, { session: boss, sessions: [latest, older] });
   await seedSession(page);
@@ -61,6 +71,7 @@ test('keeps the row menu round and clear of the open chat fill', async ({ page }
   const sessions = page.getByTestId('sidebar-chat-sessions');
   const openRow = sessions.locator('li').filter({ has: page.locator('a.menu-active') });
   const trigger = openRow.getByTestId('sidebar-chat-session-menu-button');
+  const borderAtRest = await trigger.evaluate((el) => getComputedStyle(el).borderTopColor);
 
   await trigger.hover();
 
@@ -76,6 +87,20 @@ test('keeps the row menu round and clear of the open chat fill', async ({ page }
   });
   expect(shape.width).toBe(shape.height);
   expect(shape.radius).toBeGreaterThanOrEqual(shape.width / 2);
+
+  // `btn-ghost` drops its transparent guards on hover, falling back to an opaque
+  // base-200 for both the fill and the border. On this neutral-filled row the
+  // fill reads as a solid light disc and the border as a hairline of the same
+  // colour, so both have to stay translucent for the row's own colour to show.
+  const hover = await trigger.evaluate((el) => {
+    const style = getComputedStyle(el);
+    return { fill: style.backgroundColor, border: style.borderTopColor };
+  });
+  const fillAlpha = colorAlpha(hover.fill);
+  expect(fillAlpha).toBeLessThan(0.5);
+  expect(fillAlpha).toBeGreaterThan(0);
+  expect(hover.border).toBe(borderAtRest);
+  expect(colorAlpha(hover.border)).toBe(0);
 
   // The open row is filled with `neutral`, so its icon has to follow the row's
   // own foreground rather than the base-content a plain row uses.
