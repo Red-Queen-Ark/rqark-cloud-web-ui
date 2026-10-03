@@ -1,6 +1,8 @@
 <template>
-  <div data-testid="chat-page" class="space-y-4">
-    <ChatInputArea ref="inputArea" :agents="chatSocket.agents" :providers="chatSocket.providers" @submit="handleSubmit" />
+  <div data-testid="chat-page">
+    <div class="fixed inset-x-0 bottom-2 z-30 lg:left-72">
+      <ChatInputArea ref="inputArea" :agents="chatSocket.agents" :providers="chatSocket.providers" @submit="handleSubmit" />
+    </div>
   </div>
 </template>
 

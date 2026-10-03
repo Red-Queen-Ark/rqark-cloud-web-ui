@@ -37,7 +37,7 @@
           </select>
         </div>
         <div class="ml-auto">
-          <button id="chat-input-send-btn" data-testid="chat-send" class="btn btn-primary btn-sm shrink-0 min-w-[2.25rem] px-2.5" :disabled="!hasContent" :title="t('chat.send')" :aria-label="t('chat.send')" @click="submit">
+          <button id="chat-input-send-btn" data-testid="chat-send" class="btn btn-primary btn-sm btn-square" :disabled="!hasContent" :title="t('chat.send')" :aria-label="t('chat.send')" @click="submit">
             <SendIcon class="h-5 w-5" />
           </button>
         </div>
