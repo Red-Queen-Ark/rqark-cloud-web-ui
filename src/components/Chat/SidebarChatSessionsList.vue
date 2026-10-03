@@ -3,7 +3,10 @@
     <span class="menu-title">{{ t('chat.title') }}</span>
     <ul data-testid="sidebar-chat-sessions">
       <li>
-        <RouterLink :to="{ name: 'home', params: { lang } }">{{ t('chat.newSession') }}</RouterLink>
+        <RouterLink :to="{ name: 'home', params: { lang } }" :class="{ 'menu-active': isHome }">
+          <PlusIcon class="h-4 w-4" />
+          {{ t('chat.newSession') }}
+        </RouterLink>
       </li>
       <li v-for="session in sessions" :key="session.id" class="group relative">
         <template v-if="session.id">
@@ -35,6 +38,7 @@
 import { getSessions, putSessionsByUuid, type ApiSessionDto } from '@/api';
 import CheckIcon from '@/components/svg/CheckIcon.vue';
 import CloseIcon from '@/components/svg/CloseIcon.vue';
+import PlusIcon from '@/components/svg/PlusIcon.vue';
 import SidebarChatSessionMenu from '@/components/Chat/SidebarChatSessionMenu.vue';
 import { useApiError } from '@/composables/useApiError';
 import { useAlertStore } from '@/stores/alertStore';
@@ -55,6 +59,8 @@ const chatStore = useChatStore();
 
 const sessions = ref<ApiSessionDto[]>([]);
 const lang = computed(() => route.params.lang as string);
+/** The create action owns the home route, which is where a session is started. */
+const isHome = computed(() => route.name === 'home');
 
 const rootEl = ref<HTMLElement | null>(null);
 /** Session being renamed in place, if any. */

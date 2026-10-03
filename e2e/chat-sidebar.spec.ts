@@ -52,6 +52,25 @@ test('marks the open chat and follows the selection', async ({ page }) => {
   await expect(active).toHaveText('Older chat');
 });
 
+test('fills the create action while the home route is showing', async ({ page }) => {
+  await mockBackend(page, { session: boss, sessions: [latest, older] });
+  await seedSession(page);
+  await page.goto('/en');
+  await waitForShellStyles(page);
+
+  const sessions = page.getByTestId('sidebar-chat-sessions');
+  const create = sessions.locator('a.menu-active');
+  await expect(create).toHaveText('New session');
+
+  // daisyUI only paints `.menu-active`, so the marker has to be visible paint.
+  await expect.poll(() => create.evaluate((el) => getComputedStyle(el).backgroundColor)).not.toBe('rgba(0, 0, 0, 0)');
+
+  // Opening a session hands the one marker over to that row.
+  await sessions.getByRole('link', { name: 'Latest chat' }).click();
+  await expect(page).toHaveURL(new RegExp(`/en/chat/${latest.id}$`));
+  await expect(sessions.locator('a.menu-active')).toHaveText('Latest chat');
+});
+
 /** The alpha daisyUI parks in a computed colour, whatever notation the engine picks. */
 function colorAlpha(color: string): number {
   const slash = color.lastIndexOf('/');

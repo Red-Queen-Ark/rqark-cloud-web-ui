@@ -59,6 +59,9 @@ describe('SidebarChatSessionsList', () => {
 
     // The create action leads the list; a session with no title says so.
     expect(wrapper.findAll(`${SESSIONS} a`).map((link) => link.text())).toEqual(['New session', 'Latest chat', 'Untitled session', 'Older chat']);
+
+    // The create action carries the plus icon that marks it as an add action.
+    expect(wrapper.findAll(`${SESSIONS} a`)[0].find('svg').exists()).toBe(true);
   });
 
   it('marks the session the chat route is showing', async () => {
@@ -69,6 +72,16 @@ describe('SidebarChatSessionsList', () => {
     const active = wrapper.findAll(`${SESSIONS} a.menu-active`);
     expect(active).toHaveLength(1);
     expect(active[0].text()).toBe('Latest chat');
+  });
+
+  it('marks the create action while the home route is showing', async () => {
+    (api.getSessions as Mock).mockResolvedValue({ data: [latest] });
+
+    const wrapper = await mountList('/en');
+
+    const active = wrapper.findAll(`${SESSIONS} a.menu-active`);
+    expect(active).toHaveLength(1);
+    expect(active[0].text()).toBe('New session');
   });
 
   it('stops polling once it is unmounted', async () => {
