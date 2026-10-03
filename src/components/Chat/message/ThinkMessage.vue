@@ -3,7 +3,7 @@
     <div class="collapse collapse-arrow">
       <input type="checkbox" />
       <div class="collapse-title after:inset-s-1 after:inset-e-auto pe-1 ps-8 p-0">think</div>
-      <div class="collapse-content text-sm">
+      <div class="collapse-content text-sm text-base-content/50">
         {{ props.message.reasoning_content }}
       </div>
     </div>
