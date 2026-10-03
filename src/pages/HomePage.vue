@@ -1,6 +1,6 @@
 <template>
   <div data-testid="home-page">
-    <div class="pointer-events-none fixed inset-0 z-0 flex flex-col items-center justify-center gap-4 px-6 pb-24 text-center lg:left-72 opacity-60 " data-testid="home-hero">
+    <div class="pointer-events-none fixed inset-0 z-0 flex flex-col items-center justify-center gap-4 px-6 pb-24 text-center lg:left-72 opacity-60" data-testid="home-hero">
       <img src="/logo.svg" alt="" class="h-30 w-30" />
       <div class="space-y-1">
         <h1 class="text-2xl font-bold tracking-tight">{{ t('home.welcome', { app: appName }) }}</h1>
