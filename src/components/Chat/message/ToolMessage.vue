@@ -1,7 +1,7 @@
 <template>
   <div v-if="props.message.tool_calls" class="w-full">
     <div v-for="tool_call in props.message.tool_calls" :key="tool_call.id" class="px-4 py-2">
-      <div class="collapse">
+      <div class="collapse opacity-50">
         <input type="checkbox" />
         <div class="collapse-title after:inset-s-1 after:inset-e-auto p-0">
           <span class="m-0.5 me-2 inline-flex items-center align-middle" :data-testid="`tool-status-${tool_call.id}`">
