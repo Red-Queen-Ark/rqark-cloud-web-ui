@@ -1,6 +1,6 @@
 <template>
-  <div data-testid="chat-page" class="space-y-4 flex flex-col ">
-    <button class="btn btn-primary " @click="chat">Test</button>
+  <div data-testid="chat-page" class="space-y-4 flex flex-col">
+    <button class="btn btn-primary" @click="chat">Test</button>
     <input class="input" type="text" />
     <p>{{ chatSocket.status }}</p>
     <p>{{ chatSocket.agents }}</p>
@@ -18,10 +18,10 @@ const sessionId = computed(() => (typeof route.params.uuid === 'string' ? route.
 const chatSocket = useChatSocket(sessionId);
 
 async function chat() {
-  chatSocket.send('你係邊個', 'Wednesday', 'mimo-v2.5-pro')
+  chatSocket.send('你係邊個', 'Wednesday', 'mimo-v2.5-pro');
 }
 
-onMounted( () => {
-  chatSocket.load()
+onMounted(() => {
+  chatSocket.load();
 });
 </script>
