@@ -25,7 +25,7 @@
           <BoltIcon class="h-3.5 w-3.5 shrink-0 opacity-60" />
           <select class="select select-bordered select-xs bg-base-100 max-w-36" :value="selectedProvider" :disabled="providers.length === 0" @change="selectedProvider = ($event.target as HTMLSelectElement).value">
             <option v-if="providers.length === 0" value="" disabled>{{ t('chat.noProviders') }}</option>
-            <option v-for="(p, i) in providers" :key="p.name ?? i" :value="p.name">{{ p.model_name || p.name }}</option>
+            <option v-for="(p, i) in providers" :key="providerDisplayName(p) || i" :value="providerDisplayName(p)">{{ providerDisplayName(p) }}</option>
           </select>
         </div>
         <span class="text-base-content/20">|</span>
@@ -50,6 +50,7 @@
 import { ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { ApiProviderSummaryDto } from '@/api';
+import { providerDisplayName } from '@/config/providers';
 import BoltIcon from '@/components/svg/BoltIcon.vue';
 import SendIcon from '@/components/svg/SendIcon.vue';
 import UserIcon from '@/components/svg/UserIcon.vue';
@@ -81,7 +82,7 @@ watch(
 watch(
   () => props.providers,
   (providers) => {
-    const names = providers.map((p) => p.name ?? '');
+    const names = providers.map((p) => providerDisplayName(p));
     if (!names.includes(selectedProvider.value)) {
       selectedProvider.value = names[0] ?? '';
     }

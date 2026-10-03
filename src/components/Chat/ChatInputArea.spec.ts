@@ -38,6 +38,17 @@ describe('ChatInputArea', () => {
     expect(wrapper.emitted('submit')?.[0]).toEqual([{ content: 'hello', agent: 'researcher', provider: 'openai' }]);
   });
 
+  it('falls back to the model name for a provider without a name', async () => {
+    const wrapper = mountArea({ providers: [{ model_name: 'gpt-5' }] });
+
+    const input = wrapper.get('[data-testid="chat-input"]');
+    input.element.textContent = 'hello';
+    await input.trigger('input');
+    await wrapper.get('[data-testid="chat-send"]').trigger('click');
+
+    expect(wrapper.emitted('submit')?.[0]).toEqual([{ content: 'hello', agent: 'researcher', provider: 'gpt-5' }]);
+  });
+
   it('clears the editor and disables send when the parent asks', async () => {
     const wrapper = mountArea();
 
