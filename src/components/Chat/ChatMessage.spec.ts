@@ -10,7 +10,7 @@ function mountMessages(messages: ChatHistoryEntry[]) {
 
 function expectPadded(component: { classes: () => string[] }) {
   expect(component.classes()).toContain('px-4');
-  expect(component.classes()).toContain('py-2');
+  expect(component.classes()).toContain('py-1');
 }
 
 describe('ChatMessage', () => {
