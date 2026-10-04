@@ -5,6 +5,8 @@ COPY . .
 FROM base AS builder
 RUN bun install --frozen-lockfile
 
+RUN apt-get update && apt-get install -y --no-install-recommends nodejs && rm -rf /var/lib/apt/lists/*
+
 # Vite substitutes these into index.html and inlines them into the bundle, so
 # they are build inputs, not container environment. They sit after `bun install`
 # so that changing the app name does not invalidate the install layer. Pass them
