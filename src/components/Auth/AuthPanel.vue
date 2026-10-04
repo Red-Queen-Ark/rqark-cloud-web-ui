@@ -5,10 +5,7 @@
       <div class="absolute inset-0 opacity-10" :style="gridStyleContent"></div>
       <div class="pointer-events-none absolute right-0 top-0 h-full w-full opacity-25" :style="radialGradientCenter"></div>
       <div class="relative z-10 flex w-full flex-col items-center justify-center p-10">
-        <div class="mb-8">
-          <AuthPromoIllustration class="mx-auto h-64 w-80 drop-shadow-2xl" />
-        </div>
-        <img src="/logo.svg" alt="" class="mx-auto mb-4 h-24 w-24" />
+        <img src="/logo.svg" alt="" class="mx-auto mb-4 h-60" />
         <h2 class="mb-4 text-center text-3xl font-semibold text-base-content">
           {{ appName }}
         </h2>
