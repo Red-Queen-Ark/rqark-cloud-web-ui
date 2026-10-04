@@ -2,7 +2,7 @@ import { mount } from '@vue/test-utils';
 import { describe, expect, it } from 'vitest';
 import ToolMessage from './ToolMessage.vue';
 
-function assistantMessage(toolCall: Partial<ChatToolCall> & { id: string; name: string }): ChatAssistantMessage {
+function assistantMessage(toolCall: { id: string; name: string; arguments?: string }): ChatAssistantMessage {
   return {
     role: 'assistant',
     content: '',
