@@ -1,4 +1,5 @@
 import * as api from '@/api';
+import { useAlertStore } from '@/stores/alertStore';
 import { useAuthStore } from '@/stores/authStore';
 import { createPinia, setActivePinia, type Pinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
@@ -224,8 +225,35 @@ describe('useChatSocket', () => {
     chatSocket.send('hello', 'researcher', 'openai');
 
     const socket = FakeSocket.instances[0] as FakeSocket;
+    socket.onmessage?.({ data: JSON.stringify({ agent_id: '', path: [], payload: { type: 'error', content: 'provider exploded' } }) });
+
+    expect(chatSocket.streaming).toBe(false);
+  });
+
+  it('raises an alert for a real error', async () => {
+    const chatSocket = openChat(ref('session-a'));
+    await chatSocket.load();
+    const alertStore = useAlertStore();
+    const alert = vi.spyOn(alertStore, 'addItem');
+
+    const socket = FakeSocket.instances[0] as FakeSocket;
+    socket.onmessage?.({ data: JSON.stringify({ agent_id: '', path: [], payload: { type: 'error', content: 'provider exploded' } }) });
+
+    expect(alert).toHaveBeenCalledWith({ level: 'error', message: 'provider exploded' });
+  });
+
+  it('stays quiet about a stopped turn', async () => {
+    const chatSocket = openChat(ref('session-a'));
+    await chatSocket.load();
+    const alertStore = useAlertStore();
+    const alert = vi.spyOn(alertStore, 'addItem');
+
+    chatSocket.send('hello', 'researcher', 'openai');
+
+    const socket = FakeSocket.instances[0] as FakeSocket;
     socket.onmessage?.({ data: JSON.stringify({ agent_id: '', path: [], payload: { type: 'error', content: 'chat stopped' } }) });
 
+    expect(alert).not.toHaveBeenCalled();
     expect(chatSocket.streaming).toBe(false);
   });
 

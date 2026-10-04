@@ -5,7 +5,7 @@ import type { ChatStatus } from '@/config/chatStatus';
 import { planItemsFrom, type PlanItem } from '@/config/sessions';
 import { useAlertStore } from '@/stores/alertStore';
 import { useAuthStore } from '@/stores/authStore';
-import { applyChatPayload, chatPayloadError, chatPlanItems, chatTurnDone, openChatStream } from '@/utils/chatStream';
+import { applyChatPayload, CHAT_STOPPED, chatPayloadError, chatPlanItems, chatTurnDone, openChatStream } from '@/utils/chatStream';
 
 export type ChatSessionId = string | null | undefined;
 
@@ -79,7 +79,9 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
     const error = chatPayloadError(envelope.payload);
     if (error) {
       streaming.value = false;
-      alertStore.addItem({ level: 'error', message: error });
+      if (error !== CHAT_STOPPED) {
+        alertStore.addItem({ level: 'error', message: error });
+      }
       return;
     }
     // The plan is session state rather than a message: the engine pushes the

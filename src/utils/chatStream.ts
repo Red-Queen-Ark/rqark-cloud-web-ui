@@ -9,6 +9,8 @@ export function openChatStream(messages: ChatHistoryEntry[] = []): ChatStream {
   return { messages, drafts: {} };
 }
 
+export const CHAT_STOPPED = 'chat stopped';
+
 export function chatPayloadError(payload: ChatPayload): string | null {
   if (Array.isArray(payload) || !('type' in payload) || payload.type !== 'error') {
     return null;
