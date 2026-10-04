@@ -50,6 +50,9 @@ import { useRoute, useRouter } from 'vue-router';
 /** How often the sidebar looks for sessions started somewhere else. */
 const POLL_INTERVAL_MS = 5000;
 
+/** Sessions this UI shows are the ones the agent cloud itself recorded. */
+const SESSION_SOURCE = 'AGENT_CLOUD';
+
 const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
@@ -87,7 +90,7 @@ function byRecency(a: ApiSessionDto, b: ApiSessionDto): number {
 }
 
 async function loadSessions() {
-  const { data, error } = await getSessions();
+  const { data, error } = await getSessions({ query: { source: SESSION_SOURCE } });
   if (error || !data) {
     if (!loadFailed) {
       loadFailed = true;

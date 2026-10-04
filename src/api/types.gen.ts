@@ -71,6 +71,7 @@ export type ApiCreateProviderRequest = {
 
 export type ApiCreateSessionRequest = {
     plan_items?: Array<RepositorySessionPlanItem>;
+    source?: string;
     title?: string;
     uuid?: string;
 };
@@ -151,6 +152,7 @@ export type ApiSessionDto = {
     created_at?: string;
     id?: string;
     plan_items?: Array<RepositorySessionPlanItem>;
+    source?: string;
     title?: string;
     updated_at?: string;
 };
@@ -218,6 +220,7 @@ export type ApiUpdateSessionRequest = {
         [key: string]: unknown;
     }>;
     plan_items?: Array<RepositorySessionPlanItem>;
+    source?: string;
     title?: string;
 };
 
@@ -1444,7 +1447,12 @@ export type PutProvidersByUuidResponse = PutProvidersByUuidResponses[keyof PutPr
 export type GetSessionsData = {
     body?: never;
     path?: never;
-    query?: never;
+    query?: {
+        /**
+         * Keep only sessions uploaded from this application
+         */
+        source?: string;
+    };
     url: '/sessions';
 };
 

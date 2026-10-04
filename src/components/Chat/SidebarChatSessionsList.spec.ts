@@ -97,6 +97,14 @@ describe('SidebarChatSessionsList', () => {
     expect(api.getSessions).toHaveBeenCalledTimes(2);
   });
 
+  it('asks the cloud only for the sessions the agent cloud recorded', async () => {
+    (api.getSessions as Mock).mockResolvedValue({ data: [latest] });
+
+    await mountList();
+
+    expect(api.getSessions).toHaveBeenCalledWith({ query: { source: 'AGENT_CLOUD' } });
+  });
+
   it('reports a failing load once instead of once per poll', async () => {
     (api.getSessions as Mock).mockResolvedValue({ error: { error: { code: 'INTERNAL', message: 'boom' } } });
 

@@ -577,7 +577,7 @@ export const putProvidersByUuid = <ThrowOnError extends boolean = false>(options
 /**
  * List sessions
  *
- * Returns all of the caller's sessions, most recently updated first, without their messages. Not paginated: the app syncs its whole session set in one go.
+ * Returns all of the caller's sessions, most recently updated first, without their messages. Not paginated: the app syncs its whole session set in one go. A source query keeps only sessions uploaded from that application; without one every source is returned.
  */
 export const getSessions = <ThrowOnError extends boolean = false>(options?: Options<GetSessionsData, ThrowOnError>) => {
     return (options?.client ?? client).get<GetSessionsResponses, GetSessionsErrors, ThrowOnError>({
