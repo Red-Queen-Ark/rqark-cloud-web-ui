@@ -19,7 +19,7 @@ test('shows the agent cloud as connected once it answers a ping', async ({ page 
 
   await page.goto('/en');
 
-  await expect(page.getByTestId('chat-status')).toHaveClass(/status-accent/);
+  await expect(page.getByTestId('chat-status')).toHaveClass(/status-success/);
 });
 
 test('shows the agent cloud as unreachable when the ping fails', async ({ page }) => {

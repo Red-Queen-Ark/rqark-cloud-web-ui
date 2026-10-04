@@ -25,8 +25,8 @@ describe('ChatInputArea', () => {
     expect(mountArea({ status: 'connecting' }).get('.status').classes()).toContain('status-warning');
   });
 
-  it('shows an accent dot once connected', () => {
-    expect(mountArea({ status: 'connected' }).get('.status').classes()).toContain('status-accent');
+  it('shows a success dot once connected', () => {
+    expect(mountArea({ status: 'connected' }).get('.status').classes()).toContain('status-success');
   });
 
   it('shows an error dot when the connection dropped', () => {

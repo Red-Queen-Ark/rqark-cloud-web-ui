@@ -227,7 +227,7 @@ test('shows the socket as connected while it is open', async ({ page }) => {
 
   await page.goto(`/en/chat/${first.id}`);
 
-  await expect(page.getByTestId('chat-status')).toHaveClass(/status-accent/);
+  await expect(page.getByTestId('chat-status')).toHaveClass(/status-success/);
 });
 
 test('reconnects when the socket drops and shows the connection again', async ({ page }) => {
@@ -242,11 +242,11 @@ test('reconnects when the socket drops and shows the connection again', async ({
   await page.goto(`/en/chat/${first.id}`);
 
   const status = page.getByTestId('chat-status');
-  await expect(status).toHaveClass(/status-accent/);
+  await expect(status).toHaveClass(/status-success/);
 
   sockets[0].close();
   await expect(status).toHaveClass(/status-error/);
 
   await expect.poll(() => sockets.length, { timeout: 10000 }).toBe(2);
-  await expect(status).toHaveClass(/status-accent/);
+  await expect(status).toHaveClass(/status-success/);
 });

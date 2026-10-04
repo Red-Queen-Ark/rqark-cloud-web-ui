@@ -10,6 +10,6 @@ export interface ChatStatusSpec {
 export const CHAT_STATUS: Record<ChatStatus, ChatStatusSpec> = {
   idle: { dot: '', label: '' },
   connecting: { dot: 'status-warning animate-pulse', label: 'chat.statusConnecting' },
-  connected: { dot: 'status-accent', label: 'chat.statusConnected' },
+  connected: { dot: 'status-success', label: 'chat.statusConnected' },
   error: { dot: 'status-error', label: 'chat.statusError' },
 };

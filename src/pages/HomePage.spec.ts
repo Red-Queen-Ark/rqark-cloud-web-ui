@@ -83,7 +83,7 @@ describe('HomePage', () => {
   it('shows the agent cloud connection in the composer', async () => {
     const { wrapper } = await mountHome();
 
-    expect(wrapper.get('[data-testid="chat-status"]').classes()).toContain('status-accent');
+    expect(wrapper.get('[data-testid="chat-status"]').classes()).toContain('status-success');
   });
 
   it('starts a session and carries the first turn to the chat', async () => {
