@@ -9,7 +9,7 @@
     </div>
 
     <div class="chat-input-dock fixed inset-x-0 z-30 lg:left-72" data-testid="chat-input-dock">
-      <ChatInputArea ref="inputArea" :agents="chatSocket.agents" :providers="chatSocket.providers" :status="chatSocket.status" @submit="handleSubmit" />
+      <ChatInputArea ref="inputArea" :agents="chatSocket.agents" :providers="chatSocket.providers" :status="pingStatus" @submit="handleSubmit" />
     </div>
   </div>
 </template>
@@ -22,6 +22,7 @@ import { postSessions } from '@/api';
 import ChatInputArea from '@/components/Chat/ChatInputArea.vue';
 import { useApiError } from '@/composables/useApiError';
 import { useChatSocket } from '@/composables/useChatSocket';
+import { usePingStatus } from '@/composables/usePingStatus';
 import { useVisualViewportInsets } from '@/composables/useVisualViewportInsets';
 import { useAlertStore } from '@/stores/alertStore';
 import { useChatStore } from '@/stores/chatStore';
@@ -33,6 +34,7 @@ const alertStore = useAlertStore();
 const apiError = useApiError();
 const chatStore = useChatStore();
 const chatSocket = useChatSocket(undefined);
+const { status: pingStatus } = usePingStatus();
 const appName = import.meta.env.VITE_APP_NAME || 'App';
 
 useVisualViewportInsets();

@@ -12,6 +12,26 @@ test('welcomes the user on the start page', async ({ page }) => {
   await expect(page.getByTestId('chat-input')).toBeVisible();
 });
 
+test('shows the agent cloud as connected once it answers a ping', async ({ page }) => {
+  await mockBackend(page, { session: boss });
+  await seedSession(page);
+  await page.route('**/agent-api/ping', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ message: 'pong' }) }));
+
+  await page.goto('/en');
+
+  await expect(page.getByTestId('chat-status')).toHaveClass(/status-accent/);
+});
+
+test('shows the agent cloud as unreachable when the ping fails', async ({ page }) => {
+  await mockBackend(page, { session: boss });
+  await seedSession(page);
+  await page.route('**/agent-api/ping', (route) => route.abort());
+
+  await page.goto('/en');
+
+  await expect(page.getByTestId('chat-status')).toHaveClass(/status-error/);
+});
+
 test('starts a session with the first turn typed on the start page', async ({ page }) => {
   await mockBackend(page, {
     session: boss,

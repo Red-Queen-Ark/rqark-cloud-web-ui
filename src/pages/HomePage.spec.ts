@@ -26,6 +26,13 @@ vi.mock('@/composables/useChatSocket', async () => {
   };
 });
 
+const ping = vi.hoisted(() => ({ status: 'connected' }));
+
+vi.mock('@/composables/usePingStatus', async () => {
+  const { ref } = await import('vue');
+  return { usePingStatus: () => ({ status: ref(ping.status), check: vi.fn() }) };
+});
+
 const Blank = defineComponent({ template: '<div />' });
 
 function createTestRouter(): Router {
@@ -71,6 +78,12 @@ describe('HomePage', () => {
     expect(wrapper.get('[data-testid="home-hero"]').text()).toContain('Your AI assistant is ready');
     expect(wrapper.find('[data-testid="chat-input"]').exists()).toBe(true);
     expect(socket.load).toHaveBeenCalled();
+  });
+
+  it('shows the agent cloud connection in the composer', async () => {
+    const { wrapper } = await mountHome();
+
+    expect(wrapper.get('[data-testid="chat-status"]').classes()).toContain('status-accent');
   });
 
   it('starts a session and carries the first turn to the chat', async () => {

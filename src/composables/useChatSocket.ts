@@ -1,5 +1,6 @@
 import { onScopeDispose, reactive, ref, shallowRef, toValue, watch, type MaybeRefOrGetter } from 'vue';
 import { getAgentsNames, getProvidersModels, getSessionsByUuid, getSessionsByUuidMessages, type ApiProviderSummaryDto } from '@/api';
+import { agentApiUrl } from '@/config/agentApi';
 import type { ChatStatus } from '@/config/chatStatus';
 import { planItemsFrom, type PlanItem } from '@/config/sessions';
 import { useAlertStore } from '@/stores/alertStore';
@@ -92,8 +93,7 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
   }
 
   function chatSocketUrl(sessionId: string, token: string): string {
-    const base = import.meta.env.VITE_AGENT_API_BASE_URL || '/agent-api';
-    const url = new URL(`${base.replace(/\/+$/, '')}/chat/ws/${encodeURIComponent(sessionId)}`, window.location.origin);
+    const url = new URL(agentApiUrl(`/chat/ws/${encodeURIComponent(sessionId)}`), window.location.origin);
     url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
     url.searchParams.set('token', token);
     return url.toString();
