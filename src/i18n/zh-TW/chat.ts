@@ -4,6 +4,7 @@ export const chat = {
   loadError: '無法載入 Session 清單',
   inputPlaceholder: '輸入訊息',
   send: '傳送',
+  stop: '停止',
   noProviders: '冇 Provider',
   noAgents: '冇 Agent',
   more: '更多',

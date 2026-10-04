@@ -38,7 +38,10 @@
           </select>
         </div>
         <div class="ml-auto">
-          <button id="chat-input-send-btn" data-testid="chat-send" class="btn btn-primary btn-sm btn-square" :disabled="!hasContent" :title="t('chat.send')" :aria-label="t('chat.send')" @click="submit">
+          <button v-if="streaming" id="chat-input-stop-btn" data-testid="chat-stop" class="btn btn-error btn-sm btn-square" :title="t('chat.stop')" :aria-label="t('chat.stop')" @click="emit('stop')">
+            <StopIcon class="h-5 w-5" />
+          </button>
+          <button v-else id="chat-input-send-btn" data-testid="chat-send" class="btn btn-primary btn-sm btn-square" :disabled="!hasContent" :title="t('chat.send')" :aria-label="t('chat.send')" @click="submit">
             <SendIcon class="h-5 w-5" />
           </button>
         </div>
@@ -55,15 +58,20 @@ import { CHAT_STATUS, type ChatStatus } from '@/config/chatStatus';
 import { providerDisplayName } from '@/config/providers';
 import BoltIcon from '@/components/svg/BoltIcon.vue';
 import SendIcon from '@/components/svg/SendIcon.vue';
+import StopIcon from '@/components/svg/StopIcon.vue';
 import UserIcon from '@/components/svg/UserIcon.vue';
 
 const props = defineProps<{
   agents: string[];
   providers: ApiProviderSummaryDto[];
   status?: ChatStatus;
+  streaming?: boolean;
 }>();
 
-const emit = defineEmits<(e: 'submit', payload: { content: string; agent: string; provider: string }) => void>();
+const emit = defineEmits<{
+  (e: 'submit', payload: { content: string; agent: string; provider: string }): void;
+  (e: 'stop'): void;
+}>();
 
 const { t } = useI18n();
 

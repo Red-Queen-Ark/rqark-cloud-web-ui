@@ -194,6 +194,41 @@ describe('useChatSocket', () => {
     expect(socket.sent).toEqual([JSON.stringify({ content: 'hello', provider: 'openai', agent: 'researcher' })]);
   });
 
+  it('sends a stop for the turn in flight', async () => {
+    const chatSocket = openChat(ref('session-a'));
+    await chatSocket.load();
+
+    chatSocket.send('hello', 'researcher', 'openai');
+    chatSocket.stop();
+
+    expect(FakeSocket.instances[0]?.sent).toEqual([JSON.stringify({ content: 'hello', provider: 'openai', agent: 'researcher' }), JSON.stringify({ kind: 'stop' })]);
+  });
+
+  it('tracks a turn in flight until the assistant lands', async () => {
+    const chatSocket = openChat(ref('session-a'));
+    await chatSocket.load();
+
+    chatSocket.send('hello', 'researcher', 'openai');
+    expect(chatSocket.streaming).toBe(true);
+
+    const socket = FakeSocket.instances[0] as FakeSocket;
+    socket.onmessage?.({ data: JSON.stringify({ agent_id: 'researcher:session-a', path: [], payload: { role: 'assistant', content: 'hi', created_at: '2026-01-01T00:00:00Z' } }) });
+
+    expect(chatSocket.streaming).toBe(false);
+  });
+
+  it('ends the turn in flight when an error lands', async () => {
+    const chatSocket = openChat(ref('session-a'));
+    await chatSocket.load();
+
+    chatSocket.send('hello', 'researcher', 'openai');
+
+    const socket = FakeSocket.instances[0] as FakeSocket;
+    socket.onmessage?.({ data: JSON.stringify({ agent_id: '', path: [], payload: { type: 'error', content: 'chat stopped' } }) });
+
+    expect(chatSocket.streaming).toBe(false);
+  });
+
   it('drops a turn when the socket is closed', async () => {
     const chatSocket = openChat(ref('session-a'));
     await chatSocket.load();

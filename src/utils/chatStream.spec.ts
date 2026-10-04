@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyChatPayload, chatPayloadError, chatPlanItems, openChatStream } from './chatStream';
+import { applyChatPayload, chatPayloadError, chatPlanItems, chatTurnDone, openChatStream } from './chatStream';
 
 const at = '2026-05-06T07:08:09Z';
 
@@ -20,6 +20,28 @@ describe('chatPayloadError', () => {
     expect(chatPayloadError({ type: 'content', content: 'hi' })).toBeNull();
     expect(chatPayloadError(tool)).toBeNull();
     expect(chatPayloadError([{ id: '1', content: 'step', status: 'pending', icon: ' ' }])).toBeNull();
+  });
+});
+
+describe('chatTurnDone', () => {
+  it('is done on an assistant message that asks for no tool', () => {
+    expect(chatTurnDone({ role: 'assistant', content: 'here you go', created_at: at })).toBe(true);
+  });
+
+  it('is not done while the assistant still has a tool to run', () => {
+    expect(chatTurnDone({ role: 'assistant', content: '', tool_calls: [toolCall], created_at: at })).toBe(false);
+  });
+
+  it('is not done on the streaming chunks of a turn', () => {
+    expect(chatTurnDone({ type: 'content', content: 'half' })).toBe(false);
+    expect(chatTurnDone({ type: 'reasoning_content', content: 'thinking' })).toBe(false);
+    expect(chatTurnDone({ type: 'error', content: 'boom' })).toBe(false);
+  });
+
+  it('is not done on the messages around the turn', () => {
+    expect(chatTurnDone({ role: 'user', content: [{ type: 'text', text: 'hi' }], created_at: at })).toBe(false);
+    expect(chatTurnDone(tool)).toBe(false);
+    expect(chatTurnDone([{ id: '1', content: 'step', status: 'pending', icon: ' ' }])).toBe(false);
   });
 });
 

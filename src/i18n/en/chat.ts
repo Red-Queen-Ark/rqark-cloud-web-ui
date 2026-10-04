@@ -4,6 +4,7 @@ export const chat = {
   loadError: 'Could not load sessions',
   inputPlaceholder: 'Type a message',
   send: 'Send',
+  stop: 'Stop',
   noProviders: 'No providers',
   noAgents: 'No agents',
   more: 'More',

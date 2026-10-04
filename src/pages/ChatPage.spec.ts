@@ -10,6 +10,7 @@ import ChatPage from './ChatPage.vue';
 const socket = vi.hoisted(() => ({
   load: vi.fn(),
   send: vi.fn(),
+  stop: vi.fn(),
   sessionId: undefined as unknown,
   agentsValue: ['researcher'],
   providersValue: [{ name: 'openai', model_name: 'gpt-5' }],
@@ -23,11 +24,13 @@ vi.mock('@/composables/useChatSocket', async () => {
       return reactive({
         load: socket.load,
         send: socket.send,
+        stop: socket.stop,
         agents: ref(socket.agentsValue),
         providers: ref(socket.providersValue),
         history: ref([]),
         planItems: ref([]),
         status: ref('connected'),
+        streaming: ref(false),
       });
     },
   };

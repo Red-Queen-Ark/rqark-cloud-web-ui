@@ -5,7 +5,7 @@ import type { ChatStatus } from '@/config/chatStatus';
 import { planItemsFrom, type PlanItem } from '@/config/sessions';
 import { useAlertStore } from '@/stores/alertStore';
 import { useAuthStore } from '@/stores/authStore';
-import { applyChatPayload, chatPayloadError, chatPlanItems, openChatStream } from '@/utils/chatStream';
+import { applyChatPayload, chatPayloadError, chatPlanItems, chatTurnDone, openChatStream } from '@/utils/chatStream';
 
 export type ChatSessionId = string | null | undefined;
 
@@ -20,6 +20,7 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
   const providers = ref<ApiProviderSummaryDto[]>([]);
   const ws = shallowRef<WebSocket>();
   const status = ref<ChatStatus>('idle');
+  const streaming = ref(false);
   const history = ref<ChatHistoryEntry[]>([]);
   const planItems = ref<PlanItem[]>([]);
   let stream = openChatStream();
@@ -77,6 +78,7 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
     }
     const error = chatPayloadError(envelope.payload);
     if (error) {
+      streaming.value = false;
       alertStore.addItem({ level: 'error', message: error });
       return;
     }
@@ -90,6 +92,9 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
     }
     stream = applyChatPayload(stream, envelope.agent_id, envelope.payload);
     history.value = stream.messages;
+    if (chatTurnDone(envelope.payload)) {
+      streaming.value = false;
+    }
   }
 
   function chatSocketUrl(sessionId: string, token: string): string {
@@ -122,6 +127,7 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
       }
       ws.value = undefined;
       status.value = 'error';
+      streaming.value = false;
       scheduleReconnect();
     };
     socket.onerror = () => {
@@ -162,6 +168,7 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
     }
     ws.value?.close();
     ws.value = undefined;
+    streaming.value = false;
   }
 
   watch(
@@ -177,12 +184,22 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
     }
     if (socket.readyState === WebSocket.CONNECTING) {
       socket.addEventListener('open', () => socket.send(data), { once: true });
+      streaming.value = true;
       return;
     }
     if (socket.readyState !== WebSocket.OPEN) {
       return;
     }
     socket.send(data);
+    streaming.value = true;
+  }
+
+  function stop() {
+    const socket = ws.value;
+    if (socket?.readyState !== WebSocket.OPEN) {
+      return;
+    }
+    socket.send(JSON.stringify({ kind: 'stop' }));
   }
 
   onScopeDispose(disconnect);
@@ -192,11 +209,13 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
     agents,
     providers,
     status,
+    streaming,
     ws,
     history,
     planItems,
     connect,
     disconnect,
     send,
+    stop,
   });
 }

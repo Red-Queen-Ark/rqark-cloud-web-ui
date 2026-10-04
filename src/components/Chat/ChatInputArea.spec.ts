@@ -5,12 +5,13 @@ import { describe, expect, it } from 'vitest';
 import { nextTick } from 'vue';
 import ChatInputArea from './ChatInputArea.vue';
 
-function mountArea(overrides: { agents?: string[]; providers?: { name?: string; model_name?: string }[]; status?: ChatStatus } = {}) {
+function mountArea(overrides: { agents?: string[]; providers?: { name?: string; model_name?: string }[]; status?: ChatStatus; streaming?: boolean } = {}) {
   return mount(ChatInputArea, {
     props: {
       agents: overrides.agents ?? ['researcher'],
       providers: overrides.providers ?? [{ name: 'openai', model_name: 'gpt-5' }],
       status: overrides.status,
+      streaming: overrides.streaming,
     },
     global: { plugins: [i18n] },
   });
@@ -80,5 +81,15 @@ describe('ChatInputArea', () => {
 
     expect(input.element.textContent).toBe('');
     expect(wrapper.get('[data-testid="chat-send"]').attributes('disabled')).toBeDefined();
+  });
+
+  it('replaces send with stop while a turn is in flight', async () => {
+    const wrapper = mountArea({ streaming: true });
+
+    expect(wrapper.find('[data-testid="chat-send"]').exists()).toBe(false);
+
+    await wrapper.get('[data-testid="chat-stop"]').trigger('click');
+
+    expect(wrapper.emitted('stop')).toHaveLength(1);
   });
 });

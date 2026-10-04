@@ -16,6 +16,10 @@ export function chatPayloadError(payload: ChatPayload): string | null {
   return payload.content;
 }
 
+export function chatTurnDone(payload: ChatPayload): boolean {
+  return !Array.isArray(payload) && !('type' in payload) && payload.role === 'assistant' && !payload.tool_calls?.length;
+}
+
 export function chatPlanItems(payload: ChatPayload): PlanItem[] | null {
   return Array.isArray(payload) ? planItemsFrom(payload) : null;
 }

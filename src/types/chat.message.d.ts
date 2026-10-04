@@ -87,11 +87,17 @@ interface ChatEnvelope<T = ChatPayload> {
 
 type ChatServerMessage = ChatEnvelope;
 
-interface ChatClientMessage {
+interface ChatTurnMessage {
   content: string;
   provider: string;
   agent: string;
 }
+
+interface ChatStopMessage {
+  kind: 'stop';
+}
+
+type ChatClientMessage = ChatTurnMessage | ChatStopMessage;
 
 type ChatHistoryEntry =
   | { seq: number; role: 'user'; data: ChatUserMessage; created_at: string }
