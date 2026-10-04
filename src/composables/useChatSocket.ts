@@ -12,6 +12,7 @@ export type ChatSessionId = string | null | undefined;
 const RECONNECT_BASE_DELAY = 1000;
 const RECONNECT_MAX_DELAY = 5000;
 const RECONNECT_JITTER = 0.5;
+const REPLAY_TIMEOUT_MS = 5000;
 
 export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
   const authStore = useAuthStore();
@@ -26,12 +27,14 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
   let stream = openChatStream();
   let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
   let reconnectDelay = 0;
+  let hasConnected = false;
 
   async function load() {
+    hasConnected = false;
     connect();
     await loadAgents();
     await loadProviders();
-    await loadHistory();
+    await resync();
   }
 
   async function loadAgents() {
@@ -69,6 +72,65 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
     history.value = stream.messages;
   }
 
+  async function fetchReplay(id: string): Promise<ChatEnvelope[]> {
+    const token = authStore.accessToken;
+    if (!token) {
+      return [];
+    }
+    try {
+      const response = await fetch(agentApiUrl(`/chat/${encodeURIComponent(id)}/replay`), {
+        headers: { Authorization: `Bearer ${token}` },
+        signal: AbortSignal.timeout(REPLAY_TIMEOUT_MS),
+      });
+      if (!response.ok) {
+        return [];
+      }
+      const events = (await response.json()) as ChatEnvelope[];
+      return Array.isArray(events) ? events : [];
+    } catch {
+      return [];
+    }
+  }
+
+  async function loadReplay() {
+    const id = toValue(sessionId);
+    if (!id) {
+      return;
+    }
+    const events = await fetchReplay(id);
+    if (events.length === 0) {
+      return;
+    }
+    // A running chat streams its events and clears them once it ends, so a
+    // non-empty replay is a turn still in flight: rebuild it on top of the
+    // history the session endpoint answered with.
+    for (const envelope of events) {
+      apply(envelope);
+    }
+    streaming.value = !chatTurnDone(events[events.length - 1].payload);
+  }
+
+  async function resync() {
+    await loadHistory();
+    await loadReplay();
+  }
+
+  function apply(envelope: ChatEnvelope) {
+    // The plan is session state rather than a message: the engine pushes the
+    // whole replaced plan as one array, which is kept beside the history instead
+    // of inside it.
+    const plan = chatPlanItems(envelope.payload);
+    if (plan) {
+      planItems.value = plan;
+      return;
+    }
+    stream = applyChatPayload(stream, envelope.agent_id, envelope.payload);
+    history.value = stream.messages;
+    if (chatTurnDone(envelope.payload)) {
+      streaming.value = false;
+    }
+  }
+
   function receive(data: string) {
     let envelope: ChatEnvelope;
     try {
@@ -84,19 +146,7 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
       }
       return;
     }
-    // The plan is session state rather than a message: the engine pushes the
-    // whole replaced plan as one array, which is kept beside the history instead
-    // of inside it.
-    const plan = chatPlanItems(envelope.payload);
-    if (plan) {
-      planItems.value = plan;
-      return;
-    }
-    stream = applyChatPayload(stream, envelope.agent_id, envelope.payload);
-    history.value = stream.messages;
-    if (chatTurnDone(envelope.payload)) {
-      streaming.value = false;
-    }
+    apply(envelope);
   }
 
   function chatSocketUrl(sessionId: string, token: string): string {
@@ -122,6 +172,12 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
       }
       reconnectDelay = 0;
       status.value = 'connected';
+      // The first open is followed by load()'s own resync; only a reconnect
+      // arrives with a gap of events to catch up on.
+      if (hasConnected) {
+        void resync();
+      }
+      hasConnected = true;
     };
     socket.onclose = () => {
       if (ws.value !== socket) {

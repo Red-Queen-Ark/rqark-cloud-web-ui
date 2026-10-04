@@ -1,12 +1,19 @@
 import * as api from '@/api';
 import { useAlertStore } from '@/stores/alertStore';
 import { useAuthStore } from '@/stores/authStore';
+import { flushPromises } from '@vue/test-utils';
 import { createPinia, setActivePinia, type Pinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import { effectScope, nextTick, ref, type EffectScope } from 'vue';
 import { useChatSocket } from './useChatSocket';
 
 vi.mock('@/api', () => ({ getAgentsNames: vi.fn(), getProvidersModels: vi.fn(), getSessionsByUuid: vi.fn(), getSessionsByUuidMessages: vi.fn() }));
+
+const at = '2026-01-01T00:00:00Z';
+
+function envelope(payload: Record<string, unknown>) {
+  return { agent_id: 'researcher:session-a', path: [], payload };
+}
 
 class FakeSocket {
   public static CONNECTING = 0;
@@ -83,6 +90,7 @@ describe('useChatSocket', () => {
     FakeSocket.closed = [];
     FakeSocket.instances = [];
     vi.stubGlobal('WebSocket', FakeSocket);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => [] }));
     vi.clearAllMocks();
     (api.getAgentsNames as Mock).mockResolvedValue({ data: ['researcher'] });
     (api.getProvidersModels as Mock).mockResolvedValue({ data: [{ name: 'openai', model_name: 'gpt-5' }] });
@@ -138,6 +146,51 @@ describe('useChatSocket', () => {
     expect(api.getSessionsByUuidMessages).not.toHaveBeenCalled();
     expect(chatSocket.history).toEqual([]);
     expect(chatSocket.planItems).toEqual([]);
+  });
+
+  it('rebuilds the turn a running chat has already streamed', async () => {
+    (fetch as Mock).mockResolvedValue({
+      ok: true,
+      json: async () => [envelope({ role: 'user', content: [{ type: 'text', text: 'hi' }], created_at: at }), envelope({ type: 'content', content: 'Hel' }), envelope({ type: 'content', content: 'lo' })],
+    });
+
+    const chatSocket = openChat(ref('session-a'));
+    await chatSocket.load();
+
+    expect(fetch).toHaveBeenCalledWith(expect.stringContaining('/chat/session-a/replay'), expect.anything());
+    expect(chatSocket.history).toHaveLength(2);
+    expect(chatSocket.history[1]).toMatchObject({ role: 'assistant', data: { content: 'Hello' } });
+    expect(chatSocket.streaming).toBe(true);
+  });
+
+  it('leaves the history alone when no chat is running', async () => {
+    (api.getSessionsByUuidMessages as Mock).mockResolvedValue({ data: [{ seq: 1, role: 'user', data: { content: 'hi' } }] });
+
+    const chatSocket = openChat(ref('session-a'));
+    await chatSocket.load();
+
+    expect(chatSocket.history).toEqual([{ seq: 1, role: 'user', data: { content: 'hi' } }]);
+    expect(chatSocket.streaming).toBe(false);
+  });
+
+  it('catches up on the turn after a reconnect', async () => {
+    vi.useFakeTimers();
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    (fetch as Mock).mockResolvedValue({ ok: true, json: async () => [envelope({ type: 'content', content: 'Hello' })] });
+
+    const chatSocket = openChat(ref('session-a'));
+    await chatSocket.load();
+    (FakeSocket.instances[0] as FakeSocket).open();
+    expect(fetch).toHaveBeenCalledTimes(1);
+
+    (FakeSocket.instances[0] as FakeSocket).serverClose();
+    vi.advanceTimersByTime(1000);
+    (FakeSocket.instances[1] as FakeSocket).open();
+    await flushPromises();
+
+    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(chatSocket.history).toHaveLength(1);
+    expect(chatSocket.streaming).toBe(true);
   });
 
   it('loads the plan the session endpoint holds', async () => {
