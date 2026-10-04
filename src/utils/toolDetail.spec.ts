@@ -50,6 +50,11 @@ describe('formatToolDetail', () => {
     expect(formatToolDetail('plan_update', { items })).toBe('✅ ship it');
   });
 
+  it('reads an emptied plan as cleared rather than as nothing to say', () => {
+    // An empty list stringifies to '', which a value-empty guard would swallow.
+    expect(formatToolDetail('plan_update', { items: [] })).toBe('cleared');
+  });
+
   it('returns an empty string when the display value is missing', () => {
     expect(formatToolDetail('read_file', {})).toBe('');
     expect(formatToolDetail('mystery', { anything: 1 })).toBe('');

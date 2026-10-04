@@ -63,6 +63,13 @@ export function formatToolDetail(toolName: string, args: Record<string, unknown>
   if (value === undefined || value === null) {
     return '';
   }
+
+  // A plan update is read as its whole list before the empty-string guard below:
+  // an empty list stringifies to '', and "cleared" is exactly what that means.
+  if (toolName === 'plan_update' && Array.isArray(value)) {
+    return formatPlanUpdateDetail(value);
+  }
+
   const text = String(value);
   if (!text) {
     return '';
@@ -71,10 +78,6 @@ export function formatToolDetail(toolName: string, args: Record<string, unknown>
   if (toolName === 'grep') {
     const path = String(args['path'] ?? '');
     return path && path !== '.' ? `"${text}" in ${path}` : `"${text}"`;
-  }
-
-  if (toolName === 'plan_update' && Array.isArray(value)) {
-    return formatPlanUpdateDetail(value);
   }
 
   if (toolName === 'exec' || toolName === 'shell') {
