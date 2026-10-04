@@ -21,6 +21,7 @@ vi.mock('@/composables/useChatSocket', async () => {
         load: socket.load,
         agents: ref(['researcher']),
         providers: ref([{ name: 'openai', model_name: 'gpt-5' }]),
+        status: ref('idle'),
       }),
   };
 });

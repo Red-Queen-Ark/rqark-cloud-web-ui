@@ -14,4 +14,7 @@ export const chat = {
   cancel: '取消',
   renameError: '无法重命名 Session',
   deleteError: '无法删除 Session',
+  statusConnecting: '连接中',
+  statusConnected: '已连接',
+  statusError: '连接出错',
 };

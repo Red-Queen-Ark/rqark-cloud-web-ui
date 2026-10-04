@@ -218,3 +218,35 @@ test('replaces the plan as the engine pushes a new one', async ({ page }) => {
   socket.send(frame([]));
   await expect(card).toBeHidden();
 });
+
+test('shows the socket as connected while it is open', async ({ page }) => {
+  await mockBackend(page, { session: boss, sessions: [first] });
+  await seedSession(page);
+
+  await page.routeWebSocket(/\/agent-api\/chat\/ws\//, () => undefined);
+
+  await page.goto(`/en/chat/${first.id}`);
+
+  await expect(page.getByTestId('chat-status')).toHaveClass(/status-accent/);
+});
+
+test('reconnects when the socket drops and shows the connection again', async ({ page }) => {
+  await mockBackend(page, { session: boss, sessions: [first] });
+  await seedSession(page);
+
+  const sockets: WebSocketRoute[] = [];
+  await page.routeWebSocket(/\/agent-api\/chat\/ws\//, (ws) => {
+    sockets.push(ws);
+  });
+
+  await page.goto(`/en/chat/${first.id}`);
+
+  const status = page.getByTestId('chat-status');
+  await expect(status).toHaveClass(/status-accent/);
+
+  sockets[0].close();
+  await expect(status).toHaveClass(/status-error/);
+
+  await expect.poll(() => sockets.length, { timeout: 10000 }).toBe(2);
+  await expect(status).toHaveClass(/status-accent/);
+});

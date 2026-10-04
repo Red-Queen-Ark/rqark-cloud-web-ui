@@ -14,4 +14,7 @@ export const chat = {
   cancel: 'Cancel',
   renameError: 'Could not rename the session',
   deleteError: 'Could not delete the session',
+  statusConnecting: 'Connecting',
+  statusConnected: 'Connected',
+  statusError: 'Connection error',
 };

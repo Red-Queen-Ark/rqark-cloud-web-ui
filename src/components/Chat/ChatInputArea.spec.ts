@@ -1,20 +1,38 @@
 import { i18n } from '@/i18n';
+import type { ChatStatus } from '@/config/chatStatus';
 import { mount } from '@vue/test-utils';
 import { describe, expect, it } from 'vitest';
 import { nextTick } from 'vue';
 import ChatInputArea from './ChatInputArea.vue';
 
-function mountArea(overrides: { agents?: string[]; providers?: { name?: string; model_name?: string }[] } = {}) {
+function mountArea(overrides: { agents?: string[]; providers?: { name?: string; model_name?: string }[]; status?: ChatStatus } = {}) {
   return mount(ChatInputArea, {
     props: {
       agents: overrides.agents ?? ['researcher'],
       providers: overrides.providers ?? [{ name: 'openai', model_name: 'gpt-5' }],
+      status: overrides.status,
     },
     global: { plugins: [i18n] },
   });
 }
 
 describe('ChatInputArea', () => {
+  it('shows no status dot before a connection', () => {
+    expect(mountArea().find('.status').exists()).toBe(false);
+  });
+
+  it('shows a warning dot while connecting', () => {
+    expect(mountArea({ status: 'connecting' }).get('.status').classes()).toContain('status-warning');
+  });
+
+  it('shows an accent dot once connected', () => {
+    expect(mountArea({ status: 'connected' }).get('.status').classes()).toContain('status-accent');
+  });
+
+  it('shows an error dot when the connection dropped', () => {
+    expect(mountArea({ status: 'error' }).get('.status').classes()).toContain('status-error');
+  });
+
   it('keeps send disabled until something is typed', async () => {
     const wrapper = mountArea();
     const send = wrapper.get('[data-testid="chat-send"]');

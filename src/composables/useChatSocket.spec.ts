@@ -19,6 +19,8 @@ class FakeSocket {
   public sent: string[] = [];
   public readyState = FakeSocket.OPEN;
   public onopen: (() => void) | null = null;
+  public onclose: (() => void) | null = null;
+  public onerror: (() => void) | null = null;
   public onmessage: ((event: unknown) => void) | null = null;
   private listeners: Record<string, (() => void)[]> = {};
 
@@ -39,6 +41,16 @@ class FakeSocket {
   public open() {
     this.readyState = FakeSocket.OPEN;
     this.listeners.open?.forEach((listener) => listener());
+    this.onopen?.();
+  }
+
+  public serverClose() {
+    this.readyState = FakeSocket.CLOSED;
+    this.onclose?.();
+  }
+
+  public serverError() {
+    this.onerror?.();
   }
 
   public send(data: string) {
@@ -80,6 +92,8 @@ describe('useChatSocket', () => {
 
   afterEach(() => {
     scope?.stop();
+    vi.useRealTimers();
+    vi.restoreAllMocks();
     vi.unstubAllGlobals();
   });
 
@@ -202,5 +216,123 @@ describe('useChatSocket', () => {
 
     expect(FakeSocket.instances[0]?.sent).toEqual([]);
     expect(FakeSocket.instances[1]?.sent).toHaveLength(1);
+  });
+
+  it('reports no connection when there is no session', async () => {
+    const chatSocket = openChat(ref(undefined));
+    await chatSocket.load();
+
+    expect(chatSocket.status).toBe('idle');
+  });
+
+  it('reports the connection while it opens and once it is up', async () => {
+    const chatSocket = openChat(ref('session-a'));
+    await chatSocket.load();
+
+    expect(chatSocket.status).toBe('connecting');
+
+    (FakeSocket.instances[0] as FakeSocket).open();
+
+    expect(chatSocket.status).toBe('connected');
+  });
+
+  it('reports an error and reconnects after the socket closes', async () => {
+    vi.useFakeTimers();
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+
+    const chatSocket = openChat(ref('session-a'));
+    await chatSocket.load();
+
+    (FakeSocket.instances[0] as FakeSocket).serverClose();
+
+    expect(chatSocket.status).toBe('error');
+    expect(FakeSocket.opened).toHaveLength(1);
+
+    vi.advanceTimersByTime(1000);
+
+    expect(FakeSocket.opened.map(socketPath)).toEqual(['/agent-api/chat/ws/session-a', '/agent-api/chat/ws/session-a']);
+    expect(chatSocket.status).toBe('connecting');
+  });
+
+  it('waits longer after every failed attempt, up to the ceiling', async () => {
+    vi.useFakeTimers();
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+
+    const chatSocket = openChat(ref('session-a'));
+    await chatSocket.load();
+
+    const closeLatest = () => (FakeSocket.instances.at(-1) as FakeSocket).serverClose();
+
+    closeLatest();
+    vi.advanceTimersByTime(999);
+    expect(FakeSocket.opened).toHaveLength(1);
+    vi.advanceTimersByTime(1);
+    expect(FakeSocket.opened).toHaveLength(2);
+
+    closeLatest();
+    vi.advanceTimersByTime(1999);
+    expect(FakeSocket.opened).toHaveLength(2);
+    vi.advanceTimersByTime(1);
+    expect(FakeSocket.opened).toHaveLength(3);
+
+    closeLatest();
+    vi.advanceTimersByTime(3999);
+    expect(FakeSocket.opened).toHaveLength(3);
+    vi.advanceTimersByTime(1);
+    expect(FakeSocket.opened).toHaveLength(4);
+
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      closeLatest();
+      vi.advanceTimersByTime(4999);
+      expect(FakeSocket.opened).toHaveLength(4 + attempt);
+      vi.advanceTimersByTime(1);
+      expect(FakeSocket.opened).toHaveLength(5 + attempt);
+    }
+  });
+
+  it('keeps retrying an unreachable session without giving up', async () => {
+    vi.useFakeTimers();
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+
+    const chatSocket = openChat(ref('session-a'));
+    await chatSocket.load();
+
+    for (let attempt = 0; attempt < 25; attempt += 1) {
+      (FakeSocket.instances.at(-1) as FakeSocket).serverClose();
+      vi.advanceTimersByTime(5000);
+    }
+
+    expect(FakeSocket.opened).toHaveLength(26);
+  });
+
+  it('does not reconnect the socket of the session it left', async () => {
+    vi.useFakeTimers();
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+
+    const sessionId = ref('session-a');
+    const chatSocket = openChat(sessionId);
+    await chatSocket.load();
+
+    sessionId.value = 'session-b';
+    await nextTick();
+
+    (FakeSocket.instances[0] as FakeSocket).serverClose();
+    vi.advanceTimersByTime(60000);
+
+    expect(FakeSocket.opened).toHaveLength(2);
+  });
+
+  it('stops retrying once the scope is disposed', async () => {
+    vi.useFakeTimers();
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+
+    const chatSocket = openChat(ref('session-a'));
+    await chatSocket.load();
+
+    (FakeSocket.instances[0] as FakeSocket).serverClose();
+    scope.stop();
+    vi.advanceTimersByTime(60000);
+
+    expect(FakeSocket.opened).toHaveLength(1);
   });
 });

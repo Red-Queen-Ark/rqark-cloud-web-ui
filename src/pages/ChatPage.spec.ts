@@ -27,6 +27,7 @@ vi.mock('@/composables/useChatSocket', async () => {
         providers: ref(socket.providersValue),
         history: ref([]),
         planItems: ref([]),
+        status: ref('connected'),
       });
     },
   };

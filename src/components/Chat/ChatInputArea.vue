@@ -21,6 +21,7 @@
       </div>
 
       <div class="flex items-center gap-2 px-3 pb-2 pt-1.5 border-t border-base-300/50 bg-base-300/30 rounded-b-box">
+        <div v-if="statusClass" data-testid="chat-status" :class="['status', statusClass]" :aria-label="statusLabel" :title="statusLabel"></div>
         <div class="flex items-center gap-1 text-xs text-base-content/70">
           <BoltIcon class="h-3.5 w-3.5 shrink-0 opacity-60" />
           <select class="select select-bordered select-xs bg-base-100 max-w-36" :value="selectedProvider" :disabled="providers.length === 0" @change="selectedProvider = ($event.target as HTMLSelectElement).value">
@@ -47,9 +48,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { ApiProviderSummaryDto } from '@/api';
+import { CHAT_STATUS, type ChatStatus } from '@/config/chatStatus';
 import { providerDisplayName } from '@/config/providers';
 import BoltIcon from '@/components/svg/BoltIcon.vue';
 import SendIcon from '@/components/svg/SendIcon.vue';
@@ -58,11 +60,16 @@ import UserIcon from '@/components/svg/UserIcon.vue';
 const props = defineProps<{
   agents: string[];
   providers: ApiProviderSummaryDto[];
+  status?: ChatStatus;
 }>();
 
 const emit = defineEmits<(e: 'submit', payload: { content: string; agent: string; provider: string }) => void>();
 
 const { t } = useI18n();
+
+const statusSpec = computed(() => CHAT_STATUS[props.status ?? 'idle']);
+const statusClass = computed(() => statusSpec.value.dot);
+const statusLabel = computed(() => (statusSpec.value.label ? t(statusSpec.value.label) : ''));
 
 const inputRef = ref<HTMLDivElement | null>(null);
 const hasContent = ref(false);

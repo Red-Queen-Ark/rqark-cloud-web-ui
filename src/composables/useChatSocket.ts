@@ -1,5 +1,6 @@
-import { onScopeDispose, reactive, ref, toValue, watch, type MaybeRefOrGetter } from 'vue';
+import { onScopeDispose, reactive, ref, shallowRef, toValue, watch, type MaybeRefOrGetter } from 'vue';
 import { getAgentsNames, getProvidersModels, getSessionsByUuid, getSessionsByUuidMessages, type ApiProviderSummaryDto } from '@/api';
+import type { ChatStatus } from '@/config/chatStatus';
 import { planItemsFrom, type PlanItem } from '@/config/sessions';
 import { useAlertStore } from '@/stores/alertStore';
 import { useAuthStore } from '@/stores/authStore';
@@ -7,16 +8,22 @@ import { applyChatPayload, chatPayloadError, chatPlanItems, openChatStream } fro
 
 export type ChatSessionId = string | null | undefined;
 
+const RECONNECT_BASE_DELAY = 1000;
+const RECONNECT_MAX_DELAY = 5000;
+const RECONNECT_JITTER = 0.5;
+
 export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
   const authStore = useAuthStore();
   const alertStore = useAlertStore();
   const agents = ref<string[]>([]);
   const providers = ref<ApiProviderSummaryDto[]>([]);
-  const ws = ref<WebSocket>();
-  const status = ref<string>('Waiting');
+  const ws = shallowRef<WebSocket>();
+  const status = ref<ChatStatus>('idle');
   const history = ref<ChatHistoryEntry[]>([]);
   const planItems = ref<PlanItem[]>([]);
   let stream = openChatStream();
+  let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
+  let reconnectDelay = 0;
 
   async function load() {
     connect();
@@ -92,25 +99,36 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
     return url.toString();
   }
 
-  function connect() {
+  function openSocket() {
     disconnect();
     const id = toValue(sessionId);
     const token = authStore.accessToken;
     if (!id || !token) {
+      status.value = 'idle';
       return;
     }
+    status.value = 'connecting';
     const socket = new WebSocket(chatSocketUrl(id, token));
     socket.onopen = () => {
-      status.value = 'Connected';
+      if (ws.value !== socket) {
+        return;
+      }
+      reconnectDelay = 0;
+      status.value = 'connected';
     };
     socket.onclose = () => {
-      status.value = 'Disconnected';
-      if (ws.value === socket) {
-        ws.value = undefined;
+      if (ws.value !== socket) {
+        return;
       }
+      ws.value = undefined;
+      status.value = 'error';
+      scheduleReconnect();
     };
     socket.onerror = () => {
-      status.value = 'Disconnected';
+      if (ws.value !== socket) {
+        return;
+      }
+      status.value = 'error';
     };
     socket.onmessage = (event) => {
       if (typeof event.data === 'string') {
@@ -120,7 +138,28 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
     ws.value = socket;
   }
 
+  function connect() {
+    reconnectDelay = 0;
+    openSocket();
+  }
+
+  function scheduleReconnect() {
+    if (reconnectTimer !== undefined) {
+      return;
+    }
+    reconnectDelay = reconnectDelay === 0 ? RECONNECT_BASE_DELAY : Math.min(reconnectDelay * 2, RECONNECT_MAX_DELAY);
+    const jitter = 1 + (Math.random() * 2 - 1) * RECONNECT_JITTER;
+    reconnectTimer = setTimeout(() => {
+      reconnectTimer = undefined;
+      openSocket();
+    }, reconnectDelay * jitter);
+  }
+
   function disconnect() {
+    if (reconnectTimer !== undefined) {
+      clearTimeout(reconnectTimer);
+      reconnectTimer = undefined;
+    }
     ws.value?.close();
     ws.value = undefined;
   }

@@ -5,7 +5,7 @@
       <ChatMessage :messages="chatSocket.history" />
     </div>
     <div class="chat-input-dock fixed inset-x-0 z-30 lg:left-72 md:mx-8 mb-2" data-testid="chat-input-dock">
-      <ChatInputArea ref="inputArea" :agents="chatSocket.agents" :providers="chatSocket.providers" @submit="handleSubmit" />
+      <ChatInputArea ref="inputArea" :agents="chatSocket.agents" :providers="chatSocket.providers" :status="chatSocket.status" @submit="handleSubmit" />
     </div>
   </div>
 </template>
