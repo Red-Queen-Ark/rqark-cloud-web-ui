@@ -18,4 +18,5 @@ export const chat = {
   statusConnecting: 'Connecting',
   statusConnected: 'Connected',
   statusError: 'Connection error',
+  scrollToBottom: 'Scroll to the latest',
 };

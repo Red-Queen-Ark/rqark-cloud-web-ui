@@ -274,6 +274,9 @@ test('floats the plan over the history without scrolling away', async ({ page })
   expect(before).not.toBeNull();
 
   // The history keeps clear of the floating card.
+  await page.locator('#app-scroll').evaluate((el) => {
+    el.scrollTop = 0;
+  });
   const firstMessage = await page.getByText('message 0').boundingBox();
   expect(firstMessage).not.toBeNull();
   expect(firstMessage?.y ?? 0).toBeGreaterThanOrEqual((before?.y ?? 0) + (before?.height ?? 0) - 2);

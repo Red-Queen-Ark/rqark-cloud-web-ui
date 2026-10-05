@@ -18,4 +18,5 @@ export const chat = {
   statusConnecting: '连接中',
   statusConnected: '已连接',
   statusError: '连接出错',
+  scrollToBottom: '回到最新',
 };

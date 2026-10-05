@@ -18,4 +18,5 @@ export const chat = {
   statusConnecting: '連緊',
   statusConnected: '連咗',
   statusError: '出咗事',
+  scrollToBottom: '去返最新',
 };
