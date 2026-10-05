@@ -7,8 +7,7 @@
         <p class="text-base-content/50">{{ t('home.subtitle') }}</p>
       </div>
     </div>
-
-    <div class="chat-input-dock fixed inset-x-0 z-30 lg:left-72" data-testid="chat-input-dock">
+    <div class="chat-input-dock fixed inset-x-0 z-30 lg:left-72 md:mx-8 mb-2" data-testid="chat-input-dock">
       <ChatInputArea ref="inputArea" :agents="chatSocket.agents" :providers="chatSocket.providers" :status="pingStatus" @submit="handleSubmit" />
     </div>
   </div>
