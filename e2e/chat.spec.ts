@@ -129,6 +129,33 @@ test('sends what was typed as the turn the agent cloud resolves', async ({ page 
   await expect(input).toBeEmpty();
 });
 
+test('sends a turn typed after the socket dropped, once it is back', async ({ page }) => {
+  await mockBackend(page, { session: boss, sessions: [first], agents: [agent], providers: [provider] });
+  await seedSession(page);
+
+  const sockets: WebSocketRoute[] = [];
+  const sent: string[][] = [];
+  await page.routeWebSocket(/\/agent-api\/chat\/ws\//, (ws) => {
+    const received: string[] = [];
+    sent.push(received);
+    sockets.push(ws);
+    ws.onMessage((message) => received.push(String(message)));
+  });
+
+  await page.goto(`/en/chat/${first.id}`);
+  await expect(page.getByTestId('chat-status')).toHaveClass(/status-success/);
+
+  sockets[0].close();
+
+  const input = page.getByTestId('chat-input');
+  await input.fill('hello there');
+  await page.getByTestId('chat-send').click();
+
+  await expect.poll(() => sent.length).toBe(2);
+  await expect.poll(() => sent[1]).toEqual([JSON.stringify({ content: 'hello there', provider: 'openai', agent: 'researcher' })]);
+  await expect(input).toBeEmpty();
+});
+
 test('shows the turn and the answer as the agent streams them', async ({ page }) => {
   const { socket, history } = await openTurn(page, first);
 

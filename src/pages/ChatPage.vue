@@ -30,8 +30,7 @@ useVisualViewportInsets();
 const inputArea = ref<InstanceType<typeof ChatInputArea> | null>(null);
 
 function handleSubmit(payload: { content: string; agent: string; provider: string }) {
-  chatSocket.send(payload.content, payload.agent, payload.provider);
-  inputArea.value?.clear();
+  chatSocket.send(payload.content, payload.agent, payload.provider, () => inputArea.value?.clear());
 }
 
 onMounted(async () => {

@@ -1,4 +1,5 @@
 import * as api from '@/api';
+import { refreshSession } from '@/api-client/runtime';
 import { useAlertStore } from '@/stores/alertStore';
 import { useAuthStore } from '@/stores/authStore';
 import { flushPromises } from '@vue/test-utils';
@@ -8,6 +9,8 @@ import { effectScope, nextTick, ref, type EffectScope } from 'vue';
 import { useChatSocket } from './useChatSocket';
 
 vi.mock('@/api', () => ({ getAgentsNames: vi.fn(), getProvidersModels: vi.fn(), getSessionsByUuid: vi.fn(), getSessionsByUuidMessages: vi.fn() }));
+
+vi.mock('@/api-client/runtime', () => ({ refreshSession: vi.fn().mockResolvedValue(true) }));
 
 const at = '2026-01-01T00:00:00Z';
 
@@ -96,6 +99,7 @@ describe('useChatSocket', () => {
     (api.getProvidersModels as Mock).mockResolvedValue({ data: [{ name: 'openai', model_name: 'gpt-5' }] });
     (api.getSessionsByUuid as Mock).mockResolvedValue({ data: { id: 'session-a', plan_items: [] } });
     (api.getSessionsByUuidMessages as Mock).mockResolvedValue({ data: [] });
+    (refreshSession as Mock).mockResolvedValue(true);
     useAuthStore().setTokens('access-token', 'refresh-token');
   });
 
@@ -310,15 +314,92 @@ describe('useChatSocket', () => {
     expect(chatSocket.streaming).toBe(false);
   });
 
-  it('drops a turn when the socket is closed', async () => {
+  it('reopens the socket and sends a turn typed while it was closed', async () => {
     const chatSocket = openChat(ref('session-a'));
     await chatSocket.load();
 
-    const socket = FakeSocket.instances[0] as FakeSocket;
-    socket.readyState = FakeSocket.CLOSED;
+    const first = FakeSocket.instances[0] as FakeSocket;
+    first.readyState = FakeSocket.CLOSED;
     chatSocket.send('hello', 'researcher', 'openai');
 
+    expect(first.sent).toEqual([]);
+    expect(FakeSocket.instances).toHaveLength(2);
+
+    const second = FakeSocket.instances[1] as FakeSocket;
+    second.open();
+
+    expect(second.sent).toEqual([JSON.stringify({ content: 'hello', provider: 'openai', agent: 'researcher' })]);
+  });
+
+  it('reports a turn as sent only once it reaches the socket', async () => {
+    const chatSocket = openChat(ref('session-a'));
+    await chatSocket.load();
+    const onSent = vi.fn();
+
+    const socket = FakeSocket.instances[0] as FakeSocket;
+    socket.readyState = FakeSocket.CONNECTING;
+    chatSocket.send('hello', 'researcher', 'openai', onSent);
+
+    expect(onSent).not.toHaveBeenCalled();
+
+    socket.open();
+
+    expect(onSent).toHaveBeenCalledTimes(1);
+  });
+
+  it('cancels a turn that never reached the socket', async () => {
+    const chatSocket = openChat(ref('session-a'));
+    await chatSocket.load();
+    const onSent = vi.fn();
+
+    const socket = FakeSocket.instances[0] as FakeSocket;
+    socket.readyState = FakeSocket.CONNECTING;
+    chatSocket.send('hello', 'researcher', 'openai', onSent);
+    chatSocket.stop();
+
+    socket.open();
+
     expect(socket.sent).toEqual([]);
+    expect(onSent).not.toHaveBeenCalled();
+    expect(chatSocket.streaming).toBe(false);
+  });
+
+  it('refreshes the token before reopening the socket for a queued turn', async () => {
+    vi.useFakeTimers();
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+
+    const chatSocket = openChat(ref('session-a'));
+    await chatSocket.load();
+
+    const first = FakeSocket.instances[0] as FakeSocket;
+    first.readyState = FakeSocket.CLOSED;
+    chatSocket.send('hello', 'researcher', 'openai');
+
+    (FakeSocket.instances[1] as FakeSocket).serverClose();
+    vi.advanceTimersByTime(1000);
+    await flushPromises();
+
+    expect(refreshSession).toHaveBeenCalled();
+    expect(FakeSocket.instances).toHaveLength(3);
+  });
+
+  it('does not deliver a queued turn to another session', async () => {
+    const sessionId = ref('session-a');
+    const chatSocket = openChat(sessionId);
+    await chatSocket.load();
+
+    const first = FakeSocket.instances[0] as FakeSocket;
+    first.readyState = FakeSocket.CONNECTING;
+    chatSocket.send('hello', 'researcher', 'openai');
+
+    sessionId.value = 'session-b';
+    await nextTick();
+
+    const second = FakeSocket.instances.at(-1) as FakeSocket;
+    second.open();
+
+    expect(first.sent).toEqual([]);
+    expect(second.sent).toEqual([]);
   });
 
   it('stops sending to the session it left', async () => {

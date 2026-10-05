@@ -56,6 +56,10 @@ async function refreshTokens(): Promise<boolean> {
   return refreshInFlight;
 }
 
+export function refreshSession(): Promise<boolean> {
+  return refreshTokens();
+}
+
 async function retryWithToken(request: Request, options: ResolvedRequestOptions, token: string): Promise<Response> {
   const fetchImpl = (client.getConfig().fetch ?? globalThis.fetch) as typeof fetch;
   const headers = new Headers(request.headers);

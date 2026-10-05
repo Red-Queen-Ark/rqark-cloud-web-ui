@@ -1,5 +1,6 @@
 import { onScopeDispose, reactive, ref, shallowRef, toValue, watch, type MaybeRefOrGetter } from 'vue';
 import { getAgentsNames, getProvidersModels, getSessionsByUuid, getSessionsByUuidMessages, type ApiProviderSummaryDto } from '@/api';
+import { refreshSession } from '@/api-client/runtime';
 import { agentApiUrl } from '@/config/agentApi';
 import type { ChatStatus } from '@/config/chatStatus';
 import { planItemsFrom, type PlanItem } from '@/config/sessions';
@@ -8,6 +9,14 @@ import { useAuthStore } from '@/stores/authStore';
 import { applyChatPayload, CHAT_STOPPED, chatPayloadError, chatPlanItems, chatTurnDone, openChatStream } from '@/utils/chatStream';
 
 export type ChatSessionId = string | null | undefined;
+
+interface PendingTurn {
+  sessionId: string;
+  content: string;
+  agent: string;
+  provider: string;
+  onSent?: () => void;
+}
 
 const RECONNECT_BASE_DELAY = 1000;
 const RECONNECT_MAX_DELAY = 5000;
@@ -28,8 +37,10 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
   let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
   let reconnectDelay = 0;
   let hasConnected = false;
+  let pendingTurn: PendingTurn | null = null;
 
   async function load() {
+    pendingTurn = null;
     hasConnected = false;
     connect();
     await loadAgents();
@@ -156,6 +167,20 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
     return url.toString();
   }
 
+  function flushPending(socket: WebSocket) {
+    const turn = pendingTurn;
+    if (!turn) {
+      return;
+    }
+    pendingTurn = null;
+    if (turn.sessionId !== toValue(sessionId)) {
+      return;
+    }
+    socket.send(JSON.stringify({ content: turn.content, provider: turn.provider, agent: turn.agent }));
+    streaming.value = true;
+    turn.onSent?.();
+  }
+
   function openSocket() {
     disconnect();
     const id = toValue(sessionId);
@@ -172,6 +197,7 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
       }
       reconnectDelay = 0;
       status.value = 'connected';
+      flushPending(socket);
       // The first open is followed by load()'s own resync; only a reconnect
       // arrives with a gap of events to catch up on.
       if (hasConnected) {
@@ -185,7 +211,7 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
       }
       ws.value = undefined;
       status.value = 'error';
-      streaming.value = false;
+      streaming.value = pendingTurn !== null;
       scheduleReconnect();
     };
     socket.onerror = () => {
@@ -215,8 +241,15 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
     const jitter = 1 + (Math.random() * 2 - 1) * RECONNECT_JITTER;
     reconnectTimer = setTimeout(() => {
       reconnectTimer = undefined;
-      openSocket();
+      void reconnect();
     }, reconnectDelay * jitter);
+  }
+
+  async function reconnect() {
+    if (pendingTurn) {
+      await refreshSession();
+    }
+    openSocket();
   }
 
   function disconnect() {
@@ -234,25 +267,31 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
     () => load(),
   );
 
-  function send(content: string, agent: string, provider: string) {
-    const data = JSON.stringify({ content, provider, agent });
+  function send(content: string, agent: string, provider: string, onSent?: () => void) {
+    const id = toValue(sessionId);
+    if (!id) {
+      return;
+    }
     const socket = ws.value;
-    if (!socket) {
-      return;
-    }
-    if (socket.readyState === WebSocket.CONNECTING) {
-      socket.addEventListener('open', () => socket.send(data), { once: true });
+    if (socket?.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify({ content, provider, agent }));
       streaming.value = true;
+      onSent?.();
       return;
     }
-    if (socket.readyState !== WebSocket.OPEN) {
-      return;
+    pendingTurn = { sessionId: id, content, agent, provider, onSent };
+    if (socket?.readyState !== WebSocket.CONNECTING) {
+      connect();
     }
-    socket.send(data);
     streaming.value = true;
   }
 
   function stop() {
+    if (pendingTurn) {
+      pendingTurn = null;
+      streaming.value = false;
+      return;
+    }
     const socket = ws.value;
     if (socket?.readyState !== WebSocket.OPEN) {
       return;

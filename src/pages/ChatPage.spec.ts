@@ -64,6 +64,7 @@ describe('ChatPage', () => {
     // The mock is shared, so a call recorded by one test would otherwise be read
     // as the call of the next one.
     vi.clearAllMocks();
+    socket.send.mockImplementation((...args: unknown[]) => (args[3] as (() => void) | undefined)?.());
     pinia = createPinia();
     setActivePinia(pinia);
   });
@@ -104,8 +105,20 @@ describe('ChatPage', () => {
     await input.trigger('input');
     await wrapper.get('[data-testid="chat-send"]').trigger('click');
 
-    expect(socket.send).toHaveBeenCalledWith('hello there', 'researcher', 'openai');
+    expect(socket.send).toHaveBeenCalledWith('hello there', 'researcher', 'openai', expect.any(Function));
     expect(input.element.textContent).toBe('');
+  });
+
+  it('keeps the typed turn until the socket has taken it', async () => {
+    socket.send.mockImplementation(() => undefined);
+    const { wrapper } = await mountChat('/en/chat/session-a');
+
+    const input = wrapper.get('[data-testid="chat-input"]');
+    input.element.textContent = 'hello there';
+    await input.trigger('input');
+    await wrapper.get('[data-testid="chat-send"]').trigger('click');
+
+    expect(input.element.textContent).toBe('hello there');
   });
 
   it('sends the turn the start page handed over', async () => {
