@@ -1,5 +1,5 @@
 <template>
-  <div v-if="items.length > 0" data-testid="chat-plan-card" class="bg-base-200 border-base-300 rounded-box mx-4 mt-4 border">
+  <div v-if="items.length > 0" data-testid="chat-plan-card" class="bg-base-200 border-base-300 rounded-box mx-4 border">
     <button type="button" data-testid="chat-plan-toggle" class="flex w-full items-center justify-between gap-2 px-3 py-2 text-left" :aria-expanded="!collapsed" @click="collapsed = !collapsed">
       <span class="text-sm font-semibold">{{ t('sessions.planTitle') }}</span>
       <ChevronDownIcon class="h-4 w-4 shrink-0 transition-transform" :class="{ 'rotate-180': collapsed }" />

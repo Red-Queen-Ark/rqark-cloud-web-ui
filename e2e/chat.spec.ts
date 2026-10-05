@@ -246,6 +246,47 @@ test('replaces the plan as the engine pushes a new one', async ({ page }) => {
   await expect(card).toBeHidden();
 });
 
+test('floats the plan over the history without scrolling away', async ({ page }) => {
+  const messages = Array.from({ length: 40 }, (_, index) => ({
+    seq: index,
+    role: index % 2 === 0 ? 'user' : 'assistant',
+    data: index % 2 === 0 ? { role: 'user', content: [{ type: 'text', text: `message ${index}` }], created_at: turnTimestamp } : { role: 'assistant', content: `reply ${index}`, created_at: turnTimestamp },
+    created_at: turnTimestamp,
+  }));
+
+  await mockBackend(page, {
+    session: boss,
+    sessions: [{ ...first, messages, plan_items: [{ id: 'p1', content: 'Draft the plan', status: 'in_progress' }] }],
+    agents: [agent],
+    providers: [provider],
+  });
+  await seedSession(page);
+
+  await page.goto(`/en/chat/${first.id}`);
+  const card = page.getByTestId('chat-plan-card');
+  await expect(card).toBeVisible();
+
+  // The plan lives in its own floating dock, not in the scrolling history.
+  await expect(page.locator('#chat-history [data-testid="chat-plan-card"]')).toHaveCount(0);
+  await expect(page.getByTestId('chat-plan-dock')).toHaveCSS('position', 'fixed');
+
+  const before = await card.boundingBox();
+  expect(before).not.toBeNull();
+
+  // The history keeps clear of the floating card.
+  const firstMessage = await page.getByText('message 0').boundingBox();
+  expect(firstMessage).not.toBeNull();
+  expect(firstMessage?.y ?? 0).toBeGreaterThanOrEqual((before?.y ?? 0) + (before?.height ?? 0) - 2);
+
+  await page.locator('#app-scroll').evaluate((el) => {
+    el.scrollTop = el.scrollHeight;
+  });
+
+  const after = await card.boundingBox();
+  expect(after).not.toBeNull();
+  expect(Math.abs((after?.y ?? 0) - (before?.y ?? 0))).toBeLessThan(2);
+});
+
 test('shows the socket as connected while it is open', async ({ page }) => {
   await mockBackend(page, { session: boss, sessions: [first] });
   await seedSession(page);
