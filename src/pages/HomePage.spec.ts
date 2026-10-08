@@ -4,6 +4,7 @@ import { createMemoryHistory, createRouter, type Router } from 'vue-router';
 import { defineComponent } from 'vue';
 import { createPinia, setActivePinia, type Pinia } from 'pinia';
 import { i18n } from '@/i18n';
+import { SESSION_SOURCE } from '@/config/sessionSource';
 import { useChatStore } from '@/stores/chatStore';
 import HomePage from './HomePage.vue';
 
@@ -91,7 +92,9 @@ describe('HomePage', () => {
 
     await submit(wrapper, 'hello there');
 
-    expect(api.postSessions).toHaveBeenCalledWith({ body: {} });
+    // The sidebar lists only sessions filed under this source, so a session
+    // created without it is invisible to the very UI that started it.
+    expect(api.postSessions).toHaveBeenCalledWith({ body: { source: SESSION_SOURCE } });
     expect(useChatStore().pendingTurn).toEqual({ sessionId: 'session-new', content: 'hello there', agent: 'researcher', provider: 'openai' });
     expect(router.currentRoute.value.fullPath).toBe('/en/chat/session-new');
   });

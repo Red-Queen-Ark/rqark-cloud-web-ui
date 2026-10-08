@@ -41,6 +41,7 @@ import CloseIcon from '@/components/svg/CloseIcon.vue';
 import PlusIcon from '@/components/svg/PlusIcon.vue';
 import SidebarChatSessionMenu from '@/components/Chat/SidebarChatSessionMenu.vue';
 import { useApiError } from '@/composables/useApiError';
+import { SESSION_SOURCE } from '@/config/sessionSource';
 import { useAlertStore } from '@/stores/alertStore';
 import { useChatStore } from '@/stores/chatStore';
 import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue';
@@ -49,9 +50,6 @@ import { useRoute, useRouter } from 'vue-router';
 
 /** How often the sidebar looks for sessions started somewhere else. */
 const POLL_INTERVAL_MS = 5000;
-
-/** Sessions this UI shows are the ones the agent cloud itself recorded. */
-const SESSION_SOURCE = 'AGENT_CLOUD';
 
 const { t } = useI18n();
 const route = useRoute();

@@ -23,6 +23,7 @@ import { useApiError } from '@/composables/useApiError';
 import { useChatSocket } from '@/composables/useChatSocket';
 import { usePingStatus } from '@/composables/usePingStatus';
 import { useVisualViewportInsets } from '@/composables/useVisualViewportInsets';
+import { SESSION_SOURCE } from '@/config/sessionSource';
 import { useAlertStore } from '@/stores/alertStore';
 import { useChatStore } from '@/stores/chatStore';
 
@@ -47,7 +48,7 @@ async function handleSubmit(payload: { content: string; agent: string; provider:
   }
   starting.value = true;
   try {
-    const { data, error } = await postSessions({ body: {} });
+    const { data, error } = await postSessions({ body: { source: SESSION_SOURCE } });
     if (error || !data?.id) {
       alertStore.addItem({ level: 'error', message: apiError(error, 'home.startError') });
       return;
