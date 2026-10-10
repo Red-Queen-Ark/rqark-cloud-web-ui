@@ -1,6 +1,6 @@
 <template>
   <template v-for="(message, index) in props.messages" :key="index">
-    <UserMessage v-if="message.role === 'user'" :message="message.data" class="self-end px-4 py-1" />
+    <UserMessage v-if="message.role === 'user'" :message="message.data" class="self-end px-4 py-2" />
     <template v-else-if="message.role === 'assistant'">
       <ThinkMessage :message="message.data" class="px-4 py-1" />
       <AssistantMessage :message="message.data" class="px-4 py-1" />
