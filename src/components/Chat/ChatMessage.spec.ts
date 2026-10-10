@@ -1,9 +1,17 @@
 import { i18n } from '@/i18n';
 import { mount } from '@vue/test-utils';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import ChatMessage from './ChatMessage.vue';
 
 const created_at = '2026-01-01T00:00:00Z';
+
+// The revert dialog is teleported to the body, so it is outside the wrapper's tree.
+const dialog = () => document.querySelector('[data-testid="form-modal-box"]');
+const REVERT = '[data-testid="user-message-revert"]';
+
+afterEach(() => {
+  document.body.innerHTML = '';
+});
 
 function mountMessages(messages: ChatHistoryEntry[]) {
   return mount(ChatMessage, { props: { messages }, global: { plugins: [i18n] } });
@@ -62,5 +70,27 @@ describe('ChatMessage', () => {
 
   it('withholds revert when the user turns have no app id', () => {
     expect(revertibleFlags(mountMessages([user(0, 'one'), user(2, 'two')]))).toEqual([false, false]);
+  });
+
+  it('rebuilds a row whose message changed instead of reusing it', async () => {
+    const wrapper = mountMessages([user(0, 'one', 'm1'), user(2, 'two', 'm2')]);
+    await wrapper.get(REVERT).trigger('click');
+    expect(dialog()).not.toBeNull();
+
+    // A resync after a stop replaces the history wholesale: the row at this
+    // position is a different message now, so the dialog it opened must go with
+    // the old one rather than stay attached to the position.
+    await wrapper.setProps({ messages: [user(0, 'one', 'm1'), user(2, 'three', 'm3')] });
+
+    expect(dialog()).toBeNull();
+  });
+
+  it('keeps a row while its message keeps its id', async () => {
+    const wrapper = mountMessages([user(0, 'one', 'm1'), user(2, 'two', 'm2')]);
+    await wrapper.get(REVERT).trigger('click');
+
+    await wrapper.setProps({ messages: [user(0, 'one', 'm1'), user(2, 'two again', 'm2')] });
+
+    expect(dialog()).not.toBeNull();
   });
 });

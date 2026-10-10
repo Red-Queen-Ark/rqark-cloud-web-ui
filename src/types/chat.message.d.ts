@@ -48,6 +48,7 @@ interface ChatAssistantMessage {
   created_at: string;
   tool_calls?: ChatToolCall[];
   reasoning_content?: string;
+  id?: string;
 }
 
 interface ChatToolMessage {
@@ -55,17 +56,20 @@ interface ChatToolMessage {
   tool_call_id: string;
   content: string;
   created_at: string;
+  id?: string;
 }
 
 interface ChatSystemMessage {
   role: 'system';
   content: string;
   created_at: string;
+  id?: string;
 }
 
 interface ChatSummaryMessage {
   role: 'summary';
   content: string;
+  id?: string;
 }
 
 type ChatMessage = ChatUserMessage | ChatAssistantMessage | ChatToolMessage | ChatSystemMessage | ChatSummaryMessage;
