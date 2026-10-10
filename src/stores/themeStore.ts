@@ -26,7 +26,7 @@ function prefersDark(): boolean {
 export const useThemeStore = defineStore('themeStore', {
   state: () => ({
     family: 'base' as ThemeFamily,
-    mode: 'light' as ThemeMode,
+    mode: 'system' as ThemeMode,
     /**
      * The OS preference, mirrored into state so `system` mode is reactive. It is
      * never persisted: on every load it is read back from the media query.

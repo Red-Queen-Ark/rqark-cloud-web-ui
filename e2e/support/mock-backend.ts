@@ -124,6 +124,7 @@ export interface MockBackend {
   providers: MockProvider[];
   apiKeys: MockApiKey[];
   sessions: MockSession[];
+  userConfig: Record<string, unknown>;
   requests: string[];
   /** Every request that carried a JSON body, in order. */
   writes: MockWrite[];
@@ -142,6 +143,7 @@ export interface MockBackendOptions {
   apiKeys?: MockApiKey[];
   /** Replaces the seeded session list. */
   sessions?: MockSession[];
+  userConfig?: Record<string, unknown>;
   /** Replaces the seeded account list. */
   users?: MockUser[];
 }
@@ -172,6 +174,7 @@ export async function mockBackend(page_: Page, options: MockBackendOptions = {})
     providers: options.providers ?? [],
     apiKeys: options.apiKeys ?? [],
     sessions: options.sessions ?? [],
+    userConfig: options.userConfig ?? {},
     requests: [],
     writes: [],
   };
@@ -206,6 +209,33 @@ export async function mockBackend(page_: Page, options: MockBackendOptions = {})
 
       if (path === '/users/me/password' && method === 'PUT') {
         return json(route, 200, { message: 'Password updated.' });
+      }
+
+      if (path === '/user-config' && method === 'GET') {
+        const entries = Object.entries(state.userConfig).map(([key, value], index) => ({
+          id: `config-${index + 1}`,
+          key,
+          value,
+          created_at: '2026-04-05T06:07:08Z',
+          updated_at: WRITE_TIMESTAMP,
+        }));
+        return json(route, 200, entries);
+      }
+
+      const userConfigMatch = /^\/user-config\/([^/]+)$/.exec(path);
+      if (userConfigMatch) {
+        const configKey = decodeURIComponent(userConfigMatch[1]);
+        if (method === 'PUT') {
+          state.userConfig[configKey] = body?.value;
+          return json(route, 200, { id: `config-${configKey}`, key: configKey, value: body?.value, created_at: '2026-04-05T06:07:08Z', updated_at: WRITE_TIMESTAMP });
+        }
+        if (method === 'DELETE') {
+          if (!(configKey in state.userConfig)) {
+            return json(route, 404, { error: { code: 'NOT_FOUND', message: 'Config not found.' } });
+          }
+          state.userConfig = Object.fromEntries(Object.entries(state.userConfig).filter(([key]) => key !== configKey));
+          return route.fulfill({ status: 204, body: '' });
+        }
       }
 
       if (path === '/users' && method === 'GET') {

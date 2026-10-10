@@ -17,4 +17,7 @@ import Sidebar from '@/components/Sidebar.vue';
 import Topbar from '@/components/Topbar.vue';
 import Alert from '@/components/Alert.vue';
 import { siderItems } from '@/config/siderbar';
+import { useUserConfigSync } from '@/composables/useUserConfigSync';
+
+useUserConfigSync();
 </script>

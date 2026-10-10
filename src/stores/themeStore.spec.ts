@@ -35,6 +35,13 @@ beforeEach(() => {
 });
 
 describe('themeStore', () => {
+  it('defaults to the base family in system mode', () => {
+    const store = useThemeStore();
+
+    expect(store.family).toBe('base');
+    expect(store.mode).toBe('system');
+  });
+
   it('builds the theme from the family and an explicit mode', () => {
     const store = useThemeStore();
 

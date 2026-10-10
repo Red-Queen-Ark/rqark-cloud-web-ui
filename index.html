@@ -4,18 +4,15 @@
     <script>
       (function () {
         try {
-          var r = localStorage.getItem('themeStore');
-          if (r) {
-            var s = JSON.parse(r);
-            var mode = s.mode || 'light';
-            // 'system' is resolved here as well, so the first paint already
-            // matches the OS instead of flashing the light theme.
-            if (mode === 'system') {
-              mode = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-            }
-            document.documentElement.setAttribute('data-theme', (s.family || 'base') + '-' + mode);
-            document.documentElement.style.colorScheme = mode;
+          var s = JSON.parse(localStorage.getItem('themeStore') || '{}') || {};
+          var mode = s.mode || 'system';
+          // 'system' is resolved here as well, so the first paint already
+          // matches the OS instead of flashing the light theme.
+          if (mode === 'system') {
+            mode = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
           }
+          document.documentElement.setAttribute('data-theme', (s.family || 'base') + '-' + mode);
+          document.documentElement.style.colorScheme = mode;
         } catch (e) {}
       })();
     </script>
