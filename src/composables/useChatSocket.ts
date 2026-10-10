@@ -119,7 +119,10 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
     for (const envelope of events) {
       apply(envelope);
     }
-    streaming.value = !chatTurnDone(events[events.length - 1].payload);
+    // A turn that ended in an error keeps its replay when the partial save
+    // failed, and that one is over: its last event is the error.
+    const last = events[events.length - 1].payload;
+    streaming.value = !chatTurnDone(last) && chatPayloadError(last) === null;
   }
 
   async function resync() {
@@ -177,9 +180,14 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
     const error = chatPayloadError(envelope.payload);
     if (error) {
       streaming.value = false;
-      if (error !== CHAT_STOPPED) {
-        alertStore.addItem({ level: 'error', message: error });
+      if (error === CHAT_STOPPED) {
+        // The runner saves the partial turn before it announces the stop, so the
+        // stored session is now the truth for this turn: drop the locally
+        // streamed draft and read it back.
+        void resync();
+        return;
       }
+      alertStore.addItem({ level: 'error', message: error });
       return;
     }
     apply(envelope);

@@ -262,6 +262,46 @@ describe('useChatSocket', () => {
     expect(FakeSocket.instances[0]?.sent).toEqual([JSON.stringify({ content: 'hello', provider: 'openai', agent: 'researcher' }), JSON.stringify({ kind: 'stop' })]);
   });
 
+  it('reads the stored turn back after a stop', async () => {
+    const chatSocket = openChat(ref('session-a'));
+    await chatSocket.load();
+    chatSocket.send('hello', 'researcher', 'openai');
+
+    const socket = FakeSocket.instances[0] as FakeSocket;
+    socket.onmessage?.({ data: JSON.stringify({ agent_id: '', path: [], payload: { type: 'content', content: 'hel' } }) });
+    expect(chatSocket.history).toHaveLength(1);
+
+    (api.getSessionsByUuidMessages as Mock).mockResolvedValue({
+      data: [
+        { seq: 0, role: 'user', data: { role: 'user', content: [{ type: 'text', text: 'hello' }], created_at: at, id: 'm1' }, created_at: at },
+        { seq: 1, role: 'assistant', data: { role: 'assistant', content: 'hel', created_at: at, id: 'a1' }, created_at: at },
+      ],
+    });
+    socket.onmessage?.({ data: JSON.stringify({ agent_id: '', path: [], payload: { type: 'error', content: 'chat stopped' } }) });
+    await flushPromises();
+
+    // The runner saves the partial turn before it announces the stop, so the
+    // streamed draft has to give way to what the session endpoint holds.
+    expect(chatSocket.history.map((entry) => entry.role)).toEqual(['user', 'assistant']);
+    expect(chatSocket.history[1]).toMatchObject({ data: { content: 'hel', id: 'a1' } });
+    expect(chatSocket.streaming).toBe(false);
+  });
+
+  it('does not mark a replay that ended in an error as streaming', async () => {
+    (fetch as Mock).mockResolvedValue({
+      ok: true,
+      json: async () => [envelope({ type: 'content', content: 'Hel' }), envelope({ type: 'error', content: 'chat stopped' })],
+    });
+
+    const chatSocket = openChat(ref('session-a'));
+    await chatSocket.load();
+
+    // A failed partial save keeps the replay, and that turn is over: its last
+    // event is the error the stop published.
+    expect(chatSocket.history[0]).toMatchObject({ role: 'assistant', data: { content: 'Hel' } });
+    expect(chatSocket.streaming).toBe(false);
+  });
+
   it('tracks a turn in flight until the assistant lands', async () => {
     const chatSocket = openChat(ref('session-a'));
     await chatSocket.load();
