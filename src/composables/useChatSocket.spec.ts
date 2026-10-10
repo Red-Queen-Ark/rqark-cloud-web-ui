@@ -532,4 +532,29 @@ describe('useChatSocket', () => {
 
     expect(FakeSocket.opened).toHaveLength(1);
   });
+
+  it('reverts a message through the agent cloud and resyncs the history', async () => {
+    const chatSocket = openChat(ref('session-a'));
+    await chatSocket.load();
+    const kept = { seq: 0, role: 'user', data: { content: 'kept', created_at: at } };
+    (api.getSessionsByUuidMessages as Mock).mockResolvedValue({ data: [kept] });
+
+    const result = await chatSocket.revert('m2');
+
+    expect(result).toBe(true);
+    expect(fetch).toHaveBeenCalledWith(expect.stringContaining('/chat/session-a/revert'), expect.objectContaining({ method: 'POST' }));
+    expect(chatSocket.history).toEqual([kept]);
+  });
+
+  it('alerts and keeps the history when the revert is rejected', async () => {
+    const chatSocket = openChat(ref('session-a'));
+    await chatSocket.load();
+    const alert = vi.spyOn(useAlertStore(), 'addItem');
+    (fetch as Mock).mockResolvedValue({ ok: false, json: async () => ({}) });
+
+    const result = await chatSocket.revert('m2');
+
+    expect(result).toBe(false);
+    expect(alert).toHaveBeenCalledTimes(1);
+  });
 });

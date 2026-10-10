@@ -1,6 +1,6 @@
 <template>
   <template v-for="(message, index) in props.messages" :key="index">
-    <UserMessage v-if="message.role === 'user'" :message="message.data" class="self-end px-4 py-2" />
+    <UserMessage v-if="message.role === 'user'" :message="message.data" :revertible="revertible(message)" :busy="props.busy" class="self-end px-4 py-2" @revert="emit('revert', $event)" />
     <template v-else-if="message.role === 'assistant'">
       <ThinkMessage :message="message.data" class="px-4 py-1" />
       <AssistantMessage :message="message.data" class="px-4 py-1" />
@@ -18,7 +18,12 @@ import ToolMessage from './message/ToolMessage.vue';
 
 const props = defineProps<{
   messages: ChatHistoryEntry[];
+  busy?: boolean;
 }>();
+
+const emit = defineEmits<{ revert: [messageId: string] }>();
+
+const userCount = computed(() => props.messages.filter((message) => message.role === 'user').length);
 
 const toolResult = computed<Record<string, ChatToolMessage>>(() => {
   const res: Record<string, ChatToolMessage> = {};
@@ -29,4 +34,8 @@ const toolResult = computed<Record<string, ChatToolMessage>>(() => {
   }
   return res;
 });
+
+function revertible(message: ChatHistoryEntry): boolean {
+  return message.role === 'user' && userCount.value > 1 && Boolean(message.data.id);
+}
 </script>

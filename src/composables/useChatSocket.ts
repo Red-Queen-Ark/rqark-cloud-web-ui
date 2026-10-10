@@ -4,6 +4,7 @@ import { refreshSession } from '@/api-client/runtime';
 import { agentApiUrl } from '@/config/agentApi';
 import type { ChatStatus } from '@/config/chatStatus';
 import { planItemsFrom, type PlanItem } from '@/config/sessions';
+import { i18n } from '@/i18n';
 import { useAlertStore } from '@/stores/alertStore';
 import { useAuthStore } from '@/stores/authStore';
 import { applyChatPayload, CHAT_STOPPED, chatPayloadError, chatPlanItems, chatTurnDone, openChatStream } from '@/utils/chatStream';
@@ -124,6 +125,30 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
   async function resync() {
     await loadHistory();
     await loadReplay();
+  }
+
+  async function revert(messageId: string): Promise<boolean> {
+    const id = toValue(sessionId);
+    const token = authStore.accessToken;
+    if (!id || !token || !messageId) {
+      return false;
+    }
+    try {
+      const response = await fetch(agentApiUrl(`/chat/${encodeURIComponent(id)}/revert`), {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message_id: messageId }),
+      });
+      if (!response.ok) {
+        alertStore.addItem({ level: 'error', message: i18n.global.t('chat.revertError') });
+        return false;
+      }
+      await resync();
+      return true;
+    } catch {
+      alertStore.addItem({ level: 'error', message: i18n.global.t('chat.revertError') });
+      return false;
+    }
   }
 
   function apply(envelope: ChatEnvelope) {
@@ -312,6 +337,8 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
     planItems,
     connect,
     disconnect,
+    resync,
+    revert,
     send,
     stop,
   });

@@ -301,6 +301,50 @@ test('shows the socket as connected while it is open', async ({ page }) => {
   await expect(page.getByTestId('chat-status')).toHaveClass(/status-success/);
 });
 
+test('reverts a user turn once the confirm dialog is accepted', async ({ page }) => {
+  const messages = [
+    { seq: 0, role: 'user', data: { role: 'user', content: [{ type: 'text', text: 'first question' }], created_at: turnTimestamp, id: 'm1' }, created_at: turnTimestamp },
+    { seq: 1, role: 'assistant', data: { role: 'assistant', content: 'first answer', created_at: turnTimestamp, id: 'a1' }, created_at: turnTimestamp },
+    { seq: 2, role: 'user', data: { role: 'user', content: [{ type: 'text', text: 'second question' }], created_at: turnTimestamp, id: 'm2' }, created_at: turnTimestamp },
+    { seq: 3, role: 'assistant', data: { role: 'assistant', content: 'second answer', created_at: turnTimestamp, id: 'a2' }, created_at: turnTimestamp },
+  ];
+
+  const state = await mockBackend(page, { session: boss, sessions: [{ ...first, messages }], agents: [agent], providers: [provider] });
+  await seedSession(page);
+
+  await page.routeWebSocket(/\/agent-api\/chat\/ws\//, () => undefined);
+  await page.route(/\/agent-api\/chat\/[^/]+\/replay$/, (route) => route.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+
+  const reverted: unknown[] = [];
+  await page.route(/\/agent-api\/chat\/[^/]+\/revert$/, async (route) => {
+    reverted.push(route.request().postDataJSON());
+    const session = state.sessions.find((candidate) => candidate.id === first.id);
+    if (session) {
+      session.messages = session.messages?.slice(0, 2);
+    }
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ session_id: first.id, message_id: 'm2' }) });
+  });
+
+  await page.goto(`/en/chat/${first.id}`);
+
+  const history = page.locator('#chat-history');
+  await expect(history).toContainText('second question');
+
+  const revertButtons = page.getByTestId('user-message-revert');
+  await expect(revertButtons).toHaveCount(2);
+
+  await revertButtons.nth(1).click();
+  const modal = page.getByTestId('form-modal-box');
+  await expect(modal).toContainText('This message and everything after it will be removed.');
+
+  await modal.getByRole('button', { name: 'Revert' }).click();
+
+  await expect.poll(() => reverted).toEqual([{ message_id: 'm2' }]);
+  await expect(history).not.toContainText('second question');
+  await expect(history).toContainText('first answer');
+  await expect(page.getByTestId('user-message-revert')).toHaveCount(0);
+});
+
 test('reconnects when the socket drops and shows the connection again', async ({ page }) => {
   await mockBackend(page, { session: boss, sessions: [first] });
   await seedSession(page);

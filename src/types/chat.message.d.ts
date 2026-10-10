@@ -39,6 +39,7 @@ interface ChatUserMessage {
   role: 'user';
   content: (ChatTextPart | ChatImagePart)[];
   created_at: string;
+  id?: string;
 }
 
 interface ChatAssistantMessage {
