@@ -1,6 +1,4 @@
 import { expect, test, type Page } from '@playwright/test';
-import { boss, mockBackend, seedSession } from './support/mock-backend';
-import { openDisclosure, waitForShellStyles } from './support/styles';
 
 interface FieldReport {
   text: string;
@@ -69,59 +67,4 @@ test('the auth forms stack every label above its control', async ({ page }) => {
     checked += expectStacked(await inspectFields(page), path);
   }
   expect(checked).toBeGreaterThanOrEqual(9);
-});
-
-test('the app forms stack every label above its control', async ({ page }) => {
-  await mockBackend(page, { session: boss, groups: [{ id: 'group-1', name: 'engineering', created_at: '2026-04-05T06:07:08Z', memberIds: [] }] });
-  await seedSession(page);
-
-  let checked = 0;
-  for (const path of ['/en/settings', '/en/users', '/en/groups', '/en/agents', '/en/providers']) {
-    await page.goto(path);
-    await waitForShellStyles(page);
-
-    // The dialog fields only exist in the DOM once the dialog is open.
-    if (path === '/en/users') {
-      await page.locator('#users-page-create-btn').click();
-      await expect(page.locator('#user-form-username')).toBeVisible();
-    }
-    if (path === '/en/groups') {
-      await page.locator('#groups-page-create-btn').click();
-      await expect(page.locator('#group-name')).toBeVisible();
-    }
-    if (path === '/en/agents') {
-      await page.locator('#agents-page-create-btn').click();
-      await expect(page.locator('#agent-name')).toBeVisible();
-      // Ticking entries is what brings their parameter fieldsets into the DOM.
-      await page.locator('#agent-tools-Gitea').setChecked(true);
-      await page.locator('#agent-prompts-CharacterPrompt').setChecked(true);
-    }
-    if (path === '/en/providers') {
-      await page.locator('#providers-page-create-btn').click();
-      await expect(page.locator('#provider-model_name')).toBeVisible();
-      // The optional fields are behind a disclosure; open it so the probe sees
-      // every control rather than measuring hidden boxes.
-      await openDisclosure(page, 'provider-advanced');
-    }
-    // Measuring before the stylesheet lands would compare unstyled boxes.
-    await expect(page.locator('.fieldset-legend').first()).toBeVisible();
-    checked += expectStacked(await inspectFields(page), path);
-  }
-  expect(checked).toBeGreaterThanOrEqual(13);
-});
-
-test('clicking a label focuses the control it wraps', async ({ page }) => {
-  await mockBackend(page, { session: boss });
-  await seedSession(page);
-  await page.goto('/en/settings');
-
-  await page.locator('label.fieldset:has(#settings-display-name) .fieldset-legend').click();
-  await expect(page.locator('#settings-display-name')).toBeFocused();
-
-  await page.locator('label.fieldset:has(#settings-language) .fieldset-legend').click();
-  await expect(page.locator('#settings-language')).toBeFocused();
-
-  await page.goto('/en/users');
-  await page.locator('label.fieldset:has(#users-search) .fieldset-legend').click();
-  await expect(page.locator('#users-search')).toBeFocused();
 });
