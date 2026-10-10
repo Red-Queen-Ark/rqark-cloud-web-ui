@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { DeleteAgentsByUuidData, DeleteAgentsByUuidErrors, DeleteAgentsByUuidResponses, DeleteApiKeysByUuidData, DeleteApiKeysByUuidErrors, DeleteApiKeysByUuidResponses, DeleteGroupsByUuidData, DeleteGroupsByUuidErrors, DeleteGroupsByUuidResponses, DeleteGroupsByUuidUsersByUserUuidData, DeleteGroupsByUuidUsersByUserUuidErrors, DeleteGroupsByUuidUsersByUserUuidResponses, DeleteProvidersByUuidData, DeleteProvidersByUuidErrors, DeleteProvidersByUuidResponses, DeleteSessionsByUuidData, DeleteSessionsByUuidErrors, DeleteSessionsByUuidResponses, DeleteUsersByUuidData, DeleteUsersByUuidErrors, DeleteUsersByUuidResponses, GetAgentsByUuidData, GetAgentsByUuidErrors, GetAgentsByUuidResponses, GetAgentsData, GetAgentsErrors, GetAgentsNamesData, GetAgentsNamesErrors, GetAgentsNamesResponses, GetAgentsResponses, GetApiKeysData, GetApiKeysErrors, GetApiKeysResponses, GetGroupsByUuidData, GetGroupsByUuidErrors, GetGroupsByUuidResponses, GetGroupsByUuidUsersData, GetGroupsByUuidUsersErrors, GetGroupsByUuidUsersResponses, GetGroupsData, GetGroupsErrors, GetGroupsResponses, GetPingData, GetPingResponses, GetProvidersByUuidData, GetProvidersByUuidErrors, GetProvidersByUuidResponses, GetProvidersData, GetProvidersErrors, GetProvidersModelsData, GetProvidersModelsErrors, GetProvidersModelsResponses, GetProvidersResponses, GetSessionsByUuidData, GetSessionsByUuidErrors, GetSessionsByUuidMessagesData, GetSessionsByUuidMessagesErrors, GetSessionsByUuidMessagesResponses, GetSessionsByUuidResponses, GetSessionsData, GetSessionsErrors, GetSessionsResponses, GetSwaggerJsonData, GetSwaggerJsonResponses, GetSwaggerYmlData, GetSwaggerYmlResponses, GetUsersByUuidData, GetUsersByUuidErrors, GetUsersByUuidResponses, GetUsersData, GetUsersErrors, GetUsersMeData, GetUsersMeErrors, GetUsersMeResponses, GetUsersResponses, OptionsSwaggerJsonData, OptionsSwaggerJsonResponses, PatchApiKeysByUuidData, PatchApiKeysByUuidErrors, PatchApiKeysByUuidResponses, PatchGroupsByUuidData, PatchGroupsByUuidErrors, PatchGroupsByUuidResponses, PatchUsersByUuidData, PatchUsersByUuidErrors, PatchUsersByUuidResponses, PatchUsersMeData, PatchUsersMeErrors, PatchUsersMeResponses, PostAgentsData, PostAgentsErrors, PostAgentsResponses, PostApiKeysData, PostApiKeysErrors, PostApiKeysResponses, PostAuthForgotPasswordData, PostAuthForgotPasswordErrors, PostAuthForgotPasswordResponses, PostAuthLoginData, PostAuthLoginErrors, PostAuthLoginResponses, PostAuthRefreshData, PostAuthRefreshErrors, PostAuthRefreshResponses, PostAuthRegisterData, PostAuthRegisterErrors, PostAuthRegisterResponses, PostAuthResetPasswordData, PostAuthResetPasswordErrors, PostAuthResetPasswordResponses, PostGroupsData, PostGroupsErrors, PostGroupsResponses, PostProvidersData, PostProvidersErrors, PostProvidersResponses, PostSessionsData, PostSessionsErrors, PostSessionsResponses, PostUsersData, PostUsersErrors, PostUsersResponses, PutAgentsByUuidData, PutAgentsByUuidErrors, PutAgentsByUuidResponses, PutGroupsByUuidUsersByUserUuidData, PutGroupsByUuidUsersByUserUuidErrors, PutGroupsByUuidUsersByUserUuidResponses, PutProvidersByUuidData, PutProvidersByUuidErrors, PutProvidersByUuidResponses, PutSessionsByUuidData, PutSessionsByUuidErrors, PutSessionsByUuidResponses, PutUsersByUuidPasswordData, PutUsersByUuidPasswordErrors, PutUsersByUuidPasswordResponses, PutUsersMePasswordData, PutUsersMePasswordErrors, PutUsersMePasswordResponses } from './types.gen';
+import type { DeleteAgentsByUuidData, DeleteAgentsByUuidErrors, DeleteAgentsByUuidResponses, DeleteApiKeysByUuidData, DeleteApiKeysByUuidErrors, DeleteApiKeysByUuidResponses, DeleteGroupsByUuidData, DeleteGroupsByUuidErrors, DeleteGroupsByUuidResponses, DeleteGroupsByUuidUsersByUserUuidData, DeleteGroupsByUuidUsersByUserUuidErrors, DeleteGroupsByUuidUsersByUserUuidResponses, DeleteProvidersByUuidData, DeleteProvidersByUuidErrors, DeleteProvidersByUuidResponses, DeleteSessionsByUuidData, DeleteSessionsByUuidErrors, DeleteSessionsByUuidResponses, DeleteUserConfigByKeyData, DeleteUserConfigByKeyErrors, DeleteUserConfigByKeyResponses, DeleteUsersByUuidData, DeleteUsersByUuidErrors, DeleteUsersByUuidResponses, GetAgentsByUuidData, GetAgentsByUuidErrors, GetAgentsByUuidResponses, GetAgentsData, GetAgentsErrors, GetAgentsNamesData, GetAgentsNamesErrors, GetAgentsNamesResponses, GetAgentsResponses, GetApiKeysData, GetApiKeysErrors, GetApiKeysResponses, GetGroupsByUuidData, GetGroupsByUuidErrors, GetGroupsByUuidResponses, GetGroupsByUuidUsersData, GetGroupsByUuidUsersErrors, GetGroupsByUuidUsersResponses, GetGroupsData, GetGroupsErrors, GetGroupsResponses, GetPingData, GetPingResponses, GetProvidersByUuidData, GetProvidersByUuidErrors, GetProvidersByUuidResponses, GetProvidersData, GetProvidersErrors, GetProvidersModelsData, GetProvidersModelsErrors, GetProvidersModelsResponses, GetProvidersResponses, GetSessionsByUuidData, GetSessionsByUuidErrors, GetSessionsByUuidMessagesData, GetSessionsByUuidMessagesErrors, GetSessionsByUuidMessagesResponses, GetSessionsByUuidResponses, GetSessionsData, GetSessionsErrors, GetSessionsResponses, GetSwaggerJsonData, GetSwaggerJsonResponses, GetSwaggerYmlData, GetSwaggerYmlResponses, GetUserConfigData, GetUserConfigErrors, GetUserConfigResponses, GetUsersByUuidData, GetUsersByUuidErrors, GetUsersByUuidResponses, GetUsersData, GetUsersErrors, GetUsersMeData, GetUsersMeErrors, GetUsersMeResponses, GetUsersResponses, OptionsSwaggerJsonData, OptionsSwaggerJsonResponses, PatchApiKeysByUuidData, PatchApiKeysByUuidErrors, PatchApiKeysByUuidResponses, PatchGroupsByUuidData, PatchGroupsByUuidErrors, PatchGroupsByUuidResponses, PatchUsersByUuidData, PatchUsersByUuidErrors, PatchUsersByUuidResponses, PatchUsersMeData, PatchUsersMeErrors, PatchUsersMeResponses, PostAgentsData, PostAgentsErrors, PostAgentsResponses, PostApiKeysData, PostApiKeysErrors, PostApiKeysResponses, PostAuthForgotPasswordData, PostAuthForgotPasswordErrors, PostAuthForgotPasswordResponses, PostAuthLoginData, PostAuthLoginErrors, PostAuthLoginResponses, PostAuthRefreshData, PostAuthRefreshErrors, PostAuthRefreshResponses, PostAuthRegisterData, PostAuthRegisterErrors, PostAuthRegisterResponses, PostAuthResetPasswordData, PostAuthResetPasswordErrors, PostAuthResetPasswordResponses, PostGroupsData, PostGroupsErrors, PostGroupsResponses, PostProvidersData, PostProvidersErrors, PostProvidersResponses, PostSessionsData, PostSessionsErrors, PostSessionsResponses, PostUsersData, PostUsersErrors, PostUsersResponses, PutAgentsByUuidData, PutAgentsByUuidErrors, PutAgentsByUuidResponses, PutGroupsByUuidUsersByUserUuidData, PutGroupsByUuidUsersByUserUuidErrors, PutGroupsByUuidUsersByUserUuidResponses, PutProvidersByUuidData, PutProvidersByUuidErrors, PutProvidersByUuidResponses, PutSessionsByUuidData, PutSessionsByUuidErrors, PutSessionsByUuidResponses, PutUserConfigByKeyData, PutUserConfigByKeyErrors, PutUserConfigByKeyResponses, PutUsersByUuidPasswordData, PutUsersByUuidPasswordErrors, PutUsersByUuidPasswordResponses, PutUsersMePasswordData, PutUsersMePasswordErrors, PutUsersMePasswordResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -723,6 +723,64 @@ export const getSwaggerYml = <ThrowOnError extends boolean = false>(options?: Op
     return (options?.client ?? client).get<GetSwaggerYmlResponses, unknown, ThrowOnError>({
         url: '/swagger.yml',
         ...options
+    });
+};
+
+/**
+ * List user config
+ *
+ * Returns all of the caller's config entries, ordered by key. Not paginated: the app treats them as one local config file and syncs the whole set at once.
+ */
+export const getUserConfig = <ThrowOnError extends boolean = false>(options?: Options<GetUserConfigData, ThrowOnError>) => {
+    return (options?.client ?? client).get<GetUserConfigResponses, GetUserConfigErrors, ThrowOnError>({
+        security: [
+            {
+                name: 'Authorization',
+                type: 'apiKey'
+            }
+        ],
+        url: '/user-config',
+        ...options
+    });
+};
+
+/**
+ * Delete a user config entry
+ *
+ * Hard delete of one of the caller's config entries.
+ */
+export const deleteUserConfigByKey = <ThrowOnError extends boolean = false>(options: Options<DeleteUserConfigByKeyData, ThrowOnError>) => {
+    return (options.client ?? client).delete<DeleteUserConfigByKeyResponses, DeleteUserConfigByKeyErrors, ThrowOnError>({
+        security: [
+            {
+                name: 'Authorization',
+                type: 'apiKey'
+            }
+        ],
+        url: '/user-config/{key}',
+        ...options
+    });
+};
+
+/**
+ * Set a user config entry
+ *
+ * Upserts one config entry of the caller: the value of an existing key is overwritten, a key that does not exist is created.
+ */
+export const putUserConfigByKey = <ThrowOnError extends boolean = false>(options: Options<PutUserConfigByKeyData, ThrowOnError>) => {
+    return (options.client ?? client).put<PutUserConfigByKeyResponses, PutUserConfigByKeyErrors, ThrowOnError>({
+        security: [
+            {
+                name: 'Authorization',
+                type: 'apiKey'
+            }
+        ],
+        url: '/user-config/{key}',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
     });
 };
 

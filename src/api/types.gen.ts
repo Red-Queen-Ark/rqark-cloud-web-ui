@@ -132,6 +132,12 @@ export type ApiProviderSummaryDto = {
     name?: string;
 };
 
+export type ApiPutUserConfigRequest = {
+    value?: {
+        [key: string]: unknown;
+    };
+};
+
 export type ApiRefreshRequest = {
     refresh_token?: string;
 };
@@ -231,6 +237,16 @@ export type ApiUpdateUserRequest = {
     is_staff?: boolean;
     is_superuser?: boolean;
     username?: string;
+};
+
+export type ApiUserConfigDto = {
+    created_at?: string;
+    id?: string;
+    key?: string;
+    updated_at?: string;
+    value?: {
+        [key: string]: unknown;
+    };
 };
 
 export type ApiUserDto = {
@@ -1732,6 +1748,116 @@ export type GetSwaggerYmlResponses = {
 };
 
 export type GetSwaggerYmlResponse = GetSwaggerYmlResponses[keyof GetSwaggerYmlResponses];
+
+export type GetUserConfigData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/user-config';
+};
+
+export type GetUserConfigErrors = {
+    /**
+     * Unauthorized
+     */
+    401: UtilsErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: UtilsErrorResponse;
+};
+
+export type GetUserConfigError = GetUserConfigErrors[keyof GetUserConfigErrors];
+
+export type GetUserConfigResponses = {
+    /**
+     * OK
+     */
+    200: Array<ApiUserConfigDto>;
+};
+
+export type GetUserConfigResponse = GetUserConfigResponses[keyof GetUserConfigResponses];
+
+export type DeleteUserConfigByKeyData = {
+    body?: never;
+    path: {
+        /**
+         * Config key
+         */
+        key: string;
+    };
+    query?: never;
+    url: '/user-config/{key}';
+};
+
+export type DeleteUserConfigByKeyErrors = {
+    /**
+     * Bad Request
+     */
+    400: UtilsErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: UtilsErrorResponse;
+    /**
+     * Not Found
+     */
+    404: UtilsErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: UtilsErrorResponse;
+};
+
+export type DeleteUserConfigByKeyError = DeleteUserConfigByKeyErrors[keyof DeleteUserConfigByKeyErrors];
+
+export type DeleteUserConfigByKeyResponses = {
+    /**
+     * No Content
+     */
+    204: unknown;
+};
+
+export type PutUserConfigByKeyData = {
+    /**
+     * Config value
+     */
+    body: ApiPutUserConfigRequest;
+    path: {
+        /**
+         * Config key
+         */
+        key: string;
+    };
+    query?: never;
+    url: '/user-config/{key}';
+};
+
+export type PutUserConfigByKeyErrors = {
+    /**
+     * Bad Request
+     */
+    400: UtilsErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: UtilsErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: UtilsErrorResponse;
+};
+
+export type PutUserConfigByKeyError = PutUserConfigByKeyErrors[keyof PutUserConfigByKeyErrors];
+
+export type PutUserConfigByKeyResponses = {
+    /**
+     * OK
+     */
+    200: ApiUserConfigDto;
+};
+
+export type PutUserConfigByKeyResponse = PutUserConfigByKeyResponses[keyof PutUserConfigByKeyResponses];
 
 export type GetUsersData = {
     body?: never;
