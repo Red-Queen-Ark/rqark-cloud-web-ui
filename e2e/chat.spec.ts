@@ -330,10 +330,11 @@ test('reverts a user turn once the confirm dialog is accepted', async ({ page })
   const history = page.locator('#chat-history');
   await expect(history).toContainText('second question');
 
+  // The opening turn keeps its icon hidden: reverting it would drop the whole chat.
   const revertButtons = page.getByTestId('user-message-revert');
-  await expect(revertButtons).toHaveCount(2);
+  await expect(revertButtons).toHaveCount(1);
 
-  await revertButtons.nth(1).click();
+  await revertButtons.first().click();
   const modal = page.getByTestId('form-modal-box');
   await expect(modal).toContainText('This message and everything after it will be removed.');
 

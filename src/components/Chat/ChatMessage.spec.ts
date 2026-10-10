@@ -51,9 +51,9 @@ describe('ChatMessage', () => {
     expectPadded(wrapper.getComponent({ name: 'ToolMessage' }));
   });
 
-  it('offers revert only on user turns that carry an id once a second turn exists', () => {
-    const wrapper = mountMessages([user(0, 'one', 'm1'), user(2, 'two', 'm2')]);
-    expect(revertibleFlags(wrapper)).toEqual([true, true]);
+  it('offers revert on every user turn but the opening one', () => {
+    const wrapper = mountMessages([user(0, 'one', 'm1'), user(2, 'two', 'm2'), user(4, 'three', 'm3')]);
+    expect(revertibleFlags(wrapper)).toEqual([false, true, true]);
   });
 
   it('withholds revert from a lone user turn', () => {

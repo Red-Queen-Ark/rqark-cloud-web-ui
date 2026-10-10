@@ -23,7 +23,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{ revert: [messageId: string] }>();
 
-const userCount = computed(() => props.messages.filter((message) => message.role === 'user').length);
+const openingTurn = computed(() => props.messages.find((message) => message.role === 'user'));
 
 const toolResult = computed<Record<string, ChatToolMessage>>(() => {
   const res: Record<string, ChatToolMessage> = {};
@@ -36,6 +36,8 @@ const toolResult = computed<Record<string, ChatToolMessage>>(() => {
 });
 
 function revertible(message: ChatHistoryEntry): boolean {
-  return message.role === 'user' && userCount.value > 1 && Boolean(message.data.id);
+  // Reverting trims the session back to before the message, so the opening turn
+  // would wipe the whole chat; only a later user turn may be reverted.
+  return message.role === 'user' && message !== openingTurn.value && Boolean(message.data.id);
 }
 </script>
