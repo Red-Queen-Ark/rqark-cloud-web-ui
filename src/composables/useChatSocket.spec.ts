@@ -14,6 +14,17 @@ vi.mock('@/api-client/runtime', () => ({ refreshSession: vi.fn().mockResolvedVal
 
 const at = '2026-01-01T00:00:00Z';
 
+function encoded(value: unknown): string {
+  return btoa(JSON.stringify(value)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function tokenExpiringIn(seconds: number): string {
+  return `${encoded({ alg: 'HS256', typ: 'JWT' })}.${encoded({ sub: 'user-1', exp: Math.floor(Date.now() / 1000) + seconds })}.signature`;
+}
+
+const agedToken = () => tokenExpiringIn(-60);
+const validToken = () => tokenExpiringIn(3600);
+
 function envelope(payload: Record<string, unknown>) {
   return { agent_id: 'researcher:session-a', path: [], payload };
 }
@@ -30,7 +41,7 @@ class FakeSocket {
   public sent: string[] = [];
   public readyState = FakeSocket.OPEN;
   public onopen: (() => void) | null = null;
-  public onclose: (() => void) | null = null;
+  public onclose: ((event: { code: number }) => void) | null = null;
   public onerror: (() => void) | null = null;
   public onmessage: ((event: unknown) => void) | null = null;
   private listeners: Record<string, (() => void)[]> = {};
@@ -55,9 +66,9 @@ class FakeSocket {
     this.onopen?.();
   }
 
-  public serverClose() {
+  public serverClose(code = 1006) {
     this.readyState = FakeSocket.CLOSED;
-    this.onclose?.();
+    this.onclose?.({ code });
   }
 
   public serverError() {
@@ -189,6 +200,7 @@ describe('useChatSocket', () => {
 
     (FakeSocket.instances[0] as FakeSocket).serverClose();
     vi.advanceTimersByTime(1000);
+    await flushPromises();
     (FakeSocket.instances[1] as FakeSocket).open();
     await flushPromises();
 
@@ -361,6 +373,7 @@ describe('useChatSocket', () => {
     const first = FakeSocket.instances[0] as FakeSocket;
     first.readyState = FakeSocket.CLOSED;
     chatSocket.send('hello', 'researcher', 'openai');
+    await flushPromises();
 
     expect(first.sent).toEqual([]);
     expect(FakeSocket.instances).toHaveLength(2);
@@ -404,7 +417,7 @@ describe('useChatSocket', () => {
     expect(chatSocket.streaming).toBe(false);
   });
 
-  it('refreshes the token before reopening the socket for a queued turn', async () => {
+  it('renews the token before reopening the socket for a queued turn', async () => {
     vi.useFakeTimers();
     vi.spyOn(Math, 'random').mockReturnValue(0.5);
 
@@ -413,7 +426,9 @@ describe('useChatSocket', () => {
 
     const first = FakeSocket.instances[0] as FakeSocket;
     first.readyState = FakeSocket.CLOSED;
+    useAuthStore().setTokens(agedToken(), 'refresh-token');
     chatSocket.send('hello', 'researcher', 'openai');
+    await flushPromises();
 
     (FakeSocket.instances[1] as FakeSocket).serverClose();
     vi.advanceTimersByTime(1000);
@@ -421,6 +436,65 @@ describe('useChatSocket', () => {
 
     expect(refreshSession).toHaveBeenCalled();
     expect(FakeSocket.instances).toHaveLength(3);
+  });
+
+  it('renews an aged token before the first connection', async () => {
+    useAuthStore().setTokens(agedToken(), 'refresh-token');
+
+    const chatSocket = openChat(ref('session-a'));
+    await chatSocket.load();
+
+    expect(refreshSession).toHaveBeenCalledTimes(1);
+    expect(FakeSocket.instances).toHaveLength(1);
+  });
+
+  it('reuses a token that is still valid', async () => {
+    useAuthStore().setTokens(validToken(), 'refresh-token');
+
+    const chatSocket = openChat(ref('session-a'));
+    await chatSocket.load();
+
+    expect(refreshSession).not.toHaveBeenCalled();
+  });
+
+  it('renews the token when the socket rejects it', async () => {
+    vi.useFakeTimers();
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+
+    const chatSocket = openChat(ref('session-a'));
+    await chatSocket.load();
+    (refreshSession as Mock).mockClear();
+
+    (FakeSocket.instances[0] as FakeSocket).serverClose(4401);
+    vi.advanceTimersByTime(1000);
+    await flushPromises();
+
+    expect(refreshSession).toHaveBeenCalledTimes(1);
+    expect(FakeSocket.opened).toHaveLength(2);
+  });
+
+  it('renews the token and replaces the socket before sending over an aged one', async () => {
+    vi.useFakeTimers();
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+
+    const chatSocket = openChat(ref('session-a'));
+    await chatSocket.load();
+    (FakeSocket.instances[0] as FakeSocket).open();
+    (refreshSession as Mock).mockClear();
+
+    useAuthStore().setTokens(agedToken(), 'refresh-token');
+    chatSocket.send('hello', 'researcher', 'openai');
+    await flushPromises();
+
+    expect(refreshSession).toHaveBeenCalledTimes(1);
+    expect(FakeSocket.closed.map(socketPath)).toEqual(['/agent-api/chat/ws/session-a']);
+    expect(FakeSocket.instances).toHaveLength(2);
+    expect(chatSocket.streaming).toBe(true);
+
+    const replacement = FakeSocket.instances[1] as FakeSocket;
+    replacement.open();
+
+    expect(replacement.sent).toEqual([JSON.stringify({ content: 'hello', provider: 'openai', agent: 'researcher' })]);
   });
 
   it('does not deliver a queued turn to another session', async () => {
@@ -486,6 +560,7 @@ describe('useChatSocket', () => {
     expect(FakeSocket.opened).toHaveLength(1);
 
     vi.advanceTimersByTime(1000);
+    await flushPromises();
 
     expect(FakeSocket.opened.map(socketPath)).toEqual(['/agent-api/chat/ws/session-a', '/agent-api/chat/ws/session-a']);
     expect(chatSocket.status).toBe('connecting');
@@ -499,30 +574,34 @@ describe('useChatSocket', () => {
     await chatSocket.load();
 
     const closeLatest = () => (FakeSocket.instances.at(-1) as FakeSocket).serverClose();
+    const advance = async (ms: number) => {
+      vi.advanceTimersByTime(ms);
+      await flushPromises();
+    };
 
     closeLatest();
-    vi.advanceTimersByTime(999);
+    await advance(999);
     expect(FakeSocket.opened).toHaveLength(1);
-    vi.advanceTimersByTime(1);
+    await advance(1);
     expect(FakeSocket.opened).toHaveLength(2);
 
     closeLatest();
-    vi.advanceTimersByTime(1999);
+    await advance(1999);
     expect(FakeSocket.opened).toHaveLength(2);
-    vi.advanceTimersByTime(1);
+    await advance(1);
     expect(FakeSocket.opened).toHaveLength(3);
 
     closeLatest();
-    vi.advanceTimersByTime(3999);
+    await advance(3999);
     expect(FakeSocket.opened).toHaveLength(3);
-    vi.advanceTimersByTime(1);
+    await advance(1);
     expect(FakeSocket.opened).toHaveLength(4);
 
     for (let attempt = 0; attempt < 3; attempt += 1) {
       closeLatest();
-      vi.advanceTimersByTime(4999);
+      await advance(4999);
       expect(FakeSocket.opened).toHaveLength(4 + attempt);
-      vi.advanceTimersByTime(1);
+      await advance(1);
       expect(FakeSocket.opened).toHaveLength(5 + attempt);
     }
   });
@@ -537,6 +616,7 @@ describe('useChatSocket', () => {
     for (let attempt = 0; attempt < 25; attempt += 1) {
       (FakeSocket.instances.at(-1) as FakeSocket).serverClose();
       vi.advanceTimersByTime(5000);
+      await flushPromises();
     }
 
     expect(FakeSocket.opened).toHaveLength(26);

@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page, type WebSocketRoute } from '@playwright/test';
-import { boss, mockBackend, seedSession, type MockAgent, type MockProvider, type MockSession } from './support/mock-backend';
+import { boss, jwtExpiringIn, mockBackend, seedSession, type MockAgent, type MockProvider, type MockSession } from './support/mock-backend';
 import { waitForShellStyles } from './support/styles';
 
 const first: MockSession = {
@@ -66,7 +66,7 @@ test('opens the socket of the session in the url', async ({ page }) => {
   await expect(page.getByTestId('chat-page')).toBeAttached();
 
   await expect.poll(() => opened.map(socketPath)).toEqual([`${SOCKET_PREFIX}${first.id}`]);
-  expect(new URL(opened[0]).searchParams.get('token')).toBe('access-token');
+  expect(new URL(opened[0]).searchParams.get('token')).toBe('access-token-1');
 });
 
 test('moves to the socket of the session it switches to', async ({ page }) => {
@@ -365,4 +365,81 @@ test('reconnects when the socket drops and shows the connection again', async ({
 
   await expect.poll(() => sockets.length, { timeout: 10000 }).toBe(2);
   await expect(status).toHaveClass(/status-success/);
+});
+
+test('renews the token and opens a fresh socket when the socket is rejected', async ({ page }) => {
+  await mockBackend(page, { session: boss, sessions: [first] });
+  await seedSession(page);
+
+  const sockets: WebSocketRoute[] = [];
+  const tokens: (string | null)[] = [];
+  await page.routeWebSocket(/\/agent-api\/chat\/ws\//, (ws) => {
+    sockets.push(ws);
+    tokens.push(new URL(ws.url()).searchParams.get('token'));
+  });
+
+  await page.goto(`/en/chat/${first.id}`);
+  await expect(page.getByTestId('chat-status')).toHaveClass(/status-success/);
+  await expect.poll(() => sockets.length).toBe(1);
+
+  sockets[0].close({ code: 4401 });
+
+  await expect.poll(() => sockets.length, { timeout: 10000 }).toBe(2);
+  await expect(page.getByTestId('chat-status')).toHaveClass(/status-success/);
+  expect(tokens).toEqual(['access-token-1', 'access-token-2']);
+});
+
+test('renews the token before sending a turn the session aged out of', async ({ page }) => {
+  await mockBackend(page, { session: boss, sessions: [first], agents: [agent], providers: [provider] });
+  await page.clock.install();
+  const seeded = jwtExpiringIn(3600);
+  await page.addInitScript((token: string) => {
+    localStorage.setItem('authStore', JSON.stringify({ accessToken: token, refreshToken: 'refresh-token' }));
+  }, seeded);
+
+  const tokens: (string | null)[] = [];
+  const sent: string[] = [];
+  await page.routeWebSocket(/\/agent-api\/chat\/ws\//, (ws) => {
+    tokens.push(new URL(ws.url()).searchParams.get('token'));
+    ws.onMessage((message) => sent.push(String(message)));
+  });
+
+  await page.goto(`/en/chat/${first.id}`);
+  await expect(page.getByTestId('chat-status')).toHaveClass(/status-success/);
+  expect(tokens).toEqual([seeded]);
+
+  await page.clock.setSystemTime(Date.now() + 3600 * 1000);
+
+  const input = page.getByTestId('chat-input');
+  await input.fill('hello there');
+  await page.getByTestId('chat-send').click();
+
+  await expect.poll(() => tokens.length).toBe(2);
+  expect(tokens[1]).toBe('access-token-1');
+  await expect.poll(() => sent).toEqual([JSON.stringify({ content: 'hello there', provider: 'openai', agent: 'researcher' })]);
+  await expect(input).toBeEmpty();
+});
+
+test('retries a rejected agent-cloud call with a refreshed token', async ({ page }) => {
+  await mockBackend(page, { session: boss, sessions: [first], agents: [agent], providers: [provider] });
+  await seedSession(page);
+
+  await page.routeWebSocket(/\/agent-api\/chat\/ws\//, () => undefined);
+
+  const authorizations: (string | undefined)[] = [];
+  await page.route(/\/agent-api\/chat\/[^/]+\/replay$/, async (route) => {
+    authorizations.push(route.request().headers()['authorization']);
+    const rejected = authorizations.length === 1;
+    await route.fulfill({
+      status: rejected ? 401 : 200,
+      contentType: 'application/json',
+      body: rejected ? JSON.stringify({ error: { code: 'UNAUTHORIZED', message: 'Invalid or expired access token.' } }) : '[]',
+    });
+  });
+
+  await page.goto(`/en/chat/${first.id}`);
+  await expect(page.getByTestId('chat-page')).toBeAttached();
+
+  await expect.poll(() => authorizations.length).toBe(2);
+  expect(authorizations).toEqual(['Bearer access-token-1', 'Bearer access-token-2']);
 });

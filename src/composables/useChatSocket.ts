@@ -1,5 +1,6 @@
 import { onScopeDispose, reactive, ref, shallowRef, toValue, watch, type MaybeRefOrGetter } from 'vue';
 import { getAgentsNames, getProvidersModels, getSessionsByUuid, getSessionsByUuidMessages, type ApiProviderSummaryDto } from '@/api';
+import { fetchWithAuth } from '@/api-client/fetchWithAuth';
 import { refreshSession } from '@/api-client/runtime';
 import { agentApiUrl } from '@/config/agentApi';
 import type { ChatStatus } from '@/config/chatStatus';
@@ -8,6 +9,7 @@ import { i18n } from '@/i18n';
 import { useAlertStore } from '@/stores/alertStore';
 import { useAuthStore } from '@/stores/authStore';
 import { applyChatPayload, CHAT_STOPPED, chatPayloadError, chatPlanItems, chatTurnDone, openChatStream } from '@/utils/chatStream';
+import { jwtExpiresAt } from '@/utils/jwt';
 
 export type ChatSessionId = string | null | undefined;
 
@@ -23,6 +25,8 @@ const RECONNECT_BASE_DELAY = 1000;
 const RECONNECT_MAX_DELAY = 5000;
 const RECONNECT_JITTER = 0.5;
 const REPLAY_TIMEOUT_MS = 5000;
+const TOKEN_RENEWAL_SKEW_MS = 60000;
+const SOCKET_TOKEN_REJECTED = 4401;
 
 export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
   const authStore = useAuthStore();
@@ -39,11 +43,29 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
   let reconnectDelay = 0;
   let hasConnected = false;
   let pendingTurn: PendingTurn | null = null;
+  let tokenRejected = false;
+
+  function accessTokenNeedsRenewal(): boolean {
+    if (!authStore.refreshToken) {
+      return false;
+    }
+    const expiresAt = jwtExpiresAt(authStore.accessToken);
+    return expiresAt !== null && expiresAt - Date.now() <= TOKEN_RENEWAL_SKEW_MS;
+  }
+
+  async function renewAccessToken(): Promise<void> {
+    if (!tokenRejected && !accessTokenNeedsRenewal()) {
+      return;
+    }
+    tokenRejected = false;
+    await refreshSession();
+  }
 
   async function load() {
     pendingTurn = null;
     hasConnected = false;
-    connect();
+    streaming.value = false;
+    await connect();
     await loadAgents();
     await loadProviders();
     await resync();
@@ -85,13 +107,11 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
   }
 
   async function fetchReplay(id: string): Promise<ChatEnvelope[]> {
-    const token = authStore.accessToken;
-    if (!token) {
+    if (!authStore.accessToken) {
       return [];
     }
     try {
-      const response = await fetch(agentApiUrl(`/chat/${encodeURIComponent(id)}/replay`), {
-        headers: { Authorization: `Bearer ${token}` },
+      const response = await fetchWithAuth(agentApiUrl(`/chat/${encodeURIComponent(id)}/replay`), {
         signal: AbortSignal.timeout(REPLAY_TIMEOUT_MS),
       });
       if (!response.ok) {
@@ -132,14 +152,13 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
 
   async function revert(messageId: string): Promise<boolean> {
     const id = toValue(sessionId);
-    const token = authStore.accessToken;
-    if (!id || !token || !messageId) {
+    if (!id || !authStore.accessToken || !messageId) {
       return false;
     }
     try {
-      const response = await fetch(agentApiUrl(`/chat/${encodeURIComponent(id)}/revert`), {
+      const response = await fetchWithAuth(agentApiUrl(`/chat/${encodeURIComponent(id)}/revert`), {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message_id: messageId }),
       });
       if (!response.ok) {
@@ -238,9 +257,12 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
       }
       hasConnected = true;
     };
-    socket.onclose = () => {
+    socket.onclose = (event) => {
       if (ws.value !== socket) {
         return;
+      }
+      if (event.code === SOCKET_TOKEN_REJECTED) {
+        tokenRejected = true;
       }
       ws.value = undefined;
       status.value = 'error';
@@ -261,9 +283,16 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
     ws.value = socket;
   }
 
-  function connect() {
-    reconnectDelay = 0;
+  async function openFreshConnection(): Promise<void> {
+    if (toValue(sessionId)) {
+      await renewAccessToken();
+    }
     openSocket();
+  }
+
+  function connect(): Promise<void> {
+    reconnectDelay = 0;
+    return openFreshConnection();
   }
 
   function scheduleReconnect() {
@@ -274,15 +303,8 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
     const jitter = 1 + (Math.random() * 2 - 1) * RECONNECT_JITTER;
     reconnectTimer = setTimeout(() => {
       reconnectTimer = undefined;
-      void reconnect();
+      void openFreshConnection();
     }, reconnectDelay * jitter);
-  }
-
-  async function reconnect() {
-    if (pendingTurn) {
-      await refreshSession();
-    }
-    openSocket();
   }
 
   function disconnect() {
@@ -292,7 +314,6 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
     }
     ws.value?.close();
     ws.value = undefined;
-    streaming.value = false;
   }
 
   watch(
@@ -306,7 +327,7 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
       return;
     }
     const socket = ws.value;
-    if (socket?.readyState === WebSocket.OPEN) {
+    if (socket?.readyState === WebSocket.OPEN && !accessTokenNeedsRenewal()) {
       socket.send(JSON.stringify({ content, provider, agent }));
       streaming.value = true;
       onSent?.();
@@ -314,7 +335,7 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
     }
     pendingTurn = { sessionId: id, content, agent, provider, onSent };
     if (socket?.readyState !== WebSocket.CONNECTING) {
-      connect();
+      void connect();
     }
     streaming.value = true;
   }

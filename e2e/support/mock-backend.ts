@@ -179,6 +179,8 @@ export async function mockBackend(page_: Page, options: MockBackendOptions = {})
     writes: [],
   };
 
+  let refreshCount = 0;
+
   await page_.route(
     (url) => url.pathname.startsWith('/api/'),
     async (route) => {
@@ -196,6 +198,11 @@ export async function mockBackend(page_: Page, options: MockBackendOptions = {})
           return json(route, options.loginStatus, { error: { code: 'UNAUTHORIZED', message: 'Invalid username or password.' } });
         }
         return json(route, 200, { access_token: 'access-token', refresh_token: 'refresh-token' });
+      }
+
+      if (path === '/auth/refresh' && method === 'POST') {
+        refreshCount += 1;
+        return json(route, 200, { access_token: `access-token-${refreshCount}`, refresh_token: `refresh-token-${refreshCount}` });
       }
 
       if (path === '/users/me' && method === 'GET') {
@@ -564,7 +571,14 @@ export async function mockBackend(page_: Page, options: MockBackendOptions = {})
 
 /** Seeds a stored session so a test can start on an authenticated page. */
 export async function seedSession(page_: Page): Promise<void> {
-  await page_.addInitScript(() => {
-    localStorage.setItem('authStore', JSON.stringify({ accessToken: 'access-token', refreshToken: 'refresh-token' }));
-  });
+  const accessToken = jwtExpiringIn(-60);
+  await page_.addInitScript((token: string) => {
+    localStorage.setItem('authStore', JSON.stringify({ accessToken: token, refreshToken: 'refresh-token' }));
+  }, accessToken);
+}
+
+export function jwtExpiringIn(seconds: number): string {
+  const now = Math.floor(Date.now() / 1000);
+  const encode = (value: unknown) => Buffer.from(JSON.stringify(value)).toString('base64url');
+  return `${encode({ alg: 'HS256', typ: 'JWT' })}.${encode({ sub: boss.id, iat: now, exp: now + seconds })}.signature`;
 }
