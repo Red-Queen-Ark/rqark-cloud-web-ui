@@ -5,6 +5,7 @@ import UserMessage from './UserMessage.vue';
 
 const created_at = '2026-01-01T00:00:00Z';
 const REVERT = '[data-testid="user-message-revert"]';
+const BUBBLE = '[data-testid="user-message"]';
 
 // The dialog is teleported to the body, so it is outside the wrapper's own tree.
 const dialog = () => document.querySelector('[data-testid="form-modal-box"]');
@@ -22,6 +23,13 @@ afterEach(() => {
 });
 
 describe('UserMessage', () => {
+  it('right-aligns the bubble within a fixed, max-width capped box', () => {
+    const bubble = mountMessage().get(BUBBLE);
+    expect(bubble.classes()).toContain('ms-auto');
+    expect(bubble.classes()).toContain('w-96');
+    expect(bubble.classes()).toContain('max-w-full');
+  });
+
   it('hides the revert button unless the message can be reverted', () => {
     expect(mountMessage({ revertible: false, id: 'm1' }).find(REVERT).exists()).toBe(false);
   });

@@ -1,6 +1,6 @@
 <template>
   <template v-for="(message, index) in props.messages" :key="message.data.id ?? index">
-    <UserMessage v-if="message.role === 'user'" :message="message.data" :revertible="revertible(message)" :busy="props.busy" class="self-end px-4 py-2" @revert="emit('revert', $event)" />
+    <UserMessage v-if="message.role === 'user'" :message="message.data" :revertible="revertible(message)" :busy="props.busy" class="px-4 py-2" @revert="emit('revert', $event)" />
     <template v-else-if="message.role === 'assistant'">
       <ThinkMessage :message="message.data" class="px-4 py-1" />
       <AssistantMessage :message="message.data" class="px-4 py-1" />
