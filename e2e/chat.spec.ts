@@ -290,6 +290,57 @@ test('floats the plan over the history without scrolling away', async ({ page })
   expect(Math.abs((after?.y ?? 0) - (before?.y ?? 0))).toBeLessThan(2);
 });
 
+test('keeps a user bubble inside a narrow viewport', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 800 });
+
+  const messages = [
+    { seq: 0, role: 'user', data: { role: 'user', content: [{ type: 'text', text: 'a somewhat longer opening question' }], created_at: turnTimestamp }, created_at: turnTimestamp },
+    { seq: 1, role: 'assistant', data: { role: 'assistant', content: 'answer', created_at: turnTimestamp, id: 'a1' }, created_at: turnTimestamp },
+    { seq: 2, role: 'user', data: { role: 'user', content: [{ type: 'text', text: 'follow up' }], created_at: turnTimestamp, id: 'm2' }, created_at: turnTimestamp },
+  ];
+
+  await mockBackend(page, { session: boss, sessions: [{ ...first, messages }], agents: [agent], providers: [provider] });
+  await seedSession(page);
+
+  await page.routeWebSocket(/\/agent-api\/chat\/ws\//, () => undefined);
+
+  await page.goto(`/en/chat/${first.id}`);
+
+  const history = page.locator('#chat-history');
+  await expect(history).toContainText('follow up');
+
+  const bubbles = page.getByTestId('user-message');
+  await expect(bubbles).toHaveCount(2);
+
+  // A capped bubble that cannot shrink escapes its column, so check the column
+  // itself stays free of horizontal overflow and every bubble sits on screen.
+  await expect.poll(async () => history.evaluate((el) => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(1);
+
+  for (const bubble of await bubbles.all()) {
+    const box = await bubble.boundingBox();
+    expect(box).not.toBeNull();
+    expect(box?.x ?? -1).toBeGreaterThanOrEqual(0);
+    expect((box?.x ?? 0) + (box?.width ?? 0)).toBeLessThanOrEqual(391);
+  }
+});
+
+test('keeps the fixed bubble width when the column has room', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+
+  const messages = [{ seq: 0, role: 'user', data: { role: 'user', content: [{ type: 'text', text: 'hello there' }], created_at: turnTimestamp }, created_at: turnTimestamp }];
+
+  await mockBackend(page, { session: boss, sessions: [{ ...first, messages }], agents: [agent], providers: [provider] });
+  await seedSession(page);
+
+  await page.routeWebSocket(/\/agent-api\/chat\/ws\//, () => undefined);
+
+  await page.goto(`/en/chat/${first.id}`);
+
+  const box = await page.getByTestId('user-message').boundingBox();
+  expect(box).not.toBeNull();
+  expect(box?.width ?? 0).toBeCloseTo(384, 0);
+});
+
 test('shows the socket as connected while it is open', async ({ page }) => {
   await mockBackend(page, { session: boss, sessions: [first] });
   await seedSession(page);

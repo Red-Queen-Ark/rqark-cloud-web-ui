@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div class="rounded-xl bg-base-300 w-96 max-w-full px-4 py-2">
+    <div data-testid="user-message" class="rounded-xl bg-base-300 w-96 max-w-full ms-auto px-4 py-2">
       <template v-for="(info, index) in props.message.content" :key="`user-${info.type}-${index}`">
         <MessageBody v-if="info.type === 'text'" :html="renderMarkdown(info.text)" :raw="info.text" />
         <div v-else-if="info.type === 'image_url'">

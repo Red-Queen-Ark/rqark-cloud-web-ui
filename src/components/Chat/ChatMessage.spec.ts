@@ -35,7 +35,6 @@ describe('ChatMessage', () => {
     const messages: ChatHistoryEntry[] = [user(0, 'hi', 'm1')];
     const message = mountMessages(messages).getComponent({ name: 'UserMessage' });
     expectPadded(message, 'py-2');
-    expect(message.classes()).toContain('self-end');
   });
 
   it('applies the shared block padding to think, answer and tool parts', () => {
