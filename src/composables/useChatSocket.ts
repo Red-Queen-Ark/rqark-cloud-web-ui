@@ -26,6 +26,7 @@ const RECONNECT_MAX_DELAY = 5000;
 const RECONNECT_JITTER = 0.5;
 const REPLAY_TIMEOUT_MS = 5000;
 const TOKEN_RENEWAL_SKEW_MS = 60000;
+const TOKEN_RENEWAL_MIN_DELAY_MS = 5000;
 const SOCKET_TOKEN_REJECTED = 4401;
 
 export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
@@ -40,6 +41,7 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
   const planItems = ref<PlanItem[]>([]);
   let stream = openChatStream();
   let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
+  let tokenTimer: ReturnType<typeof setTimeout> | undefined;
   let reconnectDelay = 0;
   let hasConnected = false;
   let pendingTurn: PendingTurn | null = null;
@@ -59,6 +61,39 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
     }
     tokenRejected = false;
     await refreshSession();
+  }
+
+  function pushToken() {
+    const socket = ws.value;
+    const token = authStore.accessToken;
+    if (socket?.readyState !== WebSocket.OPEN || !token) {
+      return;
+    }
+    socket.send(JSON.stringify({ kind: 'token', token }));
+  }
+
+  function scheduleTokenRenewal() {
+    if (tokenTimer !== undefined) {
+      clearTimeout(tokenTimer);
+      tokenTimer = undefined;
+    }
+    const expiresAt = jwtExpiresAt(authStore.accessToken);
+    if (expiresAt === null) {
+      return;
+    }
+    const delay = Math.max(expiresAt - Date.now() - TOKEN_RENEWAL_SKEW_MS, TOKEN_RENEWAL_MIN_DELAY_MS);
+    tokenTimer = setTimeout(() => {
+      tokenTimer = undefined;
+      void renewToken();
+    }, delay);
+  }
+
+  async function renewToken(): Promise<void> {
+    await renewAccessToken();
+    pushToken();
+    if (ws.value?.readyState === WebSocket.OPEN) {
+      scheduleTokenRenewal();
+    }
   }
 
   async function load() {
@@ -250,6 +285,7 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
       reconnectDelay = 0;
       status.value = 'connected';
       flushPending(socket);
+      scheduleTokenRenewal();
       // The first open is followed by load()'s own resync; only a reconnect
       // arrives with a gap of events to catch up on.
       if (hasConnected) {
@@ -311,6 +347,10 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
     if (reconnectTimer !== undefined) {
       clearTimeout(reconnectTimer);
       reconnectTimer = undefined;
+    }
+    if (tokenTimer !== undefined) {
+      clearTimeout(tokenTimer);
+      tokenTimer = undefined;
     }
     ws.value?.close();
     ws.value = undefined;

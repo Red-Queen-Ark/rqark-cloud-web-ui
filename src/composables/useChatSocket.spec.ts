@@ -457,6 +457,22 @@ describe('useChatSocket', () => {
     expect(refreshSession).not.toHaveBeenCalled();
   });
 
+  it('refreshes the token and pushes it to the open socket before it expires', async () => {
+    vi.useFakeTimers();
+    useAuthStore().setTokens(tokenExpiringIn(120), 'refresh-token');
+
+    const chatSocket = openChat(ref('session-a'));
+    await chatSocket.load();
+    const socket = FakeSocket.instances[0] as FakeSocket;
+    socket.open();
+    (refreshSession as Mock).mockClear();
+
+    await vi.advanceTimersByTimeAsync(60000);
+
+    expect(refreshSession).toHaveBeenCalledTimes(1);
+    expect(socket.sent).toEqual([JSON.stringify({ kind: 'token', token: useAuthStore().accessToken })]);
+  });
+
   it('renews the token when the socket rejects it', async () => {
     vi.useFakeTimers();
     vi.spyOn(Math, 'random').mockReturnValue(0.5);
