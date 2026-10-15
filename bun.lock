@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "template-frontend-vite",
+      "name": "rqark-agent-cloud-web-ui",
       "dependencies": {
         "dompurify": "^3.4.16",
         "marked": "^18.0.0",

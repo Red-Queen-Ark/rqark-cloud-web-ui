@@ -1,7 +1,8 @@
 {
-  "name": "rqark-agent-cloud",
+  "name": "rqark-agent-cloud-web-ui",
   "private": true,
   "version": "0.2.16",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "format": "bunx prettier . --write",
