@@ -1,8 +1,9 @@
 import { computed, onScopeDispose, reactive, ref, shallowRef, toValue, watch, type MaybeRefOrGetter } from 'vue';
-import { getAgentDefaultsBySource, getAgentsNames, getProvidersModels, getSessionsByUuid, getSessionsByUuidMessages, type ApiProviderSummaryDto, type RepositoryAgentName } from '@/api';
+import { getAgentDefaultsBySource, getAgentsNames, getProvidersModels, getSessionsByUuid, getSessionsByUuidMessages, type ApiProviderSummaryDto } from '@/api';
 import { fetchWithAuth } from '@/api-client/fetchWithAuth';
 import { refreshSession } from '@/api-client/runtime';
 import { agentNameById } from '@/config/agentDefaults';
+import { toAgentEntries, type AgentEntry } from '@/config/agentList';
 import { agentApiUrl } from '@/config/agentApi';
 import type { ChatStatus } from '@/config/chatStatus';
 import { SESSION_SOURCE } from '@/config/sessionSource';
@@ -34,11 +35,11 @@ const SOCKET_TOKEN_REJECTED = 4401;
 export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
   const authStore = useAuthStore();
   const alertStore = useAlertStore();
-  const agents = ref<RepositoryAgentName[]>([]);
+  const agents = ref<AgentEntry[]>([]);
   // A picker and the wire both address an agent by name; the id is only needed
   // to resolve a stored default agent, so the selectable names are derived here
   // rather than at every call site.
-  const agentNames = computed(() => agents.value.map((agent) => agent.name ?? ''));
+  const agentNames = computed(() => agents.value.map((agent) => agent.name));
   // The agent the user picked as the default for this source, by name, or '' when
   // the source holds none that can still be used.
   const defaultAgent = ref('');
@@ -119,7 +120,7 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
   async function loadAgents() {
     const res = await getAgentsNames();
     if (res.data) {
-      agents.value = res.data;
+      agents.value = toAgentEntries(res.data);
     }
   }
 

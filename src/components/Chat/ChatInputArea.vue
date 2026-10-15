@@ -34,7 +34,9 @@
           <UserIcon class="h-3.5 w-3.5 shrink-0 opacity-60" />
           <select class="select select-bordered select-xs bg-base-100 max-w-36" :value="selectedAgent" :disabled="agents.length === 0" @change="chooseAgent">
             <option v-if="agents.length === 0" value="" disabled>{{ t('chat.noAgents') }}</option>
-            <option v-for="a in agents" :key="a" :value="a">{{ a }}</option>
+            <!-- Keyed by position: two names may repeat, and the wire only carries
+            the name, so the two entries are the same choice either way. -->
+            <option v-for="(a, i) in agents" :key="i" :value="a">{{ a }}</option>
           </select>
         </div>
         <div class="ml-auto">

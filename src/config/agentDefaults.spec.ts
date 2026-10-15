@@ -19,9 +19,11 @@ describe('agentNameById', () => {
     expect(agentNameById([{ id: 'agent-1', name: 'researcher' }], 'agent-gone')).toBe('');
   });
 
-  it('answers nothing for a listed agent the API left unnamed', () => {
-    // The generated type marks both fields optional, so a row that arrives
-    // without a name must not become a default the picker cannot match.
-    expect(agentNameById([{ id: 'agent-1' }], 'agent-1')).toBe('');
+  it('answers nothing for a listing that carries no ids', () => {
+    // A data cloud that answers with names only cannot resolve a stored default,
+    // which is stored by id. Without this the first such entry would match the
+    // absent id and be read as the default the user chose.
+    expect(agentNameById([{ name: 'researcher' }, { name: 'writer' }], 'agent-1')).toBe('');
+    expect(agentNameById([{ name: 'researcher' }], undefined)).toBe('');
   });
 });

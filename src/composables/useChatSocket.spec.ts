@@ -130,6 +130,27 @@ describe('useChatSocket', () => {
     expect(FakeSocket.opened.map(socketPath)).toEqual(['/agent-api/chat/ws/session-a']);
   });
 
+  it('reads a listing of bare names, which is what an older data cloud answers with', async () => {
+    // A cloud that predates the id in the listing used to leave the picker with
+    // one nameless option per agent.
+    (api.getAgentsNames as Mock).mockResolvedValue({ data: ['researcher', 'writer'] });
+
+    const chatSocket = openChat(ref('session-a'));
+    await chatSocket.load();
+
+    expect(chatSocket.agentNames).toEqual(['researcher', 'writer']);
+    expect(chatSocket.defaultAgent).toBe('');
+  });
+
+  it('drops an agent the listing carries no name for', async () => {
+    (api.getAgentsNames as Mock).mockResolvedValue({ data: [{ id: 'agent-1' }, { id: 'agent-2', name: 'writer' }] });
+
+    const chatSocket = openChat(ref('session-a'));
+    await chatSocket.load();
+
+    expect(chatSocket.agentNames).toEqual(['writer']);
+  });
+
   it('resolves the stored default agent of this app source to its name', async () => {
     (api.getAgentsNames as Mock).mockResolvedValue({
       data: [
