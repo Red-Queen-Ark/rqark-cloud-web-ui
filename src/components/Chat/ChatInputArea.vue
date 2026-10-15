@@ -32,7 +32,7 @@
         <span class="text-base-content/20">|</span>
         <div class="flex items-center gap-1 text-xs text-base-content/70">
           <UserIcon class="h-3.5 w-3.5 shrink-0 opacity-60" />
-          <select class="select select-bordered select-xs bg-base-100 max-w-36" :value="selectedAgent" :disabled="agents.length === 0" @change="selectedAgent = ($event.target as HTMLSelectElement).value">
+          <select class="select select-bordered select-xs bg-base-100 max-w-36" :value="selectedAgent" :disabled="agents.length === 0" @change="chooseAgent">
             <option v-if="agents.length === 0" value="" disabled>{{ t('chat.noAgents') }}</option>
             <option v-for="a in agents" :key="a" :value="a">{{ a }}</option>
           </select>
@@ -63,6 +63,8 @@ import UserIcon from '@/components/svg/UserIcon.vue';
 
 const props = defineProps<{
   agents: string[];
+  /** The agent stored as the default for this app's session source, when one resolves. */
+  defaultAgent?: string;
   providers: ApiProviderSummaryDto[];
   status?: ChatStatus;
   streaming?: boolean;
@@ -83,16 +85,27 @@ const inputRef = ref<HTMLDivElement | null>(null);
 const hasContent = ref(false);
 const selectedAgent = ref('');
 const selectedProvider = ref('');
+/** Set once the user picks an agent by hand; see the agents watcher below. */
+const agentChosen = ref(false);
 
 watch(
-  () => props.agents,
-  (agents) => {
-    if (!agents.includes(selectedAgent.value)) {
-      selectedAgent.value = agents[0] ?? '';
+  () => [props.agents, props.defaultAgent] as const,
+  ([agents, defaultAgent]) => {
+    // A hand-made choice outranks the stored default: the two arrive on separate
+    // requests, so the default can land after the user has already picked one.
+    if (agentChosen.value && agents.includes(selectedAgent.value)) {
+      return;
     }
+    const preferred = defaultAgent && agents.includes(defaultAgent) ? defaultAgent : agents[0];
+    selectedAgent.value = preferred ?? '';
   },
   { immediate: true },
 );
+
+function chooseAgent(event: Event) {
+  agentChosen.value = true;
+  selectedAgent.value = (event.target as HTMLSelectElement).value;
+}
 
 watch(
   () => props.providers,

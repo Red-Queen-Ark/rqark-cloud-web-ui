@@ -55,3 +55,50 @@ test('starts a session with the first turn typed on the start page', async ({ pa
   await expect(page).toHaveURL(/\/en\/chat\/session-1$/);
   await expect.poll(() => sent).toEqual([JSON.stringify({ content: 'hello there', provider: 'openai', agent: 'researcher' })]);
 });
+
+test('starts on the default agent stored for the source', async ({ page }) => {
+  await mockBackend(page, {
+    session: boss,
+    agents: [
+      { id: 'agent-1', name: 'researcher', description: '', created_at: '2026-01-01T00:00:00Z' },
+      { id: 'agent-2', name: 'writer', description: '', created_at: '2026-01-01T00:00:00Z' },
+    ],
+    agentDefaults: { AGENT_CLOUD: 'agent-2' },
+    providers: [{ id: 'provider-1', name: 'openai', model_name: 'gpt-5', created_at: '2026-01-01T00:00:00Z' }],
+  });
+  await seedSession(page);
+
+  const sent: string[] = [];
+  await page.routeWebSocket(/\/agent-api\/chat\/ws\//, (ws) => {
+    ws.onMessage((message) => sent.push(String(message)));
+  });
+
+  await page.goto('/en');
+
+  // The picker comes up on the stored agent, not on the first one listed.
+  await expect(page.locator('#chat-input-area select').nth(1)).toHaveValue('writer');
+
+  const input = page.getByTestId('chat-input');
+  await expect(input).toBeEnabled();
+  await input.fill('hello there');
+  await page.getByTestId('chat-send').click();
+
+  await expect(page).toHaveURL(/\/en\/chat\/session-1$/);
+  await expect.poll(() => sent).toEqual([JSON.stringify({ content: 'hello there', provider: 'openai', agent: 'writer' })]);
+});
+
+test('starts on the first agent when the source holds no default', async ({ page }) => {
+  await mockBackend(page, {
+    session: boss,
+    agents: [
+      { id: 'agent-1', name: 'researcher', description: '', created_at: '2026-01-01T00:00:00Z' },
+      { id: 'agent-2', name: 'writer', description: '', created_at: '2026-01-01T00:00:00Z' },
+    ],
+    providers: [{ id: 'provider-1', name: 'openai', model_name: 'gpt-5', created_at: '2026-01-01T00:00:00Z' }],
+  });
+  await seedSession(page);
+
+  await page.goto('/en');
+
+  await expect(page.locator('#chat-input-area select').nth(1)).toHaveValue('researcher');
+});

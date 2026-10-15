@@ -6,9 +6,10 @@ import { flushPromises } from '@vue/test-utils';
 import { createPinia, setActivePinia, type Pinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import { effectScope, nextTick, ref, type EffectScope } from 'vue';
+import { SESSION_SOURCE } from '@/config/sessionSource';
 import { useChatSocket } from './useChatSocket';
 
-vi.mock('@/api', () => ({ getAgentsNames: vi.fn(), getProvidersModels: vi.fn(), getSessionsByUuid: vi.fn(), getSessionsByUuidMessages: vi.fn() }));
+vi.mock('@/api', () => ({ getAgentDefaultsBySource: vi.fn(), getAgentsNames: vi.fn(), getProvidersModels: vi.fn(), getSessionsByUuid: vi.fn(), getSessionsByUuidMessages: vi.fn() }));
 
 vi.mock('@/api-client/runtime', () => ({ refreshSession: vi.fn().mockResolvedValue(true) }));
 
@@ -107,6 +108,7 @@ describe('useChatSocket', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => [] }));
     vi.clearAllMocks();
     (api.getAgentsNames as Mock).mockResolvedValue({ data: [{ id: 'agent-1', name: 'researcher' }] });
+    (api.getAgentDefaultsBySource as Mock).mockResolvedValue({ error: { code: 'NOT_FOUND' } });
     (api.getProvidersModels as Mock).mockResolvedValue({ data: [{ name: 'openai', model_name: 'gpt-5' }] });
     (api.getSessionsByUuid as Mock).mockResolvedValue({ data: { id: 'session-a', plan_items: [] } });
     (api.getSessionsByUuidMessages as Mock).mockResolvedValue({ data: [] });
@@ -126,6 +128,72 @@ describe('useChatSocket', () => {
     await chatSocket.load();
 
     expect(FakeSocket.opened.map(socketPath)).toEqual(['/agent-api/chat/ws/session-a']);
+  });
+
+  it('resolves the stored default agent of this app source to its name', async () => {
+    (api.getAgentsNames as Mock).mockResolvedValue({
+      data: [
+        { id: 'agent-1', name: 'researcher' },
+        { id: 'agent-2', name: 'writer' },
+      ],
+    });
+    (api.getAgentDefaultsBySource as Mock).mockResolvedValue({ data: { id: 'default-1', source: SESSION_SOURCE, agent_id: 'agent-2' } });
+
+    const chatSocket = openChat(ref('session-a'));
+    await chatSocket.load();
+
+    expect(api.getAgentDefaultsBySource).toHaveBeenCalledWith({ path: { source: SESSION_SOURCE } });
+    expect(chatSocket.defaultAgent).toBe('writer');
+  });
+
+  it('holds no default when the source has none', async () => {
+    const chatSocket = openChat(ref('session-a'));
+    await chatSocket.load();
+
+    expect(chatSocket.defaultAgent).toBe('');
+  });
+
+  it('holds no default when the stored agent is no longer listed', async () => {
+    (api.getAgentDefaultsBySource as Mock).mockResolvedValue({ data: { id: 'default-1', source: SESSION_SOURCE, agent_id: 'agent-gone' } });
+
+    const chatSocket = openChat(ref('session-a'));
+    await chatSocket.load();
+
+    expect(chatSocket.defaultAgent).toBe('');
+  });
+
+  it('resolves the stored id of an agent whose name another agent shares', async () => {
+    (api.getAgentsNames as Mock).mockResolvedValue({
+      data: [
+        { id: 'agent-1', name: 'researcher' },
+        { id: 'agent-2', name: 'researcher' },
+      ],
+    });
+    (api.getAgentDefaultsBySource as Mock).mockResolvedValue({ data: { id: 'default-1', source: SESSION_SOURCE, agent_id: 'agent-2' } });
+
+    const chatSocket = openChat(ref('session-a'));
+    await chatSocket.load();
+
+    // Names are unique per owner only, so a shared agent may repeat one the
+    // caller already has. The id is what picks the row; the name then carries.
+    expect(chatSocket.defaultAgent).toBe('researcher');
+    expect(chatSocket.agentNames).toEqual(['researcher', 'researcher']);
+  });
+
+  it('reads the default again for every session it opens', async () => {
+    const sessionId = ref('session-a');
+    const chatSocket = openChat(sessionId);
+    await chatSocket.load();
+    expect(chatSocket.defaultAgent).toBe('');
+
+    (api.getAgentDefaultsBySource as Mock).mockResolvedValue({ data: { id: 'default-2', source: SESSION_SOURCE, agent_id: 'agent-1' } });
+    sessionId.value = 'session-b';
+    await nextTick();
+    await flushPromises();
+
+    // The stored row can disappear under the app, so a default cached from an
+    // earlier session would be a stale one.
+    expect(chatSocket.defaultAgent).toBe('researcher');
   });
 
   it('reopens the socket when the session changes after load', async () => {

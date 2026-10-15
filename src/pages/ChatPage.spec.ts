@@ -27,6 +27,7 @@ vi.mock('@/composables/useChatSocket', async () => {
         stop: socket.stop,
         agents: ref(socket.agentsValue),
         agentNames: ref(socket.agentsValue.map((agent) => agent.name)),
+        defaultAgent: ref(''),
         providers: ref(socket.providersValue),
         history: ref([]),
         planItems: ref([]),

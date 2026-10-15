@@ -1,9 +1,11 @@
 import { computed, onScopeDispose, reactive, ref, shallowRef, toValue, watch, type MaybeRefOrGetter } from 'vue';
-import { getAgentsNames, getProvidersModels, getSessionsByUuid, getSessionsByUuidMessages, type ApiProviderSummaryDto, type RepositoryAgentName } from '@/api';
+import { getAgentDefaultsBySource, getAgentsNames, getProvidersModels, getSessionsByUuid, getSessionsByUuidMessages, type ApiProviderSummaryDto, type RepositoryAgentName } from '@/api';
 import { fetchWithAuth } from '@/api-client/fetchWithAuth';
 import { refreshSession } from '@/api-client/runtime';
+import { agentNameById } from '@/config/agentDefaults';
 import { agentApiUrl } from '@/config/agentApi';
 import type { ChatStatus } from '@/config/chatStatus';
+import { SESSION_SOURCE } from '@/config/sessionSource';
 import { planItemsFrom, type PlanItem } from '@/config/sessions';
 import { i18n } from '@/i18n';
 import { useAlertStore } from '@/stores/alertStore';
@@ -37,6 +39,9 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
   // to resolve a stored default agent, so the selectable names are derived here
   // rather than at every call site.
   const agentNames = computed(() => agents.value.map((agent) => agent.name ?? ''));
+  // The agent the user picked as the default for this source, by name, or '' when
+  // the source holds none that can still be used.
+  const defaultAgent = ref('');
   const providers = ref<ApiProviderSummaryDto[]>([]);
   const ws = shallowRef<WebSocket>();
   const status = ref<ChatStatus>('idle');
@@ -106,6 +111,7 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
     streaming.value = false;
     await connect();
     await loadAgents();
+    await loadAgentDefault();
     await loadProviders();
     await resync();
   }
@@ -115,6 +121,21 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
     if (res.data) {
       agents.value = res.data;
     }
+  }
+
+  /**
+   * Reads the default agent this app's source holds and resolves it to a name.
+   *
+   * Read on every load rather than once, because the row is not the caller's to
+   * keep: the cloud drops it when the agent it names is deleted or unshared, and
+   * a name cached from an earlier load would then be a default the picker can no
+   * longer select. A source with no default answers 404, which is the ordinary
+   * shape of "nothing chosen yet" rather than a failure, so the error is left to
+   * resolve to ''.
+   */
+  async function loadAgentDefault() {
+    const { data } = await getAgentDefaultsBySource({ path: { source: SESSION_SOURCE } });
+    defaultAgent.value = agentNameById(agents.value, data?.agent_id);
   }
 
   async function loadProviders() {
@@ -403,6 +424,7 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
     load,
     agents,
     agentNames,
+    defaultAgent,
     providers,
     status,
     streaming,

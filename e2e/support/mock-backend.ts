@@ -125,6 +125,8 @@ export interface MockBackend {
   apiKeys: MockApiKey[];
   sessions: MockSession[];
   userConfig: Record<string, unknown>;
+  /** The default agent per session source, held as the agent id the API stores. */
+  agentDefaults: Record<string, string>;
   requests: string[];
   /** Every request that carried a JSON body, in order. */
   writes: MockWrite[];
@@ -144,6 +146,8 @@ export interface MockBackendOptions {
   /** Replaces the seeded session list. */
   sessions?: MockSession[];
   userConfig?: Record<string, unknown>;
+  /** Seeds the stored default agent per session source, keyed by source. */
+  agentDefaults?: Record<string, string>;
   /** Replaces the seeded account list. */
   users?: MockUser[];
 }
@@ -175,6 +179,7 @@ export async function mockBackend(page_: Page, options: MockBackendOptions = {})
     apiKeys: options.apiKeys ?? [],
     sessions: options.sessions ?? [],
     userConfig: options.userConfig ?? {},
+    agentDefaults: options.agentDefaults ?? {},
     requests: [],
     writes: [],
   };
@@ -241,6 +246,28 @@ export async function mockBackend(page_: Page, options: MockBackendOptions = {})
             return json(route, 404, { error: { code: 'NOT_FOUND', message: 'Config not found.' } });
           }
           state.userConfig = Object.fromEntries(Object.entries(state.userConfig).filter(([key]) => key !== configKey));
+          return route.fulfill({ status: 204, body: '' });
+        }
+      }
+
+      // One default per source. A source with none answers 404, which is how the
+      // real service reports "nothing chosen yet" rather than a failure.
+      const agentDefaultMatch = /^\/agent-defaults\/([^/]+)$/.exec(path);
+      if (agentDefaultMatch) {
+        const source = decodeURIComponent(agentDefaultMatch[1]);
+        if (method === 'GET') {
+          const agentId = state.agentDefaults[source];
+          if (!agentId) {
+            return json(route, 404, { error: { code: 'NOT_FOUND', message: 'Agent default not found.' } });
+          }
+          return json(route, 200, { id: `default-${source}`, source, agent_id: agentId, created_at: '2026-04-05T06:07:08Z', updated_at: WRITE_TIMESTAMP });
+        }
+        if (method === 'PUT') {
+          state.agentDefaults[source] = String(body?.agent_id ?? '');
+          return json(route, 200, { id: `default-${source}`, source, agent_id: state.agentDefaults[source], created_at: '2026-04-05T06:07:08Z', updated_at: WRITE_TIMESTAMP });
+        }
+        if (method === 'DELETE') {
+          state.agentDefaults = Object.fromEntries(Object.entries(state.agentDefaults).filter(([key]) => key !== source));
           return route.fulfill({ status: 204, body: '' });
         }
       }
