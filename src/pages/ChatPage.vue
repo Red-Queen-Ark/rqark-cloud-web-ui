@@ -10,7 +10,16 @@
       <div v-if="!pinned" class="pointer-events-none absolute inset-x-0 bottom-full mb-3 flex justify-end px-4">
         <ScrollToBottomButton class="pointer-events-auto" @click="scrollToBottom" />
       </div>
-      <ChatInputArea ref="inputArea" :agents="chatSocket.agentNames" :default-agent="chatSocket.defaultAgent" :providers="chatSocket.providers" :status="chatSocket.status" :streaming="chatSocket.streaming" @submit="handleSubmit" @stop="chatSocket.stop" />
+      <ChatInputArea
+        ref="inputArea"
+        :agents="chatSocket.agentNames"
+        :default-agent="chatSocket.defaultAgent"
+        :providers="chatSocket.providers"
+        :status="chatSocket.status"
+        :streaming="chatSocket.streaming"
+        @submit="handleSubmit"
+        @stop="chatSocket.stop"
+      />
     </div>
   </div>
 </template>
