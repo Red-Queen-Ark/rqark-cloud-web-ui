@@ -137,7 +137,7 @@ export const postAgents = <ThrowOnError extends boolean = false>(options: Option
 /**
  * List agent names
  *
- * Returns the name of the caller's own agents plus the ones other users share, ordered by name. The rest of each agent is left out. Not paginated: a user has few of them.
+ * Returns the id and name of the caller's own agents plus the ones other users share, ordered by name then id. The rest of each agent is left out. Not paginated: a user has few of them.
  */
 export const getAgentsNames = <ThrowOnError extends boolean = false>(options?: Options<GetAgentsNamesData, ThrowOnError>) => {
     return (options?.client ?? client).get<GetAgentsNamesResponses, GetAgentsNamesErrors, ThrowOnError>({

@@ -314,7 +314,12 @@ export async function mockBackend(page_: Page, options: MockBackendOptions = {})
       }
 
       if (path === '/agents/names' && method === 'GET') {
-        return json(route, 200, state.agents.map((agent) => agent.name).sort());
+        // Same order the service uses: name then id, so a name two agents share
+        // resolves to the same row here as it does in the cloud.
+        const names = state.agents
+          .map((agent) => ({ id: agent.id, name: agent.name }))
+          .sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
+        return json(route, 200, names);
       }
 
       const agentMatch = /^\/agents\/([^/]+)$/.exec(path);

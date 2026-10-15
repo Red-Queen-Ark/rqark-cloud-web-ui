@@ -12,7 +12,7 @@ const socket = vi.hoisted(() => ({
   send: vi.fn(),
   stop: vi.fn(),
   sessionId: undefined as unknown,
-  agentsValue: ['researcher'],
+  agentsValue: [{ id: 'agent-1', name: 'researcher' }],
   providersValue: [{ name: 'openai', model_name: 'gpt-5' }],
 }));
 
@@ -26,6 +26,7 @@ vi.mock('@/composables/useChatSocket', async () => {
         send: socket.send,
         stop: socket.stop,
         agents: ref(socket.agentsValue),
+        agentNames: ref(socket.agentsValue.map((agent) => agent.name)),
         providers: ref(socket.providersValue),
         history: ref([]),
         planItems: ref([]),

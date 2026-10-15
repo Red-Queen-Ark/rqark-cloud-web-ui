@@ -1,5 +1,5 @@
-import { onScopeDispose, reactive, ref, shallowRef, toValue, watch, type MaybeRefOrGetter } from 'vue';
-import { getAgentsNames, getProvidersModels, getSessionsByUuid, getSessionsByUuidMessages, type ApiProviderSummaryDto } from '@/api';
+import { computed, onScopeDispose, reactive, ref, shallowRef, toValue, watch, type MaybeRefOrGetter } from 'vue';
+import { getAgentsNames, getProvidersModels, getSessionsByUuid, getSessionsByUuidMessages, type ApiProviderSummaryDto, type RepositoryAgentName } from '@/api';
 import { fetchWithAuth } from '@/api-client/fetchWithAuth';
 import { refreshSession } from '@/api-client/runtime';
 import { agentApiUrl } from '@/config/agentApi';
@@ -32,7 +32,11 @@ const SOCKET_TOKEN_REJECTED = 4401;
 export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
   const authStore = useAuthStore();
   const alertStore = useAlertStore();
-  const agents = ref<string[]>([]);
+  const agents = ref<RepositoryAgentName[]>([]);
+  // A picker and the wire both address an agent by name; the id is only needed
+  // to resolve a stored default agent, so the selectable names are derived here
+  // rather than at every call site.
+  const agentNames = computed(() => agents.value.map((agent) => agent.name ?? ''));
   const providers = ref<ApiProviderSummaryDto[]>([]);
   const ws = shallowRef<WebSocket>();
   const status = ref<ChatStatus>('idle');
@@ -398,6 +402,7 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
   return reactive({
     load,
     agents,
+    agentNames,
     providers,
     status,
     streaming,

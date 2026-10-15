@@ -295,6 +295,11 @@ export type ApiVersionResponse = {
     version?: string;
 };
 
+export type RepositoryAgentName = {
+    id?: string;
+    name?: string;
+};
+
 export type RepositoryAgentPrompt = {
     name?: string;
     params?: {
@@ -600,7 +605,7 @@ export type GetAgentsNamesResponses = {
     /**
      * OK
      */
-    200: Array<string>;
+    200: Array<RepositoryAgentName>;
 };
 
 export type GetAgentsNamesResponse = GetAgentsNamesResponses[keyof GetAgentsNamesResponses];

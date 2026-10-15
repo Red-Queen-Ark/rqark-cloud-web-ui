@@ -106,7 +106,7 @@ describe('useChatSocket', () => {
     vi.stubGlobal('WebSocket', FakeSocket);
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => [] }));
     vi.clearAllMocks();
-    (api.getAgentsNames as Mock).mockResolvedValue({ data: ['researcher'] });
+    (api.getAgentsNames as Mock).mockResolvedValue({ data: [{ id: 'agent-1', name: 'researcher' }] });
     (api.getProvidersModels as Mock).mockResolvedValue({ data: [{ name: 'openai', model_name: 'gpt-5' }] });
     (api.getSessionsByUuid as Mock).mockResolvedValue({ data: { id: 'session-a', plan_items: [] } });
     (api.getSessionsByUuidMessages as Mock).mockResolvedValue({ data: [] });

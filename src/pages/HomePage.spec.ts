@@ -20,7 +20,8 @@ vi.mock('@/composables/useChatSocket', async () => {
     useChatSocket: () =>
       reactive({
         load: socket.load,
-        agents: ref(['researcher']),
+        agents: ref([{ id: 'agent-1', name: 'researcher' }]),
+        agentNames: ref(['researcher']),
         providers: ref([{ name: 'openai', model_name: 'gpt-5' }]),
         status: ref('idle'),
       }),
