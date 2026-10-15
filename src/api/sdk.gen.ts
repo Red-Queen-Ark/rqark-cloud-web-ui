@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { DeleteAgentsByUuidData, DeleteAgentsByUuidErrors, DeleteAgentsByUuidResponses, DeleteApiKeysByUuidData, DeleteApiKeysByUuidErrors, DeleteApiKeysByUuidResponses, DeleteGroupsByUuidData, DeleteGroupsByUuidErrors, DeleteGroupsByUuidResponses, DeleteGroupsByUuidUsersByUserUuidData, DeleteGroupsByUuidUsersByUserUuidErrors, DeleteGroupsByUuidUsersByUserUuidResponses, DeleteProvidersByUuidData, DeleteProvidersByUuidErrors, DeleteProvidersByUuidResponses, DeleteSessionsByUuidData, DeleteSessionsByUuidErrors, DeleteSessionsByUuidResponses, DeleteUserConfigByKeyData, DeleteUserConfigByKeyErrors, DeleteUserConfigByKeyResponses, DeleteUsersByUuidData, DeleteUsersByUuidErrors, DeleteUsersByUuidResponses, GetAgentsByUuidData, GetAgentsByUuidErrors, GetAgentsByUuidResponses, GetAgentsData, GetAgentsErrors, GetAgentsNamesData, GetAgentsNamesErrors, GetAgentsNamesResponses, GetAgentsResponses, GetApiKeysData, GetApiKeysErrors, GetApiKeysResponses, GetGroupsByUuidData, GetGroupsByUuidErrors, GetGroupsByUuidResponses, GetGroupsByUuidUsersData, GetGroupsByUuidUsersErrors, GetGroupsByUuidUsersResponses, GetGroupsData, GetGroupsErrors, GetGroupsResponses, GetPingData, GetPingResponses, GetProvidersByUuidData, GetProvidersByUuidErrors, GetProvidersByUuidResponses, GetProvidersData, GetProvidersErrors, GetProvidersModelsData, GetProvidersModelsErrors, GetProvidersModelsResponses, GetProvidersResponses, GetSessionsByUuidData, GetSessionsByUuidErrors, GetSessionsByUuidMessagesData, GetSessionsByUuidMessagesErrors, GetSessionsByUuidMessagesResponses, GetSessionsByUuidResponses, GetSessionsData, GetSessionsErrors, GetSessionsResponses, GetSwaggerJsonData, GetSwaggerJsonResponses, GetSwaggerYmlData, GetSwaggerYmlResponses, GetUserConfigData, GetUserConfigErrors, GetUserConfigResponses, GetUsersByUuidData, GetUsersByUuidErrors, GetUsersByUuidResponses, GetUsersData, GetUsersErrors, GetUsersMeData, GetUsersMeErrors, GetUsersMeResponses, GetUsersResponses, OptionsSwaggerJsonData, OptionsSwaggerJsonResponses, PatchApiKeysByUuidData, PatchApiKeysByUuidErrors, PatchApiKeysByUuidResponses, PatchGroupsByUuidData, PatchGroupsByUuidErrors, PatchGroupsByUuidResponses, PatchUsersByUuidData, PatchUsersByUuidErrors, PatchUsersByUuidResponses, PatchUsersMeData, PatchUsersMeErrors, PatchUsersMeResponses, PostAgentsData, PostAgentsErrors, PostAgentsResponses, PostApiKeysData, PostApiKeysErrors, PostApiKeysResponses, PostAuthForgotPasswordData, PostAuthForgotPasswordErrors, PostAuthForgotPasswordResponses, PostAuthLoginData, PostAuthLoginErrors, PostAuthLoginResponses, PostAuthRefreshData, PostAuthRefreshErrors, PostAuthRefreshResponses, PostAuthRegisterData, PostAuthRegisterErrors, PostAuthRegisterResponses, PostAuthResetPasswordData, PostAuthResetPasswordErrors, PostAuthResetPasswordResponses, PostGroupsData, PostGroupsErrors, PostGroupsResponses, PostProvidersData, PostProvidersErrors, PostProvidersResponses, PostSessionsData, PostSessionsErrors, PostSessionsResponses, PostUsersData, PostUsersErrors, PostUsersResponses, PutAgentsByUuidData, PutAgentsByUuidErrors, PutAgentsByUuidResponses, PutGroupsByUuidUsersByUserUuidData, PutGroupsByUuidUsersByUserUuidErrors, PutGroupsByUuidUsersByUserUuidResponses, PutProvidersByUuidData, PutProvidersByUuidErrors, PutProvidersByUuidResponses, PutSessionsByUuidData, PutSessionsByUuidErrors, PutSessionsByUuidResponses, PutUserConfigByKeyData, PutUserConfigByKeyErrors, PutUserConfigByKeyResponses, PutUsersByUuidPasswordData, PutUsersByUuidPasswordErrors, PutUsersByUuidPasswordResponses, PutUsersMePasswordData, PutUsersMePasswordErrors, PutUsersMePasswordResponses } from './types.gen';
+import type { DeleteAgentDefaultsBySourceData, DeleteAgentDefaultsBySourceErrors, DeleteAgentDefaultsBySourceResponses, DeleteAgentsByUuidData, DeleteAgentsByUuidErrors, DeleteAgentsByUuidResponses, DeleteApiKeysByUuidData, DeleteApiKeysByUuidErrors, DeleteApiKeysByUuidResponses, DeleteGroupsByUuidData, DeleteGroupsByUuidErrors, DeleteGroupsByUuidResponses, DeleteGroupsByUuidUsersByUserUuidData, DeleteGroupsByUuidUsersByUserUuidErrors, DeleteGroupsByUuidUsersByUserUuidResponses, DeleteProvidersByUuidData, DeleteProvidersByUuidErrors, DeleteProvidersByUuidResponses, DeleteSessionsByUuidData, DeleteSessionsByUuidErrors, DeleteSessionsByUuidResponses, DeleteUserConfigByKeyData, DeleteUserConfigByKeyErrors, DeleteUserConfigByKeyResponses, DeleteUsersByUuidData, DeleteUsersByUuidErrors, DeleteUsersByUuidResponses, GetAgentDefaultsBySourceData, GetAgentDefaultsBySourceErrors, GetAgentDefaultsBySourceResponses, GetAgentDefaultsData, GetAgentDefaultsErrors, GetAgentDefaultsResponses, GetAgentsByUuidData, GetAgentsByUuidErrors, GetAgentsByUuidResponses, GetAgentsData, GetAgentsErrors, GetAgentsNamesData, GetAgentsNamesErrors, GetAgentsNamesResponses, GetAgentsResponses, GetApiKeysData, GetApiKeysErrors, GetApiKeysResponses, GetGroupsByUuidData, GetGroupsByUuidErrors, GetGroupsByUuidResponses, GetGroupsByUuidUsersData, GetGroupsByUuidUsersErrors, GetGroupsByUuidUsersResponses, GetGroupsData, GetGroupsErrors, GetGroupsResponses, GetPingData, GetPingResponses, GetProvidersByUuidData, GetProvidersByUuidErrors, GetProvidersByUuidResponses, GetProvidersData, GetProvidersErrors, GetProvidersModelsData, GetProvidersModelsErrors, GetProvidersModelsResponses, GetProvidersResponses, GetSessionsByUuidData, GetSessionsByUuidErrors, GetSessionsByUuidMessagesData, GetSessionsByUuidMessagesErrors, GetSessionsByUuidMessagesResponses, GetSessionsByUuidResponses, GetSessionsData, GetSessionsErrors, GetSessionsResponses, GetSwaggerJsonData, GetSwaggerJsonResponses, GetSwaggerYmlData, GetSwaggerYmlResponses, GetUserConfigData, GetUserConfigErrors, GetUserConfigResponses, GetUsersByUuidData, GetUsersByUuidErrors, GetUsersByUuidResponses, GetUsersData, GetUsersErrors, GetUsersMeData, GetUsersMeErrors, GetUsersMeResponses, GetUsersResponses, GetVersionData, GetVersionResponses, OptionsSwaggerJsonData, OptionsSwaggerJsonResponses, PatchApiKeysByUuidData, PatchApiKeysByUuidErrors, PatchApiKeysByUuidResponses, PatchGroupsByUuidData, PatchGroupsByUuidErrors, PatchGroupsByUuidResponses, PatchUsersByUuidData, PatchUsersByUuidErrors, PatchUsersByUuidResponses, PatchUsersMeData, PatchUsersMeErrors, PatchUsersMeResponses, PostAgentsData, PostAgentsErrors, PostAgentsResponses, PostApiKeysData, PostApiKeysErrors, PostApiKeysResponses, PostAuthForgotPasswordData, PostAuthForgotPasswordErrors, PostAuthForgotPasswordResponses, PostAuthLoginData, PostAuthLoginErrors, PostAuthLoginResponses, PostAuthRefreshData, PostAuthRefreshErrors, PostAuthRefreshResponses, PostAuthRegisterData, PostAuthRegisterErrors, PostAuthRegisterResponses, PostAuthResetPasswordData, PostAuthResetPasswordErrors, PostAuthResetPasswordResponses, PostGroupsData, PostGroupsErrors, PostGroupsResponses, PostProvidersData, PostProvidersErrors, PostProvidersResponses, PostSessionsData, PostSessionsErrors, PostSessionsResponses, PostUsersData, PostUsersErrors, PostUsersResponses, PutAgentDefaultsBySourceData, PutAgentDefaultsBySourceErrors, PutAgentDefaultsBySourceResponses, PutAgentsByUuidData, PutAgentsByUuidErrors, PutAgentsByUuidResponses, PutGroupsByUuidUsersByUserUuidData, PutGroupsByUuidUsersByUserUuidErrors, PutGroupsByUuidUsersByUserUuidResponses, PutProvidersByUuidData, PutProvidersByUuidErrors, PutProvidersByUuidPriorityData, PutProvidersByUuidPriorityErrors, PutProvidersByUuidPriorityResponses, PutProvidersByUuidResponses, PutSessionsByUuidData, PutSessionsByUuidErrors, PutSessionsByUuidResponses, PutUserConfigByKeyData, PutUserConfigByKeyErrors, PutUserConfigByKeyResponses, PutUsersByUuidPasswordData, PutUsersByUuidPasswordErrors, PutUsersByUuidPasswordResponses, PutUsersMePasswordData, PutUsersMePasswordErrors, PutUsersMePasswordResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -19,9 +19,85 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
 };
 
 /**
+ * List agent defaults
+ *
+ * Returns all of the caller's default agents, ordered by source. Not paginated: a user names one source per client it runs and the app wants the whole set at once.
+ */
+export const getAgentDefaults = <ThrowOnError extends boolean = false>(options?: Options<GetAgentDefaultsData, ThrowOnError>) => {
+    return (options?.client ?? client).get<GetAgentDefaultsResponses, GetAgentDefaultsErrors, ThrowOnError>({
+        security: [
+            {
+                name: 'Authorization',
+                type: 'apiKey'
+            }
+        ],
+        url: '/agent-defaults',
+        ...options
+    });
+};
+
+/**
+ * Delete a default agent
+ *
+ * Hard delete of the caller's default agent for one source. A source that has no default is reported as 404.
+ */
+export const deleteAgentDefaultsBySource = <ThrowOnError extends boolean = false>(options: Options<DeleteAgentDefaultsBySourceData, ThrowOnError>) => {
+    return (options.client ?? client).delete<DeleteAgentDefaultsBySourceResponses, DeleteAgentDefaultsBySourceErrors, ThrowOnError>({
+        security: [
+            {
+                name: 'Authorization',
+                type: 'apiKey'
+            }
+        ],
+        url: '/agent-defaults/{source}',
+        ...options
+    });
+};
+
+/**
+ * Get a default agent
+ *
+ * Returns the caller's default agent for one source. A source that holds no default is reported as 404.
+ */
+export const getAgentDefaultsBySource = <ThrowOnError extends boolean = false>(options: Options<GetAgentDefaultsBySourceData, ThrowOnError>) => {
+    return (options.client ?? client).get<GetAgentDefaultsBySourceResponses, GetAgentDefaultsBySourceErrors, ThrowOnError>({
+        security: [
+            {
+                name: 'Authorization',
+                type: 'apiKey'
+            }
+        ],
+        url: '/agent-defaults/{source}',
+        ...options
+    });
+};
+
+/**
+ * Set a default agent
+ *
+ * Upserts the caller's default agent for one source: the agent of an existing source is overwritten, a source that does not exist is created. The agent has to be one the caller may use: its own, or one another user shares.
+ */
+export const putAgentDefaultsBySource = <ThrowOnError extends boolean = false>(options: Options<PutAgentDefaultsBySourceData, ThrowOnError>) => {
+    return (options.client ?? client).put<PutAgentDefaultsBySourceResponses, PutAgentDefaultsBySourceErrors, ThrowOnError>({
+        security: [
+            {
+                name: 'Authorization',
+                type: 'apiKey'
+            }
+        ],
+        url: '/agent-defaults/{source}',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
+};
+
+/**
  * List agents
  *
- * Returns all of the caller's agents, ordered by name. Not paginated: a user has few of them.
+ * Returns the caller's own agents plus every agent another user shares, ordered by name. A shared agent carries `is_public` true and `owned` false, and cannot be changed by anyone but its owner. Not paginated: a user has few of them.
  */
 export const getAgents = <ThrowOnError extends boolean = false>(options?: Options<GetAgentsData, ThrowOnError>) => {
     return (options?.client ?? client).get<GetAgentsResponses, GetAgentsErrors, ThrowOnError>({
@@ -39,7 +115,7 @@ export const getAgents = <ThrowOnError extends boolean = false>(options?: Option
 /**
  * Create an agent
  *
- * The agent belongs to the caller. Answers 201 with a Location header pointing at the new agent.
+ * The agent belongs to the caller. `is_public` shares it with every other user and is reserved to superusers. Answers 201 with a Location header pointing at the new agent.
  */
 export const postAgents = <ThrowOnError extends boolean = false>(options: Options<PostAgentsData, ThrowOnError>) => {
     return (options.client ?? client).post<PostAgentsResponses, PostAgentsErrors, ThrowOnError>({
@@ -61,7 +137,7 @@ export const postAgents = <ThrowOnError extends boolean = false>(options: Option
 /**
  * List agent names
  *
- * Returns the name of all of the caller's agents, ordered by name. The rest of each agent is left out. Not paginated: a user has few of them.
+ * Returns the name of the caller's own agents plus the ones other users share, ordered by name. The rest of each agent is left out. Not paginated: a user has few of them.
  */
 export const getAgentsNames = <ThrowOnError extends boolean = false>(options?: Options<GetAgentsNamesData, ThrowOnError>) => {
     return (options?.client ?? client).get<GetAgentsNamesResponses, GetAgentsNamesErrors, ThrowOnError>({
@@ -97,7 +173,7 @@ export const deleteAgentsByUuid = <ThrowOnError extends boolean = false>(options
 /**
  * Get an agent
  *
- * Returns one of the caller's agents. Another user's agent is reported as 404.
+ * Returns an agent the caller may use: one it owns, or one another user shares. An agent the caller may not use is reported as 404.
  */
 export const getAgentsByUuid = <ThrowOnError extends boolean = false>(options: Options<GetAgentsByUuidData, ThrowOnError>) => {
     return (options.client ?? client).get<GetAgentsByUuidResponses, GetAgentsByUuidErrors, ThrowOnError>({
@@ -115,7 +191,7 @@ export const getAgentsByUuid = <ThrowOnError extends boolean = false>(options: O
 /**
  * Update an agent
  *
- * Every field is optional and a field that is absent is left untouched. Another user's agent is reported as 404.
+ * Every field is optional and a field that is absent is left untouched. `is_public` shares the agent with every other user and is reserved to superusers. Another user's agent is reported as 404, so only the owner changes a shared one.
  */
 export const putAgentsByUuid = <ThrowOnError extends boolean = false>(options: Options<PutAgentsByUuidData, ThrowOnError>) => {
     return (options.client ?? client).put<PutAgentsByUuidResponses, PutAgentsByUuidErrors, ThrowOnError>({
@@ -461,7 +537,7 @@ export const getPing = <ThrowOnError extends boolean = false>(options?: Options<
 /**
  * List providers
  *
- * Returns all of the caller's providers, lowest priority first. Not paginated: a user has few of them.
+ * Returns the caller's own providers plus every provider another user shares, ordered by the priority that applies to the caller: its own `priority_override` on a shared provider when one is set, the provider's own `priority` when the caller owns it, and `-99` on a shared provider the caller never ordered. A shared provider carries `is_public` true and `owned` false, and only its owner changes its fields. Not paginated: a user has few of them.
  */
 export const getProviders = <ThrowOnError extends boolean = false>(options?: Options<GetProvidersData, ThrowOnError>) => {
     return (options?.client ?? client).get<GetProvidersResponses, GetProvidersErrors, ThrowOnError>({
@@ -479,7 +555,7 @@ export const getProviders = <ThrowOnError extends boolean = false>(options?: Opt
 /**
  * Create a provider
  *
- * The provider belongs to the caller. Answers 201 with a Location header pointing at the new provider.
+ * The provider belongs to the caller. `is_public` shares it with every other user and is reserved to superusers. Answers 201 with a Location header pointing at the new provider.
  */
 export const postProviders = <ThrowOnError extends boolean = false>(options: Options<PostProvidersData, ThrowOnError>) => {
     return (options.client ?? client).post<PostProvidersResponses, PostProvidersErrors, ThrowOnError>({
@@ -501,7 +577,7 @@ export const postProviders = <ThrowOnError extends boolean = false>(options: Opt
 /**
  * List provider models
  *
- * Returns name and model_name for all of the caller's providers, lowest priority first. The remaining provider fields, credentials included, are left out. Not paginated: a user has few of them.
+ * Returns name and model_name for the caller's own providers plus the ones other users share, in the same order as GET /api/providers. The remaining provider fields, credentials included, are left out. Not paginated: a user has few of them.
  */
 export const getProvidersModels = <ThrowOnError extends boolean = false>(options?: Options<GetProvidersModelsData, ThrowOnError>) => {
     return (options?.client ?? client).get<GetProvidersModelsResponses, GetProvidersModelsErrors, ThrowOnError>({
@@ -537,7 +613,7 @@ export const deleteProvidersByUuid = <ThrowOnError extends boolean = false>(opti
 /**
  * Get a provider
  *
- * Returns one of the caller's providers, api_key included. Another user's provider is reported as 404.
+ * Returns a provider the caller may use: one it owns, or one another user shares. api_key is included, since the client needs it to reach the model. A provider the caller may not use is reported as 404.
  */
 export const getProvidersByUuid = <ThrowOnError extends boolean = false>(options: Options<GetProvidersByUuidData, ThrowOnError>) => {
     return (options.client ?? client).get<GetProvidersByUuidResponses, GetProvidersByUuidErrors, ThrowOnError>({
@@ -555,7 +631,7 @@ export const getProvidersByUuid = <ThrowOnError extends boolean = false>(options
 /**
  * Update a provider
  *
- * A field that is absent keeps its stored value; sending null clears a nullable field. Another user's provider is reported as 404.
+ * A field that is absent keeps its stored value; sending null clears a nullable field. `is_public` shares the provider with every other user and is reserved to superusers. Another user's provider is reported as 404, so only the owner changes a shared one.
  */
 export const putProvidersByUuid = <ThrowOnError extends boolean = false>(options: Options<PutProvidersByUuidData, ThrowOnError>) => {
     return (options.client ?? client).put<PutProvidersByUuidResponses, PutProvidersByUuidErrors, ThrowOnError>({
@@ -566,6 +642,28 @@ export const putProvidersByUuid = <ThrowOnError extends boolean = false>(options
             }
         ],
         url: '/providers/{uuid}',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
+};
+
+/**
+ * Set a provider priority override
+ *
+ * Sets the priority the caller uses to order a provider another user shared. The provider's own fields, credentials included, stay with its owner; only the caller's ordering changes, and every other user is left alone. A provider the caller owns is reported as 400 (its priority is its own field), a provider the caller may not use as 404.
+ */
+export const putProvidersByUuidPriority = <ThrowOnError extends boolean = false>(options: Options<PutProvidersByUuidPriorityData, ThrowOnError>) => {
+    return (options.client ?? client).put<PutProvidersByUuidPriorityResponses, PutProvidersByUuidPriorityErrors, ThrowOnError>({
+        security: [
+            {
+                name: 'Authorization',
+                type: 'apiKey'
+            }
+        ],
+        url: '/providers/{uuid}/priority',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -963,5 +1061,17 @@ export const putUsersByUuidPassword = <ThrowOnError extends boolean = false>(opt
             'Content-Type': 'application/json',
             ...options.headers
         }
+    });
+};
+
+/**
+ * Build version
+ *
+ * Returns the version of the running binary. It is injected at build time from the release tag, so a development build reports "dev". Does not touch PostgreSQL or Redis.
+ */
+export const getVersion = <ThrowOnError extends boolean = false>(options?: Options<GetVersionData, ThrowOnError>) => {
+    return (options?.client ?? client).get<GetVersionResponses, unknown, ThrowOnError>({
+        url: '/version',
+        ...options
     });
 };

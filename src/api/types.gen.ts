@@ -26,9 +26,19 @@ export type ApiAgentDto = {
     created_at?: string;
     description?: string;
     id?: string;
+    is_public?: boolean;
     name?: string;
+    owned?: boolean;
     prompts?: Array<RepositoryAgentPrompt>;
     tools?: Array<RepositoryAgentTool>;
+    updated_at?: string;
+};
+
+export type ApiAgentDefaultDto = {
+    agent_id?: string;
+    created_at?: string;
+    id?: string;
+    source?: string;
     updated_at?: string;
 };
 
@@ -44,6 +54,7 @@ export type ApiCreateApiKeyRequest = {
 
 export type ApiCreateAgentRequest = {
     description?: string;
+    is_public?: boolean;
     name?: string;
     prompts?: Array<RepositoryAgentPrompt>;
     tools?: Array<RepositoryAgentTool>;
@@ -58,6 +69,7 @@ export type ApiCreateProviderRequest = {
     api_key?: string;
     combine?: boolean;
     frequency_penalty?: number;
+    is_public?: boolean;
     model_name?: string;
     name?: string;
     presence_penalty?: number;
@@ -115,10 +127,18 @@ export type ApiProviderDto = {
     created_at?: string;
     frequency_penalty?: number;
     id?: string;
+    is_public?: boolean;
     model_name?: string;
     name?: string;
+    owned?: boolean;
     presence_penalty?: number;
     priority?: number;
+    /**
+     * PriorityOverride is the caller's own priority for a shared provider, or
+     * null when the caller never ordered it. It is always null on a provider the
+     * caller owns: that priority is edited through the provider.
+     */
+    priority_override?: number;
     reasoning_effort?: string;
     seed?: number;
     temperature?: number;
@@ -130,6 +150,10 @@ export type ApiProviderDto = {
 export type ApiProviderSummaryDto = {
     model_name?: string;
     name?: string;
+};
+
+export type ApiPutAgentDefaultRequest = {
+    agent_id?: string;
 };
 
 export type ApiPutUserConfigRequest = {
@@ -176,6 +200,10 @@ export type ApiSetPasswordRequest = {
     new_password?: string;
 };
 
+export type ApiSetProviderPriorityRequest = {
+    priority?: number;
+};
+
 export type ApiTokenPair = {
     access_token?: string;
     refresh_token?: string;
@@ -189,6 +217,7 @@ export type ApiUpdateApiKeyRequest = {
 
 export type ApiUpdateAgentRequest = {
     description?: string;
+    is_public?: boolean;
     name?: string;
     prompts?: Array<RepositoryAgentPrompt>;
     tools?: Array<RepositoryAgentTool>;
@@ -210,6 +239,7 @@ export type ApiUpdateProviderRequest = {
     api_key?: string;
     combine?: boolean;
     frequency_penalty?: number;
+    is_public?: boolean;
     model_name?: string;
     name?: string;
     presence_penalty?: number;
@@ -259,6 +289,10 @@ export type ApiUserDto = {
     is_superuser?: boolean;
     updated_at?: string;
     username?: string;
+};
+
+export type ApiVersionResponse = {
+    version?: string;
 };
 
 export type RepositoryAgentPrompt = {
@@ -313,6 +347,162 @@ export type UtilsPageApiUserDto = {
     total?: number;
 };
 
+export type GetAgentDefaultsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/agent-defaults';
+};
+
+export type GetAgentDefaultsErrors = {
+    /**
+     * Unauthorized
+     */
+    401: UtilsErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: UtilsErrorResponse;
+};
+
+export type GetAgentDefaultsError = GetAgentDefaultsErrors[keyof GetAgentDefaultsErrors];
+
+export type GetAgentDefaultsResponses = {
+    /**
+     * OK
+     */
+    200: Array<ApiAgentDefaultDto>;
+};
+
+export type GetAgentDefaultsResponse = GetAgentDefaultsResponses[keyof GetAgentDefaultsResponses];
+
+export type DeleteAgentDefaultsBySourceData = {
+    body?: never;
+    path: {
+        /**
+         * Session source
+         */
+        source: string;
+    };
+    query?: never;
+    url: '/agent-defaults/{source}';
+};
+
+export type DeleteAgentDefaultsBySourceErrors = {
+    /**
+     * Bad Request
+     */
+    400: UtilsErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: UtilsErrorResponse;
+    /**
+     * Not Found
+     */
+    404: UtilsErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: UtilsErrorResponse;
+};
+
+export type DeleteAgentDefaultsBySourceError = DeleteAgentDefaultsBySourceErrors[keyof DeleteAgentDefaultsBySourceErrors];
+
+export type DeleteAgentDefaultsBySourceResponses = {
+    /**
+     * No Content
+     */
+    204: unknown;
+};
+
+export type GetAgentDefaultsBySourceData = {
+    body?: never;
+    path: {
+        /**
+         * Session source
+         */
+        source: string;
+    };
+    query?: never;
+    url: '/agent-defaults/{source}';
+};
+
+export type GetAgentDefaultsBySourceErrors = {
+    /**
+     * Bad Request
+     */
+    400: UtilsErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: UtilsErrorResponse;
+    /**
+     * Not Found
+     */
+    404: UtilsErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: UtilsErrorResponse;
+};
+
+export type GetAgentDefaultsBySourceError = GetAgentDefaultsBySourceErrors[keyof GetAgentDefaultsBySourceErrors];
+
+export type GetAgentDefaultsBySourceResponses = {
+    /**
+     * OK
+     */
+    200: ApiAgentDefaultDto;
+};
+
+export type GetAgentDefaultsBySourceResponse = GetAgentDefaultsBySourceResponses[keyof GetAgentDefaultsBySourceResponses];
+
+export type PutAgentDefaultsBySourceData = {
+    /**
+     * Default agent to set
+     */
+    body: ApiPutAgentDefaultRequest;
+    path: {
+        /**
+         * Session source
+         */
+        source: string;
+    };
+    query?: never;
+    url: '/agent-defaults/{source}';
+};
+
+export type PutAgentDefaultsBySourceErrors = {
+    /**
+     * Bad Request
+     */
+    400: UtilsErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: UtilsErrorResponse;
+    /**
+     * Not Found
+     */
+    404: UtilsErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: UtilsErrorResponse;
+};
+
+export type PutAgentDefaultsBySourceError = PutAgentDefaultsBySourceErrors[keyof PutAgentDefaultsBySourceErrors];
+
+export type PutAgentDefaultsBySourceResponses = {
+    /**
+     * OK
+     */
+    200: ApiAgentDefaultDto;
+};
+
+export type PutAgentDefaultsBySourceResponse = PutAgentDefaultsBySourceResponses[keyof PutAgentDefaultsBySourceResponses];
+
 export type GetAgentsData = {
     body?: never;
     path?: never;
@@ -361,6 +551,10 @@ export type PostAgentsErrors = {
      * Unauthorized
      */
     401: UtilsErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: UtilsErrorResponse;
     /**
      * Conflict
      */
@@ -517,6 +711,10 @@ export type PutAgentsByUuidErrors = {
      * Unauthorized
      */
     401: UtilsErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: UtilsErrorResponse;
     /**
      * Not Found
      */
@@ -1288,6 +1486,10 @@ export type PostProvidersErrors = {
      */
     401: UtilsErrorResponse;
     /**
+     * Forbidden
+     */
+    403: UtilsErrorResponse;
+    /**
      * Internal Server Error
      */
     500: UtilsErrorResponse;
@@ -1440,6 +1642,10 @@ export type PutProvidersByUuidErrors = {
      */
     401: UtilsErrorResponse;
     /**
+     * Forbidden
+     */
+    403: UtilsErrorResponse;
+    /**
      * Not Found
      */
     404: UtilsErrorResponse;
@@ -1459,6 +1665,51 @@ export type PutProvidersByUuidResponses = {
 };
 
 export type PutProvidersByUuidResponse = PutProvidersByUuidResponses[keyof PutProvidersByUuidResponses];
+
+export type PutProvidersByUuidPriorityData = {
+    /**
+     * Priority override
+     */
+    body: ApiSetProviderPriorityRequest;
+    path: {
+        /**
+         * Provider ID
+         */
+        uuid: string;
+    };
+    query?: never;
+    url: '/providers/{uuid}/priority';
+};
+
+export type PutProvidersByUuidPriorityErrors = {
+    /**
+     * Bad Request
+     */
+    400: UtilsErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: UtilsErrorResponse;
+    /**
+     * Not Found
+     */
+    404: UtilsErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: UtilsErrorResponse;
+};
+
+export type PutProvidersByUuidPriorityError = PutProvidersByUuidPriorityErrors[keyof PutProvidersByUuidPriorityErrors];
+
+export type PutProvidersByUuidPriorityResponses = {
+    /**
+     * OK
+     */
+    200: ApiProviderDto;
+};
+
+export type PutProvidersByUuidPriorityResponse = PutProvidersByUuidPriorityResponses[keyof PutProvidersByUuidPriorityResponses];
 
 export type GetSessionsData = {
     body?: never;
@@ -2245,3 +2496,19 @@ export type PutUsersByUuidPasswordResponses = {
 };
 
 export type PutUsersByUuidPasswordResponse = PutUsersByUuidPasswordResponses[keyof PutUsersByUuidPasswordResponses];
+
+export type GetVersionData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/version';
+};
+
+export type GetVersionResponses = {
+    /**
+     * OK
+     */
+    200: ApiVersionResponse;
+};
+
+export type GetVersionResponse = GetVersionResponses[keyof GetVersionResponses];
