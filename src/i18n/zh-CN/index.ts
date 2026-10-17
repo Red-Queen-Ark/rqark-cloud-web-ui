@@ -19,6 +19,7 @@ import { users } from './users';
 import { groups } from './groups';
 import { settings } from './settings';
 import { workspace } from './workspace';
+import { tasks } from './tasks';
 
 export const basis = {
   common,
@@ -42,4 +43,5 @@ export const basis = {
   groups,
   settings,
   workspace,
+  tasks,
 };

@@ -1,8 +1,13 @@
 <template>
   <div data-testid="form-modal" class="modal modal-open">
     <div data-testid="form-modal-box" class="modal-box" :class="[{ 'max-w-2xl': wide }, boxClass]">
-      <h3 class="text-lg font-bold">{{ title }}</h3>
-      <p v-if="description" class="text-base-content/60 pt-1 text-sm">{{ description }}</p>
+      <div class="flex items-start justify-between gap-3">
+        <div class="min-w-0">
+          <h3 class="text-lg font-bold">{{ title }}</h3>
+          <p v-if="description" class="text-base-content/60 pt-1 text-sm">{{ description }}</p>
+        </div>
+        <slot name="header-actions"></slot>
+      </div>
 
       <div class="space-y-3 py-4">
         <slot></slot>

@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { DeleteAgentDefaultsBySourceData, DeleteAgentDefaultsBySourceErrors, DeleteAgentDefaultsBySourceResponses, DeleteAgentsByUuidData, DeleteAgentsByUuidErrors, DeleteAgentsByUuidResponses, DeleteApiKeysByUuidData, DeleteApiKeysByUuidErrors, DeleteApiKeysByUuidResponses, DeleteGroupsByUuidData, DeleteGroupsByUuidErrors, DeleteGroupsByUuidResponses, DeleteGroupsByUuidUsersByUserUuidData, DeleteGroupsByUuidUsersByUserUuidErrors, DeleteGroupsByUuidUsersByUserUuidResponses, DeleteProvidersByUuidData, DeleteProvidersByUuidErrors, DeleteProvidersByUuidResponses, DeleteSessionsByUuidData, DeleteSessionsByUuidErrors, DeleteSessionsByUuidResponses, DeleteUserConfigByKeyData, DeleteUserConfigByKeyErrors, DeleteUserConfigByKeyResponses, DeleteUsersByUuidData, DeleteUsersByUuidErrors, DeleteUsersByUuidResponses, GetAgentDefaultsBySourceData, GetAgentDefaultsBySourceErrors, GetAgentDefaultsBySourceResponses, GetAgentDefaultsData, GetAgentDefaultsErrors, GetAgentDefaultsResponses, GetAgentsByUuidData, GetAgentsByUuidErrors, GetAgentsByUuidResponses, GetAgentsData, GetAgentsErrors, GetAgentsNamesData, GetAgentsNamesErrors, GetAgentsNamesResponses, GetAgentsResponses, GetApiKeysData, GetApiKeysErrors, GetApiKeysResponses, GetGroupsByUuidData, GetGroupsByUuidErrors, GetGroupsByUuidResponses, GetGroupsByUuidUsersData, GetGroupsByUuidUsersErrors, GetGroupsByUuidUsersResponses, GetGroupsData, GetGroupsErrors, GetGroupsResponses, GetPingData, GetPingResponses, GetProvidersByUuidData, GetProvidersByUuidErrors, GetProvidersByUuidResponses, GetProvidersData, GetProvidersErrors, GetProvidersModelsData, GetProvidersModelsErrors, GetProvidersModelsResponses, GetProvidersResponses, GetSessionsByUuidData, GetSessionsByUuidErrors, GetSessionsByUuidMessagesData, GetSessionsByUuidMessagesErrors, GetSessionsByUuidMessagesResponses, GetSessionsByUuidResponses, GetSessionsData, GetSessionsErrors, GetSessionsResponses, GetSwaggerJsonData, GetSwaggerJsonResponses, GetSwaggerYmlData, GetSwaggerYmlResponses, GetUserConfigData, GetUserConfigErrors, GetUserConfigResponses, GetUsersByUuidData, GetUsersByUuidErrors, GetUsersByUuidResponses, GetUsersData, GetUsersErrors, GetUsersMeData, GetUsersMeErrors, GetUsersMeResponses, GetUsersResponses, GetVersionData, GetVersionResponses, OptionsSwaggerJsonData, OptionsSwaggerJsonResponses, PatchApiKeysByUuidData, PatchApiKeysByUuidErrors, PatchApiKeysByUuidResponses, PatchGroupsByUuidData, PatchGroupsByUuidErrors, PatchGroupsByUuidResponses, PatchUsersByUuidData, PatchUsersByUuidErrors, PatchUsersByUuidResponses, PatchUsersMeData, PatchUsersMeErrors, PatchUsersMeResponses, PostAgentsData, PostAgentsErrors, PostAgentsResponses, PostApiKeysData, PostApiKeysErrors, PostApiKeysResponses, PostAuthForgotPasswordData, PostAuthForgotPasswordErrors, PostAuthForgotPasswordResponses, PostAuthLoginData, PostAuthLoginErrors, PostAuthLoginResponses, PostAuthRefreshData, PostAuthRefreshErrors, PostAuthRefreshResponses, PostAuthRegisterData, PostAuthRegisterErrors, PostAuthRegisterResponses, PostAuthResetPasswordData, PostAuthResetPasswordErrors, PostAuthResetPasswordResponses, PostGroupsData, PostGroupsErrors, PostGroupsResponses, PostProvidersData, PostProvidersErrors, PostProvidersResponses, PostSessionsData, PostSessionsErrors, PostSessionsResponses, PostUsersData, PostUsersErrors, PostUsersResponses, PutAgentDefaultsBySourceData, PutAgentDefaultsBySourceErrors, PutAgentDefaultsBySourceResponses, PutAgentsByUuidData, PutAgentsByUuidErrors, PutAgentsByUuidResponses, PutGroupsByUuidUsersByUserUuidData, PutGroupsByUuidUsersByUserUuidErrors, PutGroupsByUuidUsersByUserUuidResponses, PutProvidersByUuidData, PutProvidersByUuidErrors, PutProvidersByUuidPriorityData, PutProvidersByUuidPriorityErrors, PutProvidersByUuidPriorityResponses, PutProvidersByUuidResponses, PutSessionsByUuidData, PutSessionsByUuidErrors, PutSessionsByUuidResponses, PutUserConfigByKeyData, PutUserConfigByKeyErrors, PutUserConfigByKeyResponses, PutUsersByUuidPasswordData, PutUsersByUuidPasswordErrors, PutUsersByUuidPasswordResponses, PutUsersMePasswordData, PutUsersMePasswordErrors, PutUsersMePasswordResponses } from './types.gen';
+import type { DeleteAgentDefaultsBySourceData, DeleteAgentDefaultsBySourceErrors, DeleteAgentDefaultsBySourceResponses, DeleteAgentsByUuidData, DeleteAgentsByUuidErrors, DeleteAgentsByUuidResponses, DeleteApiKeysByUuidData, DeleteApiKeysByUuidErrors, DeleteApiKeysByUuidResponses, DeleteGroupsByUuidData, DeleteGroupsByUuidErrors, DeleteGroupsByUuidResponses, DeleteGroupsByUuidUsersByUserUuidData, DeleteGroupsByUuidUsersByUserUuidErrors, DeleteGroupsByUuidUsersByUserUuidResponses, DeleteProvidersByUuidData, DeleteProvidersByUuidErrors, DeleteProvidersByUuidResponses, DeleteSessionsByUuidData, DeleteSessionsByUuidErrors, DeleteSessionsByUuidResponses, DeleteTasksByUuidData, DeleteTasksByUuidErrors, DeleteTasksByUuidResponses, DeleteUserConfigByKeyData, DeleteUserConfigByKeyErrors, DeleteUserConfigByKeyResponses, DeleteUsersByUuidData, DeleteUsersByUuidErrors, DeleteUsersByUuidResponses, GetAgentDefaultsBySourceData, GetAgentDefaultsBySourceErrors, GetAgentDefaultsBySourceResponses, GetAgentDefaultsData, GetAgentDefaultsErrors, GetAgentDefaultsResponses, GetAgentsByUuidData, GetAgentsByUuidErrors, GetAgentsByUuidResponses, GetAgentsData, GetAgentsErrors, GetAgentsNamesData, GetAgentsNamesErrors, GetAgentsNamesResponses, GetAgentsResponses, GetApiKeysData, GetApiKeysErrors, GetApiKeysResponses, GetGroupsByUuidData, GetGroupsByUuidErrors, GetGroupsByUuidResponses, GetGroupsByUuidUsersData, GetGroupsByUuidUsersErrors, GetGroupsByUuidUsersResponses, GetGroupsData, GetGroupsErrors, GetGroupsResponses, GetPingData, GetPingResponses, GetProvidersByUuidData, GetProvidersByUuidErrors, GetProvidersByUuidResponses, GetProvidersData, GetProvidersErrors, GetProvidersModelsData, GetProvidersModelsErrors, GetProvidersModelsResponses, GetProvidersResponses, GetSessionsByUuidData, GetSessionsByUuidErrors, GetSessionsByUuidMessagesData, GetSessionsByUuidMessagesErrors, GetSessionsByUuidMessagesResponses, GetSessionsByUuidResponses, GetSessionsData, GetSessionsErrors, GetSessionsResponses, GetSwaggerJsonData, GetSwaggerJsonResponses, GetSwaggerYmlData, GetSwaggerYmlResponses, GetTasksByUuidData, GetTasksByUuidErrors, GetTasksByUuidResponses, GetTasksByUuidRunsData, GetTasksByUuidRunsErrors, GetTasksByUuidRunsResponses, GetTasksData, GetTasksErrors, GetTasksResponses, GetUserConfigData, GetUserConfigErrors, GetUserConfigResponses, GetUsersByUuidData, GetUsersByUuidErrors, GetUsersByUuidResponses, GetUsersData, GetUsersErrors, GetUsersMeData, GetUsersMeErrors, GetUsersMeResponses, GetUsersResponses, GetVersionData, GetVersionResponses, OptionsSwaggerJsonData, OptionsSwaggerJsonResponses, PatchApiKeysByUuidData, PatchApiKeysByUuidErrors, PatchApiKeysByUuidResponses, PatchGroupsByUuidData, PatchGroupsByUuidErrors, PatchGroupsByUuidResponses, PatchUsersByUuidData, PatchUsersByUuidErrors, PatchUsersByUuidResponses, PatchUsersMeData, PatchUsersMeErrors, PatchUsersMeResponses, PostAgentsData, PostAgentsErrors, PostAgentsResponses, PostApiKeysData, PostApiKeysErrors, PostApiKeysResponses, PostAuthForgotPasswordData, PostAuthForgotPasswordErrors, PostAuthForgotPasswordResponses, PostAuthLoginData, PostAuthLoginErrors, PostAuthLoginResponses, PostAuthRefreshData, PostAuthRefreshErrors, PostAuthRefreshResponses, PostAuthRegisterData, PostAuthRegisterErrors, PostAuthRegisterResponses, PostAuthResetPasswordData, PostAuthResetPasswordErrors, PostAuthResetPasswordResponses, PostGroupsData, PostGroupsErrors, PostGroupsResponses, PostProvidersData, PostProvidersErrors, PostProvidersResponses, PostSessionsData, PostSessionsErrors, PostSessionsResponses, PostTasksData, PostTasksErrors, PostTasksResponses, PostUsersData, PostUsersErrors, PostUsersResponses, PutAgentDefaultsBySourceData, PutAgentDefaultsBySourceErrors, PutAgentDefaultsBySourceResponses, PutAgentsByUuidData, PutAgentsByUuidErrors, PutAgentsByUuidResponses, PutGroupsByUuidUsersByUserUuidData, PutGroupsByUuidUsersByUserUuidErrors, PutGroupsByUuidUsersByUserUuidResponses, PutProvidersByUuidData, PutProvidersByUuidErrors, PutProvidersByUuidPriorityData, PutProvidersByUuidPriorityErrors, PutProvidersByUuidPriorityResponses, PutProvidersByUuidResponses, PutSessionsByUuidData, PutSessionsByUuidErrors, PutSessionsByUuidResponses, PutTasksByUuidData, PutTasksByUuidErrors, PutTasksByUuidResponses, PutUserConfigByKeyData, PutUserConfigByKeyErrors, PutUserConfigByKeyResponses, PutUsersByUuidPasswordData, PutUsersByUuidPasswordErrors, PutUsersByUuidPasswordResponses, PutUsersMePasswordData, PutUsersMePasswordErrors, PutUsersMePasswordResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -820,6 +820,122 @@ export const optionsSwaggerJson = <ThrowOnError extends boolean = false>(options
 export const getSwaggerYml = <ThrowOnError extends boolean = false>(options?: Options<GetSwaggerYmlData, ThrowOnError>) => {
     return (options?.client ?? client).get<GetSwaggerYmlResponses, unknown, ThrowOnError>({
         url: '/swagger.yml',
+        ...options
+    });
+};
+
+/**
+ * List tasks
+ *
+ * Returns all of the caller's tasks ordered by name. Not paginated: a user has few of them.
+ */
+export const getTasks = <ThrowOnError extends boolean = false>(options?: Options<GetTasksData, ThrowOnError>) => {
+    return (options?.client ?? client).get<GetTasksResponses, GetTasksErrors, ThrowOnError>({
+        security: [
+            {
+                name: 'Authorization',
+                type: 'apiKey'
+            }
+        ],
+        url: '/tasks',
+        ...options
+    });
+};
+
+/**
+ * Create a task
+ *
+ * The task belongs to the caller. schedule_kind selects the one schedule field the body may set: run_at for at, every_seconds (at least 60) for every, or cron_expr for cron, which is evaluated in timezone. agent_name and provider_name must each resolve to exactly one agent or provider the caller may use; a provider is addressed by its name, or by its model_name when it carries none. Answers 201 with a Location header pointing at the new task.
+ */
+export const postTasks = <ThrowOnError extends boolean = false>(options: Options<PostTasksData, ThrowOnError>) => {
+    return (options.client ?? client).post<PostTasksResponses, PostTasksErrors, ThrowOnError>({
+        security: [
+            {
+                name: 'Authorization',
+                type: 'apiKey'
+            }
+        ],
+        url: '/tasks',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
+};
+
+/**
+ * Delete a task
+ *
+ * Hard delete of one of the caller's tasks, its runs included. Another user's task is reported as 404.
+ */
+export const deleteTasksByUuid = <ThrowOnError extends boolean = false>(options: Options<DeleteTasksByUuidData, ThrowOnError>) => {
+    return (options.client ?? client).delete<DeleteTasksByUuidResponses, DeleteTasksByUuidErrors, ThrowOnError>({
+        security: [
+            {
+                name: 'Authorization',
+                type: 'apiKey'
+            }
+        ],
+        url: '/tasks/{uuid}',
+        ...options
+    });
+};
+
+/**
+ * Get a task
+ *
+ * Returns one of the caller's tasks. Another user's task is reported as 404.
+ */
+export const getTasksByUuid = <ThrowOnError extends boolean = false>(options: Options<GetTasksByUuidData, ThrowOnError>) => {
+    return (options.client ?? client).get<GetTasksByUuidResponses, GetTasksByUuidErrors, ThrowOnError>({
+        security: [
+            {
+                name: 'Authorization',
+                type: 'apiKey'
+            }
+        ],
+        url: '/tasks/{uuid}',
+        ...options
+    });
+};
+
+/**
+ * Update a task
+ *
+ * Every field is optional and a field that is absent is left untouched. A schedule_kind replaces the whole schedule, so send the one field that kind uses. next_run_at is recomputed when the schedule or timezone changes and when a disabled task is enabled again; a disabled task carries no next_run_at. Another user's task is reported as 404.
+ */
+export const putTasksByUuid = <ThrowOnError extends boolean = false>(options: Options<PutTasksByUuidData, ThrowOnError>) => {
+    return (options.client ?? client).put<PutTasksByUuidResponses, PutTasksByUuidErrors, ThrowOnError>({
+        security: [
+            {
+                name: 'Authorization',
+                type: 'apiKey'
+            }
+        ],
+        url: '/tasks/{uuid}',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
+};
+
+/**
+ * List task runs
+ *
+ * Returns one page of the runs recorded for one of the caller's tasks, newest scheduled instant first. Paginated because runs grow without bound. Another user's task is reported as 404.
+ */
+export const getTasksByUuidRuns = <ThrowOnError extends boolean = false>(options: Options<GetTasksByUuidRunsData, ThrowOnError>) => {
+    return (options.client ?? client).get<GetTasksByUuidRunsResponses, GetTasksByUuidRunsErrors, ThrowOnError>({
+        security: [
+            {
+                name: 'Authorization',
+                type: 'apiKey'
+            }
+        ],
+        url: '/tasks/{uuid}/runs',
         ...options
     });
 };

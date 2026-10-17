@@ -171,6 +171,11 @@ export function toProviderRequestBody(values: ProviderFormValues): ApiCreateProv
  * does the same instead of showing a blank cell.
  */
 export function providerDisplayName(provider: ApiProviderDto): string {
+  return providerLabel(provider);
+}
+
+/** The same label, for the summary listing that carries only the two columns. */
+export function providerLabel(provider: { name?: string; model_name?: string }): string {
   return provider.name || provider.model_name || '';
 }
 

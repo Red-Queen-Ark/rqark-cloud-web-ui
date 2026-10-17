@@ -72,6 +72,23 @@ export interface MockSession {
   messages?: MockSessionMessage[];
 }
 
+export interface MockTask {
+  id: string;
+  name: string;
+  prompt: string;
+  agent_name: string;
+  provider_name: string;
+  timezone: string;
+  enabled: boolean;
+  schedule_kind: string;
+  run_at: string | null;
+  every_seconds: number | null;
+  cron_expr: string | null;
+  next_run_at: string | null;
+  created_at: string;
+  updated_at?: string;
+}
+
 export const boss: MockUser = {
   id: '11111111-1111-4111-8111-111111111111',
   username: 'boss',
@@ -124,6 +141,7 @@ export interface MockBackend {
   providers: MockProvider[];
   apiKeys: MockApiKey[];
   sessions: MockSession[];
+  tasks: MockTask[];
   userConfig: Record<string, unknown>;
   /** The default agent per session source, held as the agent id the API stores. */
   agentDefaults: Record<string, string>;
@@ -145,6 +163,7 @@ export interface MockBackendOptions {
   apiKeys?: MockApiKey[];
   /** Replaces the seeded session list. */
   sessions?: MockSession[];
+  tasks?: MockTask[];
   userConfig?: Record<string, unknown>;
   /** Seeds the stored default agent per session source, keyed by source. */
   agentDefaults?: Record<string, string>;
@@ -178,6 +197,7 @@ export async function mockBackend(page_: Page, options: MockBackendOptions = {})
     providers: options.providers ?? [],
     apiKeys: options.apiKeys ?? [],
     sessions: options.sessions ?? [],
+    tasks: options.tasks ?? [],
     userConfig: options.userConfig ?? {},
     agentDefaults: options.agentDefaults ?? {},
     requests: [],
@@ -369,6 +389,53 @@ export async function mockBackend(page_: Page, options: MockBackendOptions = {})
         }
         if (method === 'DELETE') {
           state.agents = state.agents.filter((candidate) => candidate.id !== agent.id);
+          return route.fulfill({ status: 204, body: '' });
+        }
+      }
+
+      if (path === '/tasks' && method === 'GET') {
+        return json(route, 200, state.tasks);
+      }
+
+      if (path === '/tasks' && method === 'POST') {
+        const created: MockTask = {
+          id: `task-${state.tasks.length + 1}`,
+          name: String(body?.name ?? ''),
+          prompt: String(body?.prompt ?? ''),
+          agent_name: String(body?.agent_name ?? ''),
+          provider_name: String(body?.provider_name ?? ''),
+          timezone: String(body?.timezone ?? 'UTC'),
+          enabled: body?.enabled !== false,
+          schedule_kind: String(body?.schedule_kind ?? 'cron'),
+          run_at: (body?.run_at as string | undefined) ?? null,
+          every_seconds: (body?.every_seconds as number | undefined) ?? null,
+          cron_expr: (body?.cron_expr as string | undefined) ?? null,
+          next_run_at: body?.enabled === false ? null : WRITE_TIMESTAMP,
+          created_at: WRITE_TIMESTAMP,
+          updated_at: WRITE_TIMESTAMP,
+        };
+        state.tasks.push(created);
+        return json(route, 201, created);
+      }
+
+      const taskMatch = /^\/tasks\/([^/]+)$/.exec(path);
+      if (taskMatch) {
+        const task = state.tasks.find((candidate) => candidate.id === taskMatch[1]);
+        if (!task) {
+          return json(route, 404, error(404, 'NOT_FOUND', 'Task not found.').body);
+        }
+        if (method === 'GET') {
+          return json(route, 200, task);
+        }
+        if (method === 'PUT') {
+          Object.assign(task, body);
+          task.enabled = task.enabled !== false;
+          task.next_run_at = task.enabled ? WRITE_TIMESTAMP : null;
+          task.updated_at = WRITE_TIMESTAMP;
+          return json(route, 200, task);
+        }
+        if (method === 'DELETE') {
+          state.tasks = state.tasks.filter((candidate) => candidate.id !== task.id);
           return route.fulfill({ status: 204, body: '' });
         }
       }
