@@ -10,6 +10,7 @@ import ResetPasswordPage from '@/pages/ResetPasswordPage.vue';
 import HomePage from '@/pages/HomePage.vue';
 import SettingsPage from '@/pages/SettingsPage.vue';
 import ChatPage from '@/pages/ChatPage.vue';
+import WorkSpacePage from '@/pages/WorkSpacePage.vue';
 
 const routes = [
   {
@@ -67,6 +68,7 @@ const routes = [
           { path: '', component: HomePage, name: 'home' },
           { path: 'chat/:uuid', component: ChatPage, name: 'chat' },
           { path: 'settings', component: SettingsPage, name: 'settings' },
+          { path: 'workspace', component: WorkSpacePage, name: 'workspace' },
         ],
       },
     ],

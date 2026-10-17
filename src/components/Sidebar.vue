@@ -16,6 +16,12 @@
         <!-- daisyUI 5 gives .menu `width: fit-content`, which collapses the row
              highlight to the label width inside a stretched flex column. -->
         <ul class="menu menu-md w-full scrollbar-thin flex-1 gap-1 overflow-y-auto p-2">
+          <li>
+            <RouterLink :to="{ name: 'workspace', params: { lang: route.params.lang as string } }" :class="{ 'menu-active': route.name === 'workspace' }" data-testid="sidebar-workspace-link">
+              <FolderIcon class="h-4 w-4" />
+              {{ t('workspace.title') }}
+            </RouterLink>
+          </li>
           <SidebarChatSessionsList />
           <!-- <li v-for="item in visibleItems" :key="item.pageId">
             <RouterLink :to="{ name: item.pageId }" :class="{ 'menu-active': isActive(item) }">
@@ -38,6 +44,7 @@
 
 <script setup lang="ts">
 import LogoutIcon from '@/components/svg/LogoutIcon.vue';
+import FolderIcon from '@/components/svg/FolderIcon.vue';
 import { useAuthStore } from '@/stores/authStore';
 import type { SiderItem } from '@/config/siderbar';
 import { computed, ref, watch } from 'vue';
