@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { parseCron, toCron } from './cron';
-import { emptyTaskSchedule, fromDateTimeLocal, gapLabel, isTaskScheduleKind, taskScheduleBody, taskScheduleForm, taskScheduleSummary, toDateTimeLocal } from './tasks';
+import { emptyTaskSchedule, formatDuration, fromDateTimeLocal, gapLabel, isTaskScheduleKind, taskRunStatusStyle, taskScheduleBody, taskScheduleForm, taskScheduleSummary, taskTriggerLabel, toDateTimeLocal } from './tasks';
 
 const translate = (key: string, named?: Record<string, unknown>) => `${key}:${JSON.stringify(named ?? {})}`;
 
@@ -121,5 +121,50 @@ describe('taskScheduleSummary', () => {
 
   it('shows the raw kind for one this build does not know', () => {
     expect(taskScheduleSummary({ schedule_kind: 'later' }, translate)).toBe('later');
+  });
+});
+
+describe('taskRunStatusStyle', () => {
+  it('gives every status its own badge and label', () => {
+    const statuses = ['running', 'ok', 'error', 'cancelled', 'skipped', 'lost'];
+    const styles = statuses.map((status) => taskRunStatusStyle(status));
+
+    expect(styles.map((style) => style.labelKey)).toEqual(statuses.map((status) => `tasks.runStatus.${status}`));
+    expect(new Set(styles.map((style) => style.badgeClass)).size).toBe(statuses.length);
+  });
+
+  it.each([undefined, '', 'awaiting_review'])('falls back for %s without claiming a known label', (status) => {
+    expect(taskRunStatusStyle(status).labelKey).toBe('');
+  });
+});
+
+describe('taskTriggerLabel', () => {
+  it('names the two triggers and passes anything else through', () => {
+    expect(taskTriggerLabel('schedule', translate)).toContain('tasks.triggerSchedule');
+    expect(taskTriggerLabel('manual', translate)).toContain('tasks.triggerManual');
+    expect(taskTriggerLabel('later', translate)).toBe('later');
+    expect(taskTriggerLabel(undefined, translate)).toBe('');
+  });
+});
+
+describe('formatDuration', () => {
+  it('states a finished run to a tenth of a second, then in minutes and hours', () => {
+    expect(formatDuration({ started_at: '2026-10-17T01:00:00Z', finished_at: '2026-10-17T01:00:12Z' })).toBe('12.0 s');
+    expect(formatDuration({ started_at: '2026-10-17T01:00:00Z', finished_at: '2026-10-17T01:01:30Z' })).toBe('1m 30s');
+    expect(formatDuration({ started_at: '2026-10-17T01:00:00Z', finished_at: '2026-10-17T03:30:00Z' })).toBe('2h 30m');
+  });
+
+  it('states a sub-second run in milliseconds rather than rounding it to zero', () => {
+    expect(formatDuration({ started_at: '2026-10-17T01:00:00Z', finished_at: '2026-10-17T01:00:00.250Z' })).toBe('250 ms');
+  });
+
+  it('states nothing while a run is unfinished', () => {
+    expect(formatDuration({ started_at: '2026-10-17T01:00:00Z' })).toBe('');
+  });
+
+  it('states nothing for a missing start or an impossible interval', () => {
+    expect(formatDuration({ finished_at: '2026-10-17T01:00:12Z' })).toBe('');
+    expect(formatDuration({ started_at: '2026-10-17T01:00:12Z', finished_at: '2026-10-17T01:00:00Z' })).toBe('');
+    expect(formatDuration({ started_at: 'not-a-date', finished_at: '2026-10-17T01:00:12Z' })).toBe('');
   });
 });

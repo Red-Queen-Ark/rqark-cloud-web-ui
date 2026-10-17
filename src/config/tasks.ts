@@ -1,4 +1,4 @@
-import type { ApiCreateTaskRequest, ApiTaskDto } from '@/api';
+import type { ApiCreateTaskRequest, ApiTaskDto, ApiTaskRunDto } from '@/api';
 import { formatClock, formatDateTime } from '@/utils/datetime';
 import { parseCron, toCron, type CronPattern } from './cron';
 
@@ -17,12 +17,41 @@ const GAP_UNITS: { key: string; seconds: number }[] = [
 
 type Translate = (key: string, named?: Record<string, unknown>) => string;
 
+export const TASK_RUN_STATUSES = ['running', 'ok', 'error', 'cancelled', 'skipped', 'lost'] as const;
+
+export type TaskRunStatus = (typeof TASK_RUN_STATUSES)[number];
+
+const RUN_STATUS_BADGES: Record<TaskRunStatus, string> = {
+  running: 'badge-info',
+  ok: 'badge-success',
+  error: 'badge-error',
+  cancelled: 'badge-ghost',
+  skipped: 'badge-warning',
+  lost: 'badge-error badge-outline',
+};
+
 export function browserTimeZone(): string {
   return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
 }
 
 export function isTaskScheduleKind(value?: string): value is TaskScheduleKind {
   return value !== undefined && (TASK_SCHEDULE_KINDS as readonly string[]).includes(value);
+}
+
+export function isTaskRunStatus(value?: string): value is TaskRunStatus {
+  return value !== undefined && (TASK_RUN_STATUSES as readonly string[]).includes(value);
+}
+
+export interface TaskRunStatusStyle {
+  labelKey: string;
+  badgeClass: string;
+}
+
+export function taskRunStatusStyle(status?: string): TaskRunStatusStyle {
+  if (isTaskRunStatus(status)) {
+    return { labelKey: `tasks.runStatus.${status}`, badgeClass: RUN_STATUS_BADGES[status] };
+  }
+  return { labelKey: '', badgeClass: 'badge-ghost' };
 }
 
 export interface TaskScheduleForm {
@@ -128,4 +157,49 @@ export function taskScheduleSummary(task: ApiTaskDto, t: Translate): string {
     return t('tasks.cron', { schedule: cronSummary(task.cron_expr ?? '', t), timezone: task.timezone ?? 'UTC' });
   }
   return task.schedule_kind ?? '';
+}
+
+export function taskTriggerLabel(trigger: string | undefined, t: Translate): string {
+  if (trigger === 'manual') {
+    return t('tasks.triggerManual');
+  }
+  if (trigger === 'schedule') {
+    return t('tasks.triggerSchedule');
+  }
+  return trigger ?? '';
+}
+
+/**
+ * How long a run took, from its start to its finish.
+ *
+ * A run that has not finished has no duration to state — reporting the time
+ * elapsed so far would be a number that changes under the reader, and it would
+ * read as a finished figure. The caller shows the status instead.
+ */
+export function formatDuration(run: ApiTaskRunDto): string {
+  if (!run.started_at) {
+    return '';
+  }
+  const finished = run.finished_at ? new Date(run.finished_at).getTime() : Number.NaN;
+  const started = new Date(run.started_at).getTime();
+  if (Number.isNaN(finished) || Number.isNaN(started) || finished < started) {
+    return '';
+  }
+
+  const seconds = (finished - started) / 1000;
+  if (seconds < 1) {
+    return `${Math.round(seconds * 1000)} ms`;
+  }
+  if (seconds < 60) {
+    return `${seconds.toFixed(1)} s`;
+  }
+
+  const whole = Math.round(seconds);
+  const minutes = Math.floor(whole / 60);
+  const rest = whole % 60;
+  if (minutes < 60) {
+    return `${minutes}m ${rest}s`;
+  }
+  const hours = Math.floor(minutes / 60);
+  return `${hours}h ${minutes % 60}m`;
 }

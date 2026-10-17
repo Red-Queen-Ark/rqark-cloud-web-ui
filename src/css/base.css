@@ -18,6 +18,27 @@
   }
 }
 
+/*
+ * Every list table caps the height of its scroll region to the shell's own
+ * viewport, minus the chrome a list page carries above and below it (header,
+ * page padding, toolbar, panel padding). The rows then scroll inside the panel
+ * while the head is pinned over them by daisyUI's `table-pin-rows`, instead of
+ * carrying the columns off the top of the page.
+ *
+ * Without a capped height the wrapper is still a scroll container — `overflow-x`
+ * forces the other axis to `auto` — but it never scrolls, so a sticky head has
+ * nothing to stick to and the columns slip away with the page.
+ */
+.table-scroll {
+  max-height: calc(100dvh - 17rem);
+}
+
+/* The pinned header sits over the pinned actions column, so the two share the
+   panel's own surface rather than daisyUI's page-coloured default. */
+.table-pin-rows thead th {
+  background-color: var(--color-base-200);
+}
+
 /* The app shell never scrolls the page; regions scroll instead. */
 .scrollbar-thin {
   scrollbar-width: thin;

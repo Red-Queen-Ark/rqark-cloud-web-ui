@@ -72,6 +72,18 @@ export interface MockSession {
   messages?: MockSessionMessage[];
 }
 
+export interface MockTaskRun {
+  id: string;
+  task_id: string;
+  status: string;
+  trigger: string;
+  scheduled_at: string;
+  started_at: string | null;
+  finished_at: string | null;
+  error: string;
+  session_id: string | null;
+}
+
 export interface MockTask {
   id: string;
   name: string;
@@ -142,6 +154,7 @@ export interface MockBackend {
   apiKeys: MockApiKey[];
   sessions: MockSession[];
   tasks: MockTask[];
+  taskRuns: MockTaskRun[];
   userConfig: Record<string, unknown>;
   /** The default agent per session source, held as the agent id the API stores. */
   agentDefaults: Record<string, string>;
@@ -164,6 +177,7 @@ export interface MockBackendOptions {
   /** Replaces the seeded session list. */
   sessions?: MockSession[];
   tasks?: MockTask[];
+  taskRuns?: MockTaskRun[];
   userConfig?: Record<string, unknown>;
   /** Seeds the stored default agent per session source, keyed by source. */
   agentDefaults?: Record<string, string>;
@@ -198,6 +212,7 @@ export async function mockBackend(page_: Page, options: MockBackendOptions = {})
     apiKeys: options.apiKeys ?? [],
     sessions: options.sessions ?? [],
     tasks: options.tasks ?? [],
+    taskRuns: options.taskRuns ?? [],
     userConfig: options.userConfig ?? {},
     agentDefaults: options.agentDefaults ?? {},
     requests: [],
@@ -416,6 +431,17 @@ export async function mockBackend(page_: Page, options: MockBackendOptions = {})
         };
         state.tasks.push(created);
         return json(route, 201, created);
+      }
+
+      const taskRunsMatch = /^\/tasks\/([^/]+)\/runs$/.exec(path);
+      if (taskRunsMatch) {
+        const task = state.tasks.find((candidate) => candidate.id === taskRunsMatch[1]);
+        if (!task) {
+          return json(route, 404, error(404, 'NOT_FOUND', 'Task not found.').body);
+        }
+        // Newest scheduled instant first, the same order the service answers in.
+        const all = state.taskRuns.filter((run) => run.task_id === task.id).sort((a, b) => b.scheduled_at.localeCompare(a.scheduled_at));
+        return json(route, 200, page(all, Number(url.searchParams.get('limit') ?? 20), Number(url.searchParams.get('offset') ?? 0)));
       }
 
       const taskMatch = /^\/tasks\/([^/]+)$/.exec(path);

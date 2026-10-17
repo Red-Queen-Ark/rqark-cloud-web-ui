@@ -32,6 +32,7 @@ export const siderItems: SiderItem[] = [
     i18nKey: 'tasks.title',
     subtitleKey: 'tasks.subtitle',
     icon: BoltIcon,
+    aliases: ['taskDetail', 'taskSession'],
   },
   {
     pageId: 'settings',

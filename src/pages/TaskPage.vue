@@ -26,7 +26,7 @@
         <button id="task-page-create-first-btn" class="btn btn-primary btn-sm" @click="openCreate">{{ t('tasks.create') }}</button>
       </div>
 
-      <div v-else class="scrollbar-thin overflow-x-auto">
+      <div v-else class="scrollbar-thin table-scroll overflow-x-auto">
         <table data-testid="task-page-table" class="table table-pin-rows w-full whitespace-nowrap">
           <thead>
             <tr>
@@ -52,7 +52,8 @@
                 </span>
               </td>
               <td class="bg-base-200 sticky right-0 text-right">
-                <div class="flex justify-end gap-1">
+                <div class="flex items-center justify-end gap-1">
+                  <RouterLink v-if="task.id" :data-testid="`task-view-${task.id}`" class="btn btn-ghost btn-xs" :to="{ name: 'taskDetail', params: { lang, uuid: task.id } }">{{ t('tasks.view') }}</RouterLink>
                   <button class="btn btn-ghost btn-xs" @click="openEdit(task)">{{ t('tasks.edit') }}</button>
                   <button class="btn btn-ghost btn-xs text-error" @click="deleteTarget = task">{{ t('tasks.delete') }}</button>
                 </div>
@@ -197,9 +198,12 @@ import { useAlertStore } from '@/stores/alertStore';
 import { formatDateTime } from '@/utils/datetime';
 import { computed, onMounted, reactive, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useRoute } from 'vue-router';
 
 const { t } = useI18n();
+const route = useRoute();
 const alertStore = useAlertStore();
+const lang = computed(() => route.params.lang as string);
 const apiError = useApiError();
 
 const tasks = ref<ApiTaskDto[]>([]);

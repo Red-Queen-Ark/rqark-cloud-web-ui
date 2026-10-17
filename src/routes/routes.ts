@@ -12,6 +12,8 @@ import SettingsPage from '@/pages/SettingsPage.vue';
 import ChatPage from '@/pages/ChatPage.vue';
 import WorkSpacePage from '@/pages/WorkSpacePage.vue';
 import TaskPage from '@/pages/TaskPage.vue';
+import TaskDetailPage from '@/pages/TaskDetailPage.vue';
+import TaskSessionPage from '@/pages/TaskSessionPage.vue';
 
 const routes = [
   {
@@ -71,6 +73,8 @@ const routes = [
           { path: 'settings', component: SettingsPage, name: 'settings' },
           { path: 'workspace', component: WorkSpacePage, name: 'workspace' },
           { path: 'tasks', component: TaskPage, name: 'tasks' },
+          { path: 'tasks/:uuid', component: TaskDetailPage, name: 'taskDetail' },
+          { path: 'tasks/:uuid/sessions/:session', component: TaskSessionPage, name: 'taskSession' },
         ],
       },
     ],
