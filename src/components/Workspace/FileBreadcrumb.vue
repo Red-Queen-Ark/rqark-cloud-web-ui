@@ -1,8 +1,8 @@
 <template>
-  <nav data-testid="workspace-breadcrumb" class="min-w-0 overflow-x-auto" aria-label="breadcrumb">
-    <ul class="breadcrumbs text-sm">
+  <nav data-testid="workspace-breadcrumb" class="breadcrumbs min-w-0 text-sm" aria-label="breadcrumb">
+    <ul>
       <li>
-        <button data-testid="workspace-breadcrumb-root" class="gap-1" :class="{ 'font-semibold': segments.length === 0 }" @click="emit('navigate', '')">
+        <button data-testid="workspace-breadcrumb-root" :class="{ 'font-semibold': segments.length === 0 }" @click="emit('navigate', '')">
           <HomeIcon class="h-4 w-4" />
           {{ rootLabel }}
         </button>
