@@ -18,6 +18,8 @@ export const THEME_MODES: ThemeMode[] = ['light', 'dark', 'system'];
 
 const DARK_QUERY = '(prefers-color-scheme: dark)';
 
+const THEME_COLOR: Record<ThemeVariant, string> = { light: '#ffffff', dark: '#101010' };
+
 /** True when the OS asks for a dark appearance. */
 function prefersDark(): boolean {
   return window.matchMedia(DARK_QUERY).matches;
@@ -53,6 +55,7 @@ export const useThemeStore = defineStore('themeStore', {
       // Same value the pre-paint script writes into `<head>`, kept in step here
       // so scrollbars and form controls follow a later in-app switch too.
       document.documentElement.style.colorScheme = this.resolvedMode;
+      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', THEME_COLOR[this.resolvedMode]);
     },
 
     setFamily(family: ThemeFamily) {
