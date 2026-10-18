@@ -1,5 +1,6 @@
 <template>
   <div id="chat-input-area" class="py-2 px-3 bg-base-100 shrink-0 relative">
+    <SlashCommandPanel :entries="slashEntries" :active-index="slashIndex" :label="t('chat.slashPanelLabel')" @select="completeSlash" @hover="slashIndex = $event" />
     <div class="bg-base-200 rounded-box border border-base-300">
       <div class="py-2 px-3">
         <div class="min-h-9 max-h-32 overflow-y-auto scrollbar-thin">
@@ -8,7 +9,7 @@
             ref="inputRef"
             data-testid="chat-input"
             contenteditable="true"
-            class="w-full py-1.5 px-1 bg-transparent outline-none text-sm text-base-content"
+            class="w-full py-1.5 px-1 bg-transparent outline-none text-sm text-base-content whitespace-pre-wrap"
             :placeholder="t('chat.inputPlaceholder')"
             role="textbox"
             aria-multiline="true"
@@ -16,6 +17,9 @@
             @keydown="handleKeydown"
             @input="handleInput"
             @paste="handlePaste"
+            @blur="closeSlash"
+            @compositionstart="handleCompositionStart"
+            @compositionend="handleCompositionEnd"
           ></div>
         </div>
       </div>
@@ -53,11 +57,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { ApiProviderSummaryDto } from '@/api';
 import { CHAT_STATUS, type ChatStatus } from '@/config/chatStatus';
 import { providerDisplayName } from '@/config/providers';
+import { slashEntries as buildSlashEntries, type SlashEntry } from '@/config/slashCommands';
+import { useSopList } from '@/composables/useSopList';
+import SlashCommandPanel from '@/components/Chat/SlashCommandPanel.vue';
 import BoltIcon from '@/components/svg/BoltIcon.vue';
 import SendIcon from '@/components/svg/SendIcon.vue';
 import StopIcon from '@/components/svg/StopIcon.vue';
@@ -89,6 +96,14 @@ const selectedAgent = ref('');
 const selectedProvider = ref('');
 /** Set once the user picks an agent by hand; see the agents watcher below. */
 const agentChosen = ref(false);
+
+const { sops, load: loadSops } = useSopList();
+watch(sops, () => refreshSlash());
+/** The panel's rows; empty while it is closed, which is what hides it. */
+const slashEntries = ref<SlashEntry[]>([]);
+const slashIndex = ref(0);
+/** True between compositionstart and compositionend, i.e. while an IME is composing. */
+const composing = ref(false);
 
 watch(
   () => [props.agents, props.defaultAgent] as const,
@@ -128,11 +143,115 @@ function readText(el: HTMLElement | null): string {
   return (editable.innerText ?? editable.textContent ?? '').trim();
 }
 
+/**
+ * The text a slash panel would look at, or null when the editor cannot name a
+ * command: only a single line that opens with `/` and carries no whitespace
+ * qualifies, so `/clear` opens the panel and `/clear the log` does not.
+ */
+function slashQuery(): string | null {
+  const el = inputRef.value;
+  if (!el) {
+    return null;
+  }
+  const editable = el as unknown as { innerText?: string; textContent: string | null };
+  const raw = editable.innerText ?? editable.textContent ?? '';
+  if (!raw.startsWith('/') || /\s/.test(raw)) {
+    return null;
+  }
+  return raw;
+}
+
+function refreshSlash() {
+  const query = composing.value ? null : slashQuery();
+  if (query === null) {
+    closeSlash();
+    return;
+  }
+
+  const entries = buildSlashEntries(query, sops.value, (key) => t(key));
+  slashEntries.value = entries;
+  // The highlight stays where it is while the list still has that row, so a
+  // character that narrows the list does not also move the choice.
+  slashIndex.value = Math.min(slashIndex.value, Math.max(0, entries.length - 1));
+}
+
+function closeSlash() {
+  slashEntries.value = [];
+  slashIndex.value = 0;
+}
+
+/**
+ * Completes the highlighted row: the editor is replaced with `/<name> ` and the
+ * caret put after it. The turn is not sent — a SOP takes arguments, so the user
+ * is given the space to type them.
+ */
+function completeSlash(index: number) {
+  const entry = slashEntries.value[index];
+  if (!entry || !inputRef.value) {
+    closeSlash();
+    return;
+  }
+
+  const text = `${entry.name} `;
+  inputRef.value.textContent = text;
+  const range = document.createRange();
+  range.selectNodeContents(inputRef.value);
+  range.collapse(false);
+  const selection = window.getSelection();
+  selection?.removeAllRanges();
+  selection?.addRange(range);
+
+  hasContent.value = true;
+  closeSlash();
+}
+
+function moveSlash(delta: number) {
+  const count = slashEntries.value.length;
+  if (count === 0) {
+    return;
+  }
+  slashIndex.value = (slashIndex.value + delta + count) % count;
+}
+
+function handleCompositionStart() {
+  composing.value = true;
+  closeSlash();
+}
+
+function handleCompositionEnd() {
+  composing.value = false;
+  refreshSlash();
+}
+
 function handleInput() {
   hasContent.value = readText(inputRef.value) !== '';
+  refreshSlash();
 }
 
 function handleKeydown(e: KeyboardEvent) {
+  if (slashEntries.value.length > 0) {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      moveSlash(1);
+      return;
+    }
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      moveSlash(-1);
+      return;
+    }
+    if (e.key === 'Enter' || e.key === 'Tab') {
+      e.preventDefault();
+      completeSlash(slashIndex.value);
+      return;
+    }
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      closeSlash();
+      return;
+    }
+  }
+
   if (e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault();
     submit();
@@ -178,7 +297,14 @@ function clear() {
     inputRef.value.innerHTML = '';
   }
   hasContent.value = false;
+  closeSlash();
 }
+
+onMounted(() => {
+  // Read once, in the background: a deployment without the data cloud answers
+  // nothing and the panel keeps offering only the built-in commands.
+  void loadSops();
+});
 
 defineExpose({ inputRef, clear });
 </script>

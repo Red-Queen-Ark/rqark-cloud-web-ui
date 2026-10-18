@@ -131,6 +131,31 @@ describe('ChatPage', () => {
     expect(socket.send).toHaveBeenCalledWith('hello there', 'researcher', 'openai');
   });
 
+  it('answers /stop by stopping the turn instead of sending it', async () => {
+    const { wrapper } = await mountChat('/en/chat/session-a');
+
+    const input = wrapper.get('[data-testid="chat-input"]');
+    input.element.textContent = '/stop';
+    await input.trigger('input');
+    await wrapper.get('[data-testid="chat-send"]').trigger('click');
+
+    expect(socket.stop).toHaveBeenCalledTimes(1);
+    expect(socket.send).not.toHaveBeenCalled();
+    expect(input.element.textContent).toBe('');
+  });
+
+  it('sends /compact as a turn so the server can compact the conversation', async () => {
+    const { wrapper } = await mountChat('/en/chat/session-a');
+
+    const input = wrapper.get('[data-testid="chat-input"]');
+    input.element.textContent = '/compact';
+    await input.trigger('input');
+    await wrapper.get('[data-testid="chat-send"]').trigger('click');
+
+    expect(socket.send).toHaveBeenCalledWith('/compact', 'researcher', 'openai', expect.any(Function));
+    expect(socket.stop).not.toHaveBeenCalled();
+  });
+
   it('leaves a turn meant for another session alone', async () => {
     useChatStore().setPendingTurn({ sessionId: 'session-b', content: 'hello there', agent: 'researcher', provider: 'openai' });
 

@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { DeleteAgentDefaultsBySourceData, DeleteAgentDefaultsBySourceErrors, DeleteAgentDefaultsBySourceResponses, DeleteAgentsByUuidData, DeleteAgentsByUuidErrors, DeleteAgentsByUuidResponses, DeleteApiKeysByUuidData, DeleteApiKeysByUuidErrors, DeleteApiKeysByUuidResponses, DeleteGroupsByUuidData, DeleteGroupsByUuidErrors, DeleteGroupsByUuidResponses, DeleteGroupsByUuidUsersByUserUuidData, DeleteGroupsByUuidUsersByUserUuidErrors, DeleteGroupsByUuidUsersByUserUuidResponses, DeleteProvidersByUuidData, DeleteProvidersByUuidErrors, DeleteProvidersByUuidResponses, DeleteSessionsByUuidData, DeleteSessionsByUuidErrors, DeleteSessionsByUuidResponses, DeleteTasksByUuidData, DeleteTasksByUuidErrors, DeleteTasksByUuidResponses, DeleteUserConfigByKeyData, DeleteUserConfigByKeyErrors, DeleteUserConfigByKeyResponses, DeleteUsersByUuidData, DeleteUsersByUuidErrors, DeleteUsersByUuidResponses, GetAgentDefaultsBySourceData, GetAgentDefaultsBySourceErrors, GetAgentDefaultsBySourceResponses, GetAgentDefaultsData, GetAgentDefaultsErrors, GetAgentDefaultsResponses, GetAgentsByUuidData, GetAgentsByUuidErrors, GetAgentsByUuidResponses, GetAgentsData, GetAgentsErrors, GetAgentsNamesData, GetAgentsNamesErrors, GetAgentsNamesResponses, GetAgentsResponses, GetApiKeysData, GetApiKeysErrors, GetApiKeysResponses, GetGroupsByUuidData, GetGroupsByUuidErrors, GetGroupsByUuidResponses, GetGroupsByUuidUsersData, GetGroupsByUuidUsersErrors, GetGroupsByUuidUsersResponses, GetGroupsData, GetGroupsErrors, GetGroupsResponses, GetPingData, GetPingResponses, GetProvidersByUuidData, GetProvidersByUuidErrors, GetProvidersByUuidResponses, GetProvidersData, GetProvidersErrors, GetProvidersModelsData, GetProvidersModelsErrors, GetProvidersModelsResponses, GetProvidersResponses, GetSessionsByUuidData, GetSessionsByUuidErrors, GetSessionsByUuidMessagesData, GetSessionsByUuidMessagesErrors, GetSessionsByUuidMessagesResponses, GetSessionsByUuidResponses, GetSessionsData, GetSessionsErrors, GetSessionsResponses, GetSwaggerJsonData, GetSwaggerJsonResponses, GetSwaggerYmlData, GetSwaggerYmlResponses, GetTasksByUuidData, GetTasksByUuidErrors, GetTasksByUuidResponses, GetTasksByUuidRunsData, GetTasksByUuidRunsErrors, GetTasksByUuidRunsResponses, GetTasksData, GetTasksErrors, GetTasksResponses, GetUserConfigData, GetUserConfigErrors, GetUserConfigResponses, GetUsersByUuidData, GetUsersByUuidErrors, GetUsersByUuidResponses, GetUsersData, GetUsersErrors, GetUsersMeData, GetUsersMeErrors, GetUsersMeResponses, GetUsersResponses, GetVersionData, GetVersionResponses, OptionsSwaggerJsonData, OptionsSwaggerJsonResponses, PatchApiKeysByUuidData, PatchApiKeysByUuidErrors, PatchApiKeysByUuidResponses, PatchGroupsByUuidData, PatchGroupsByUuidErrors, PatchGroupsByUuidResponses, PatchUsersByUuidData, PatchUsersByUuidErrors, PatchUsersByUuidResponses, PatchUsersMeData, PatchUsersMeErrors, PatchUsersMeResponses, PostAgentsData, PostAgentsErrors, PostAgentsResponses, PostApiKeysData, PostApiKeysErrors, PostApiKeysResponses, PostAuthForgotPasswordData, PostAuthForgotPasswordErrors, PostAuthForgotPasswordResponses, PostAuthLoginData, PostAuthLoginErrors, PostAuthLoginResponses, PostAuthRefreshData, PostAuthRefreshErrors, PostAuthRefreshResponses, PostAuthRegisterData, PostAuthRegisterErrors, PostAuthRegisterResponses, PostAuthResetPasswordData, PostAuthResetPasswordErrors, PostAuthResetPasswordResponses, PostGroupsData, PostGroupsErrors, PostGroupsResponses, PostProvidersData, PostProvidersErrors, PostProvidersResponses, PostSessionsData, PostSessionsErrors, PostSessionsResponses, PostTasksData, PostTasksErrors, PostTasksResponses, PostUsersData, PostUsersErrors, PostUsersResponses, PutAgentDefaultsBySourceData, PutAgentDefaultsBySourceErrors, PutAgentDefaultsBySourceResponses, PutAgentsByUuidData, PutAgentsByUuidErrors, PutAgentsByUuidResponses, PutGroupsByUuidUsersByUserUuidData, PutGroupsByUuidUsersByUserUuidErrors, PutGroupsByUuidUsersByUserUuidResponses, PutProvidersByUuidData, PutProvidersByUuidErrors, PutProvidersByUuidPriorityData, PutProvidersByUuidPriorityErrors, PutProvidersByUuidPriorityResponses, PutProvidersByUuidResponses, PutSessionsByUuidData, PutSessionsByUuidErrors, PutSessionsByUuidResponses, PutTasksByUuidData, PutTasksByUuidErrors, PutTasksByUuidResponses, PutUserConfigByKeyData, PutUserConfigByKeyErrors, PutUserConfigByKeyResponses, PutUsersByUuidPasswordData, PutUsersByUuidPasswordErrors, PutUsersByUuidPasswordResponses, PutUsersMePasswordData, PutUsersMePasswordErrors, PutUsersMePasswordResponses } from './types.gen';
+import type { DeleteAgentDefaultsBySourceData, DeleteAgentDefaultsBySourceErrors, DeleteAgentDefaultsBySourceResponses, DeleteAgentsByUuidData, DeleteAgentsByUuidErrors, DeleteAgentsByUuidResponses, DeleteApiKeysByUuidData, DeleteApiKeysByUuidErrors, DeleteApiKeysByUuidResponses, DeleteGroupsByUuidData, DeleteGroupsByUuidErrors, DeleteGroupsByUuidResponses, DeleteGroupsByUuidUsersByUserUuidData, DeleteGroupsByUuidUsersByUserUuidErrors, DeleteGroupsByUuidUsersByUserUuidResponses, DeleteMemoryByUuidData, DeleteMemoryByUuidErrors, DeleteMemoryByUuidResponses, DeleteProvidersByUuidData, DeleteProvidersByUuidErrors, DeleteProvidersByUuidResponses, DeleteSessionsByUuidData, DeleteSessionsByUuidErrors, DeleteSessionsByUuidResponses, DeleteSopsBySlugData, DeleteSopsBySlugErrors, DeleteSopsBySlugResponses, DeleteTasksByUuidData, DeleteTasksByUuidErrors, DeleteTasksByUuidResponses, DeleteUserConfigByKeyData, DeleteUserConfigByKeyErrors, DeleteUserConfigByKeyResponses, DeleteUsersByUuidData, DeleteUsersByUuidErrors, DeleteUsersByUuidResponses, GetAgentDefaultsBySourceData, GetAgentDefaultsBySourceErrors, GetAgentDefaultsBySourceResponses, GetAgentDefaultsData, GetAgentDefaultsErrors, GetAgentDefaultsResponses, GetAgentsByUuidData, GetAgentsByUuidErrors, GetAgentsByUuidResponses, GetAgentsData, GetAgentsErrors, GetAgentsNamesData, GetAgentsNamesErrors, GetAgentsNamesResponses, GetAgentsResponses, GetApiKeysData, GetApiKeysErrors, GetApiKeysResponses, GetGroupsByUuidData, GetGroupsByUuidErrors, GetGroupsByUuidResponses, GetGroupsByUuidUsersData, GetGroupsByUuidUsersErrors, GetGroupsByUuidUsersResponses, GetGroupsData, GetGroupsErrors, GetGroupsResponses, GetMemoryByUuidData, GetMemoryByUuidErrors, GetMemoryByUuidResponses, GetMemoryData, GetMemoryErrors, GetMemoryResponses, GetPingData, GetPingResponses, GetProvidersByUuidData, GetProvidersByUuidErrors, GetProvidersByUuidResponses, GetProvidersData, GetProvidersErrors, GetProvidersModelsData, GetProvidersModelsErrors, GetProvidersModelsResponses, GetProvidersResponses, GetSessionsByUuidData, GetSessionsByUuidErrors, GetSessionsByUuidMessagesData, GetSessionsByUuidMessagesErrors, GetSessionsByUuidMessagesResponses, GetSessionsByUuidResponses, GetSessionsData, GetSessionsErrors, GetSessionsResponses, GetSopsBySlugData, GetSopsBySlugErrors, GetSopsBySlugResponses, GetSopsData, GetSopsErrors, GetSopsResponses, GetSwaggerJsonData, GetSwaggerJsonResponses, GetSwaggerYmlData, GetSwaggerYmlResponses, GetTasksByUuidData, GetTasksByUuidErrors, GetTasksByUuidResponses, GetTasksByUuidRunsData, GetTasksByUuidRunsErrors, GetTasksByUuidRunsResponses, GetTasksData, GetTasksErrors, GetTasksResponses, GetUserConfigData, GetUserConfigErrors, GetUserConfigResponses, GetUsersByUuidData, GetUsersByUuidErrors, GetUsersByUuidResponses, GetUsersData, GetUsersErrors, GetUsersMeData, GetUsersMeErrors, GetUsersMeResponses, GetUsersResponses, GetVersionData, GetVersionResponses, OptionsSwaggerJsonData, OptionsSwaggerJsonResponses, PatchApiKeysByUuidData, PatchApiKeysByUuidErrors, PatchApiKeysByUuidResponses, PatchGroupsByUuidData, PatchGroupsByUuidErrors, PatchGroupsByUuidResponses, PatchMemoryByUuidData, PatchMemoryByUuidErrors, PatchMemoryByUuidResponses, PatchSopsBySlugData, PatchSopsBySlugErrors, PatchSopsBySlugResponses, PatchUsersByUuidData, PatchUsersByUuidErrors, PatchUsersByUuidResponses, PatchUsersMeData, PatchUsersMeErrors, PatchUsersMeResponses, PostAgentsData, PostAgentsErrors, PostAgentsResponses, PostApiKeysData, PostApiKeysErrors, PostApiKeysResponses, PostAuthForgotPasswordData, PostAuthForgotPasswordErrors, PostAuthForgotPasswordResponses, PostAuthLoginData, PostAuthLoginErrors, PostAuthLoginResponses, PostAuthRefreshData, PostAuthRefreshErrors, PostAuthRefreshResponses, PostAuthRegisterData, PostAuthRegisterErrors, PostAuthRegisterResponses, PostAuthResetPasswordData, PostAuthResetPasswordErrors, PostAuthResetPasswordResponses, PostGroupsData, PostGroupsErrors, PostGroupsResponses, PostMemoryData, PostMemoryErrors, PostMemoryPromptData, PostMemoryPromptErrors, PostMemoryPromptResponses, PostMemoryResponses, PostMemorySearchData, PostMemorySearchErrors, PostMemorySearchResponses, PostProvidersData, PostProvidersErrors, PostProvidersResponses, PostSessionsData, PostSessionsErrors, PostSessionsResponses, PostSopsData, PostSopsErrors, PostSopsResponses, PostTasksByUuidRunData, PostTasksByUuidRunErrors, PostTasksByUuidRunResponses, PostTasksData, PostTasksErrors, PostTasksResponses, PostUsersData, PostUsersErrors, PostUsersResponses, PutAgentDefaultsBySourceData, PutAgentDefaultsBySourceErrors, PutAgentDefaultsBySourceResponses, PutAgentsByUuidData, PutAgentsByUuidErrors, PutAgentsByUuidResponses, PutGroupsByUuidUsersByUserUuidData, PutGroupsByUuidUsersByUserUuidErrors, PutGroupsByUuidUsersByUserUuidResponses, PutProvidersByUuidData, PutProvidersByUuidErrors, PutProvidersByUuidPriorityData, PutProvidersByUuidPriorityErrors, PutProvidersByUuidPriorityResponses, PutProvidersByUuidResponses, PutSessionsByUuidData, PutSessionsByUuidErrors, PutSessionsByUuidResponses, PutTasksByUuidData, PutTasksByUuidErrors, PutTasksByUuidResponses, PutUserConfigByKeyData, PutUserConfigByKeyErrors, PutUserConfigByKeyResponses, PutUsersByUuidPasswordData, PutUsersByUuidPasswordErrors, PutUsersByUuidPasswordResponses, PutUsersMePasswordData, PutUsersMePasswordErrors, PutUsersMePasswordResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -523,6 +523,148 @@ export const putGroupsByUuidUsersByUserUuid = <ThrowOnError extends boolean = fa
 };
 
 /**
+ * List memory
+ *
+ * Returns the caller's memory records ordered by occurred_at descending, then id descending. agent_id narrows the page to one of the caller's own agents; leaving it out covers every agent. The page continues from cursor, which is the next_cursor of the previous response. Rows are not ordered by score: score depends on now(), so a cursor built from it would drift and repeat or skip rows between pages.
+ */
+export const getMemory = <ThrowOnError extends boolean = false>(options?: Options<GetMemoryData, ThrowOnError>) => {
+    return (options?.client ?? client).get<GetMemoryResponses, GetMemoryErrors, ThrowOnError>({
+        security: [
+            {
+                name: 'Authorization',
+                type: 'apiKey'
+            }
+        ],
+        url: '/memory',
+        ...options
+    });
+};
+
+/**
+ * Create a memory record
+ *
+ * Appends one record to the caller's memory log. The agent must belong to the caller. content is limited to 200 characters and keywords to 8 entries; a longer value is rejected rather than truncated. occurred_at is required because it drives the score decay. Pinning at creation counts against the same limit of 5 pinned rows per (user, agent) pair.
+ */
+export const postMemory = <ThrowOnError extends boolean = false>(options: Options<PostMemoryData, ThrowOnError>) => {
+    return (options.client ?? client).post<PostMemoryResponses, PostMemoryErrors, ThrowOnError>({
+        security: [
+            {
+                name: 'Authorization',
+                type: 'apiKey'
+            }
+        ],
+        url: '/memory',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
+};
+
+/**
+ * Memory injection prompt
+ *
+ * Returns at most 20 records of one of the caller's agents, ordered pinned first, then the decayed score, then recency. This is the one ordering the injection prompt uses and search does not: pinned rows here are exempt from decay. Every returned row counts as injected, recorded at most once per UTC day.
+ */
+export const postMemoryPrompt = <ThrowOnError extends boolean = false>(options: Options<PostMemoryPromptData, ThrowOnError>) => {
+    return (options.client ?? client).post<PostMemoryPromptResponses, PostMemoryPromptErrors, ThrowOnError>({
+        security: [
+            {
+                name: 'Authorization',
+                type: 'apiKey'
+            }
+        ],
+        url: '/memory/prompt',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
+};
+
+/**
+ * Search memory
+ *
+ * Returns at most 20 records of one of the caller's agents. Rows are ranked by how many of the requested keywords they carry, then by the decayed score, then by recency; pinned is ignored here and only orders the injection prompt. query matches content or a keyword as a substring. at bounds occurred_at from above, so asking what the user wanted on a date means at plus keywords, not at alone. Every returned row counts as one hit, recorded at most once per UTC day.
+ */
+export const postMemorySearch = <ThrowOnError extends boolean = false>(options: Options<PostMemorySearchData, ThrowOnError>) => {
+    return (options.client ?? client).post<PostMemorySearchResponses, PostMemorySearchErrors, ThrowOnError>({
+        security: [
+            {
+                name: 'Authorization',
+                type: 'apiKey'
+            }
+        ],
+        url: '/memory/search',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
+};
+
+/**
+ * Delete a memory record
+ *
+ * Hard delete of one of the caller's records. This is how a wrong record is corrected: the agent cannot edit or delete, so only the user removes it.
+ */
+export const deleteMemoryByUuid = <ThrowOnError extends boolean = false>(options: Options<DeleteMemoryByUuidData, ThrowOnError>) => {
+    return (options.client ?? client).delete<DeleteMemoryByUuidResponses, DeleteMemoryByUuidErrors, ThrowOnError>({
+        security: [
+            {
+                name: 'Authorization',
+                type: 'apiKey'
+            }
+        ],
+        url: '/memory/{uuid}',
+        ...options
+    });
+};
+
+/**
+ * Get a memory record
+ *
+ * Returns one of the caller's records, source_message included. A record that does not exist or belongs to another pair is reported as 404.
+ */
+export const getMemoryByUuid = <ThrowOnError extends boolean = false>(options: Options<GetMemoryByUuidData, ThrowOnError>) => {
+    return (options.client ?? client).get<GetMemoryByUuidResponses, GetMemoryByUuidErrors, ThrowOnError>({
+        security: [
+            {
+                name: 'Authorization',
+                type: 'apiKey'
+            }
+        ],
+        url: '/memory/{uuid}',
+        ...options
+    });
+};
+
+/**
+ * Pin or unpin a memory record
+ *
+ * The only field a caller may change is pinned; content, occurred_at and every other field are immutable, and naming one answers 400 IMMUTABLE_FIELD. A corrected record is written as a new row, not an edit. At most 5 rows of one (user, agent) pair may be pinned.
+ */
+export const patchMemoryByUuid = <ThrowOnError extends boolean = false>(options: Options<PatchMemoryByUuidData, ThrowOnError>) => {
+    return (options.client ?? client).patch<PatchMemoryByUuidResponses, PatchMemoryByUuidErrors, ThrowOnError>({
+        security: [
+            {
+                name: 'Authorization',
+                type: 'apiKey'
+            }
+        ],
+        url: '/memory/{uuid}',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
+};
+
+/**
  * Health check
  *
  * Returns pong. Does not touch PostgreSQL or Redis.
@@ -789,6 +931,104 @@ export const getSessionsByUuidMessages = <ThrowOnError extends boolean = false>(
 };
 
 /**
+ * List sops
+ *
+ * Returns the caller's sops ordered by slug ascending. The page continues from cursor, which is the next_cursor of the previous response. sops are per-user: no agent is involved, so one procedure is available to every agent the caller talks to.
+ */
+export const getSops = <ThrowOnError extends boolean = false>(options?: Options<GetSopsData, ThrowOnError>) => {
+    return (options?.client ?? client).get<GetSopsResponses, GetSopsErrors, ThrowOnError>({
+        security: [
+            {
+                name: 'Authorization',
+                type: 'apiKey'
+            }
+        ],
+        url: '/sops',
+        ...options
+    });
+};
+
+/**
+ * Create a sop
+ *
+ * Stores one procedure under a slug the caller picks. The slug is what a message calls the procedure by, so it is limited to lowercase letters, digits and hyphens; a slug the caller already uses answers 409 rather than overwriting the stored procedure. content is limited to 2000 characters and a longer one is rejected rather than truncated. title is optional and defaults to the content's first heading, then to the slug.
+ */
+export const postSops = <ThrowOnError extends boolean = false>(options: Options<PostSopsData, ThrowOnError>) => {
+    return (options.client ?? client).post<PostSopsResponses, PostSopsErrors, ThrowOnError>({
+        security: [
+            {
+                name: 'Authorization',
+                type: 'apiKey'
+            }
+        ],
+        url: '/sops',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
+};
+
+/**
+ * Delete a sop
+ *
+ * Hard delete of one of the caller's sop. A message that named the slug afterwards is an ordinary message again.
+ */
+export const deleteSopsBySlug = <ThrowOnError extends boolean = false>(options: Options<DeleteSopsBySlugData, ThrowOnError>) => {
+    return (options.client ?? client).delete<DeleteSopsBySlugResponses, DeleteSopsBySlugErrors, ThrowOnError>({
+        security: [
+            {
+                name: 'Authorization',
+                type: 'apiKey'
+            }
+        ],
+        url: '/sops/{slug}',
+        ...options
+    });
+};
+
+/**
+ * Get a sop
+ *
+ * Returns one of the caller's sops, content included. A slug that does not exist or belongs to another user is reported as 404.
+ */
+export const getSopsBySlug = <ThrowOnError extends boolean = false>(options: Options<GetSopsBySlugData, ThrowOnError>) => {
+    return (options.client ?? client).get<GetSopsBySlugResponses, GetSopsBySlugErrors, ThrowOnError>({
+        security: [
+            {
+                name: 'Authorization',
+                type: 'apiKey'
+            }
+        ],
+        url: '/sops/{slug}',
+        ...options
+    });
+};
+
+/**
+ * Update a sop
+ *
+ * Rewrites the title or content of one of the caller's sops. A field left out keeps what is stored. The slug is part of the identity and cannot be changed; a body that names it answers 400 IMMUTABLE_FIELD. content is limited to 2000 characters and a longer one is rejected rather than truncated.
+ */
+export const patchSopsBySlug = <ThrowOnError extends boolean = false>(options: Options<PatchSopsBySlugData, ThrowOnError>) => {
+    return (options.client ?? client).patch<PatchSopsBySlugResponses, PatchSopsBySlugErrors, ThrowOnError>({
+        security: [
+            {
+                name: 'Authorization',
+                type: 'apiKey'
+            }
+        ],
+        url: '/sops/{slug}',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
+};
+
+/**
  * OpenAPI specification (JSON)
  *
  * Returns the generated Swagger 2.0 document describing this API. Served without caching, so a viewer always sees the current API.
@@ -919,6 +1159,24 @@ export const putTasksByUuid = <ThrowOnError extends boolean = false>(options: Op
             'Content-Type': 'application/json',
             ...options.headers
         }
+    });
+};
+
+/**
+ * Run a task now
+ *
+ * Asks for one run at the next tick, without waiting for the schedule. next_run_at is left alone, so a manual run never shifts an every task's phase or skips a cron task's next fire. The run is recorded with trigger 'manual' and answered through the run listing. A paused task, or one that is already running, is reported as 409.
+ */
+export const postTasksByUuidRun = <ThrowOnError extends boolean = false>(options: Options<PostTasksByUuidRunData, ThrowOnError>) => {
+    return (options.client ?? client).post<PostTasksByUuidRunResponses, PostTasksByUuidRunErrors, ThrowOnError>({
+        security: [
+            {
+                name: 'Authorization',
+                type: 'apiKey'
+            }
+        ],
+        url: '/tasks/{uuid}/run',
+        ...options
     });
 };
 

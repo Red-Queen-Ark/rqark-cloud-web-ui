@@ -147,6 +147,14 @@ export interface MockWrite {
  */
 export const WRITE_TIMESTAMP = '2026-05-06T07:08:09Z';
 
+export interface MockSop {
+  slug: string;
+  title: string;
+  content: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface MockBackend {
   users: MockUser[];
   groups: MockGroup[];
@@ -158,6 +166,8 @@ export interface MockBackend {
   userConfig: Record<string, unknown>;
   /** The default agent per session source, held as the agent id the API stores. */
   agentDefaults: Record<string, string>;
+  /** Every sop the account holds. */
+  sops: MockSop[];
   requests: string[];
   /** Every request that carried a JSON body, in order. */
   writes: MockWrite[];
@@ -181,6 +191,8 @@ export interface MockBackendOptions {
   userConfig?: Record<string, unknown>;
   /** Seeds the stored default agent per session source, keyed by source. */
   agentDefaults?: Record<string, string>;
+  /** Replaces the seeded sop list. */
+  sops?: MockSop[];
   /** Replaces the seeded account list. */
   users?: MockUser[];
 }
@@ -215,6 +227,7 @@ export async function mockBackend(page_: Page, options: MockBackendOptions = {})
     taskRuns: options.taskRuns ?? [],
     userConfig: options.userConfig ?? {},
     agentDefaults: options.agentDefaults ?? {},
+    sops: options.sops ?? [],
     requests: [],
     writes: [],
   };
@@ -283,6 +296,12 @@ export async function mockBackend(page_: Page, options: MockBackendOptions = {})
           state.userConfig = Object.fromEntries(Object.entries(state.userConfig).filter(([key]) => key !== configKey));
           return route.fulfill({ status: 204, body: '' });
         }
+      }
+
+      // The caller's sops: one page, slug ascending, which is all the chat
+      // input reads to fill its slash panel.
+      if (path === '/sops' && method === 'GET') {
+        return json(route, 200, { items: state.sops, next_cursor: '' });
       }
 
       // One default per source. A source with none answers 404, which is how the

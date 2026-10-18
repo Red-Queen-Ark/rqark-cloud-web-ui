@@ -22,5 +22,8 @@ export const chat = {
   statusConnecting: 'Connecting',
   statusConnected: 'Connected',
   statusError: 'Connection error',
+  slashPanelLabel: 'Slash commands',
+  slashCompact: 'Compact the current conversation',
+  slashStop: 'Stop the current response',
   scrollToBottom: 'Scroll to the latest',
 };

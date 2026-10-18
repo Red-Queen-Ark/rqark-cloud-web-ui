@@ -64,6 +64,18 @@ export type ApiCreateGroupRequest = {
     name?: string;
 };
 
+export type ApiCreateMemoryRequest = {
+    agent_id?: string;
+    content?: string;
+    keywords?: Array<string>;
+    occurred_at?: string;
+    pinned?: boolean;
+    source?: string;
+    source_message?: {
+        [key: string]: unknown;
+    };
+};
+
 export type ApiCreateProviderRequest = {
     api_base?: string;
     api_key?: string;
@@ -86,6 +98,12 @@ export type ApiCreateSessionRequest = {
     source?: string;
     title?: string;
     uuid?: string;
+};
+
+export type ApiCreateSopRequest = {
+    content?: string;
+    slug?: string;
+    title?: string;
 };
 
 export type ApiCreateTaskRequest = {
@@ -125,12 +143,61 @@ export type ApiLoginRequest = {
     password?: string;
 };
 
+export type ApiMemoryDto = {
+    agent_id?: string;
+    content?: string;
+    created_at?: string;
+    hits?: number;
+    id?: string;
+    keywords?: Array<string>;
+    last_used_at?: string;
+    occurred_at?: string;
+    pinned?: boolean;
+    source?: string;
+    updated_at?: string;
+};
+
+export type ApiMemoryDetailDto = {
+    agent_id?: string;
+    content?: string;
+    created_at?: string;
+    hits?: number;
+    id?: string;
+    keywords?: Array<string>;
+    last_used_at?: string;
+    occurred_at?: string;
+    pinned?: boolean;
+    source?: string;
+    source_message?: {
+        [key: string]: unknown;
+    };
+    updated_at?: string;
+};
+
+export type ApiMemoryPage = {
+    items?: Array<ApiMemoryDto>;
+    next_cursor?: string;
+};
+
 export type ApiMessageResponse = {
     message?: string;
 };
 
+export type ApiPatchMemoryRequest = {
+    pinned?: boolean;
+};
+
+export type ApiPatchSopRequest = {
+    content?: string;
+    title?: string;
+};
+
 export type ApiPingResponse = {
     message?: string;
+};
+
+export type ApiPromptMemoryRequest = {
+    agent_id?: string;
 };
 
 export type ApiProviderDto = {
@@ -191,6 +258,13 @@ export type ApiResetPasswordRequest = {
     token?: string;
 };
 
+export type ApiSearchMemoryRequest = {
+    agent_id?: string;
+    at?: string;
+    keywords?: Array<string>;
+    query?: string;
+};
+
 export type ApiSessionDto = {
     created_at?: string;
     id?: string;
@@ -215,6 +289,19 @@ export type ApiSetPasswordRequest = {
 
 export type ApiSetProviderPriorityRequest = {
     priority?: number;
+};
+
+export type ApiSopDto = {
+    content?: string;
+    created_at?: string;
+    slug?: string;
+    title?: string;
+    updated_at?: string;
+};
+
+export type ApiSopPage = {
+    items?: Array<ApiSopDto>;
+    next_cursor?: string;
 };
 
 export type ApiTaskDto = {
@@ -375,7 +462,7 @@ export type RepositorySessionPlanItem = {
     status?: string;
 };
 
-export type UtilsCode = 'UNAUTHORIZED' | 'FORBIDDEN' | 'BAD_REQUEST' | 'NOT_FOUND' | 'CONFLICT' | 'AGENT_AMBIGUOUS' | 'PROVIDER_AMBIGUOUS' | 'LAST_SUPERUSER' | 'INTERNAL';
+export type UtilsCode = 'UNAUTHORIZED' | 'FORBIDDEN' | 'BAD_REQUEST' | 'NOT_FOUND' | 'CONFLICT' | 'INVALID_CONTENT' | 'IMMUTABLE_FIELD' | 'PINNED_LIMIT' | 'AGENT_AMBIGUOUS' | 'PROVIDER_AMBIGUOUS' | 'LAST_SUPERUSER' | 'INTERNAL';
 
 export type UtilsError = {
     code?: UtilsCode;
@@ -1488,6 +1575,319 @@ export type PutGroupsByUuidUsersByUserUuidResponses = {
     204: unknown;
 };
 
+export type GetMemoryData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Agent ID
+         */
+        agent_id?: string;
+        /**
+         * next_cursor of the previous page
+         */
+        cursor?: string;
+        /**
+         * Page size, default 100, at most 100
+         */
+        limit?: number;
+    };
+    url: '/memory';
+};
+
+export type GetMemoryErrors = {
+    /**
+     * Bad Request
+     */
+    400: UtilsErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: UtilsErrorResponse;
+    /**
+     * Not Found
+     */
+    404: UtilsErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: UtilsErrorResponse;
+};
+
+export type GetMemoryError = GetMemoryErrors[keyof GetMemoryErrors];
+
+export type GetMemoryResponses = {
+    /**
+     * OK
+     */
+    200: ApiMemoryPage;
+};
+
+export type GetMemoryResponse = GetMemoryResponses[keyof GetMemoryResponses];
+
+export type PostMemoryData = {
+    /**
+     * Record to append
+     */
+    body: ApiCreateMemoryRequest;
+    path?: never;
+    query?: never;
+    url: '/memory';
+};
+
+export type PostMemoryErrors = {
+    /**
+     * Bad Request
+     */
+    400: UtilsErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: UtilsErrorResponse;
+    /**
+     * Not Found
+     */
+    404: UtilsErrorResponse;
+    /**
+     * Conflict
+     */
+    409: UtilsErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: UtilsErrorResponse;
+};
+
+export type PostMemoryError = PostMemoryErrors[keyof PostMemoryErrors];
+
+export type PostMemoryResponses = {
+    /**
+     * Created
+     */
+    201: ApiMemoryDetailDto;
+};
+
+export type PostMemoryResponse = PostMemoryResponses[keyof PostMemoryResponses];
+
+export type PostMemoryPromptData = {
+    /**
+     * Agent to read
+     */
+    body: ApiPromptMemoryRequest;
+    path?: never;
+    query?: never;
+    url: '/memory/prompt';
+};
+
+export type PostMemoryPromptErrors = {
+    /**
+     * Bad Request
+     */
+    400: UtilsErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: UtilsErrorResponse;
+    /**
+     * Not Found
+     */
+    404: UtilsErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: UtilsErrorResponse;
+};
+
+export type PostMemoryPromptError = PostMemoryPromptErrors[keyof PostMemoryPromptErrors];
+
+export type PostMemoryPromptResponses = {
+    /**
+     * OK
+     */
+    200: Array<ApiMemoryDto>;
+};
+
+export type PostMemoryPromptResponse = PostMemoryPromptResponses[keyof PostMemoryPromptResponses];
+
+export type PostMemorySearchData = {
+    /**
+     * Search terms
+     */
+    body: ApiSearchMemoryRequest;
+    path?: never;
+    query?: never;
+    url: '/memory/search';
+};
+
+export type PostMemorySearchErrors = {
+    /**
+     * Bad Request
+     */
+    400: UtilsErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: UtilsErrorResponse;
+    /**
+     * Not Found
+     */
+    404: UtilsErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: UtilsErrorResponse;
+};
+
+export type PostMemorySearchError = PostMemorySearchErrors[keyof PostMemorySearchErrors];
+
+export type PostMemorySearchResponses = {
+    /**
+     * OK
+     */
+    200: Array<ApiMemoryDto>;
+};
+
+export type PostMemorySearchResponse = PostMemorySearchResponses[keyof PostMemorySearchResponses];
+
+export type DeleteMemoryByUuidData = {
+    body?: never;
+    path: {
+        /**
+         * Memory ID
+         */
+        uuid: string;
+    };
+    query?: never;
+    url: '/memory/{uuid}';
+};
+
+export type DeleteMemoryByUuidErrors = {
+    /**
+     * Bad Request
+     */
+    400: UtilsErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: UtilsErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: UtilsErrorResponse;
+    /**
+     * Not Found
+     */
+    404: UtilsErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: UtilsErrorResponse;
+};
+
+export type DeleteMemoryByUuidError = DeleteMemoryByUuidErrors[keyof DeleteMemoryByUuidErrors];
+
+export type DeleteMemoryByUuidResponses = {
+    /**
+     * No Content
+     */
+    204: unknown;
+};
+
+export type GetMemoryByUuidData = {
+    body?: never;
+    path: {
+        /**
+         * Memory ID
+         */
+        uuid: string;
+    };
+    query?: never;
+    url: '/memory/{uuid}';
+};
+
+export type GetMemoryByUuidErrors = {
+    /**
+     * Bad Request
+     */
+    400: UtilsErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: UtilsErrorResponse;
+    /**
+     * Not Found
+     */
+    404: UtilsErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: UtilsErrorResponse;
+};
+
+export type GetMemoryByUuidError = GetMemoryByUuidErrors[keyof GetMemoryByUuidErrors];
+
+export type GetMemoryByUuidResponses = {
+    /**
+     * OK
+     */
+    200: ApiMemoryDetailDto;
+};
+
+export type GetMemoryByUuidResponse = GetMemoryByUuidResponses[keyof GetMemoryByUuidResponses];
+
+export type PatchMemoryByUuidData = {
+    /**
+     * Pin state
+     */
+    body: ApiPatchMemoryRequest;
+    path: {
+        /**
+         * Memory ID
+         */
+        uuid: string;
+    };
+    query?: never;
+    url: '/memory/{uuid}';
+};
+
+export type PatchMemoryByUuidErrors = {
+    /**
+     * Bad Request
+     */
+    400: UtilsErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: UtilsErrorResponse;
+    /**
+     * Forbidden
+     */
+    403: UtilsErrorResponse;
+    /**
+     * Not Found
+     */
+    404: UtilsErrorResponse;
+    /**
+     * Conflict
+     */
+    409: UtilsErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: UtilsErrorResponse;
+};
+
+export type PatchMemoryByUuidError = PatchMemoryByUuidErrors[keyof PatchMemoryByUuidErrors];
+
+export type PatchMemoryByUuidResponses = {
+    /**
+     * OK
+     */
+    200: ApiMemoryDto;
+};
+
+export type PatchMemoryByUuidResponse = PatchMemoryByUuidResponses[keyof PatchMemoryByUuidResponses];
+
 export type GetPingData = {
     body?: never;
     path?: never;
@@ -2021,6 +2421,215 @@ export type GetSessionsByUuidMessagesResponses = {
 
 export type GetSessionsByUuidMessagesResponse = GetSessionsByUuidMessagesResponses[keyof GetSessionsByUuidMessagesResponses];
 
+export type GetSopsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * next_cursor of the previous page
+         */
+        cursor?: string;
+        /**
+         * Page size, default 100, at most 100
+         */
+        limit?: number;
+    };
+    url: '/sops';
+};
+
+export type GetSopsErrors = {
+    /**
+     * Bad Request
+     */
+    400: UtilsErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: UtilsErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: UtilsErrorResponse;
+};
+
+export type GetSopsError = GetSopsErrors[keyof GetSopsErrors];
+
+export type GetSopsResponses = {
+    /**
+     * OK
+     */
+    200: ApiSopPage;
+};
+
+export type GetSopsResponse = GetSopsResponses[keyof GetSopsResponses];
+
+export type PostSopsData = {
+    /**
+     * Sop to store
+     */
+    body: ApiCreateSopRequest;
+    path?: never;
+    query?: never;
+    url: '/sops';
+};
+
+export type PostSopsErrors = {
+    /**
+     * Bad Request
+     */
+    400: UtilsErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: UtilsErrorResponse;
+    /**
+     * Conflict
+     */
+    409: UtilsErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: UtilsErrorResponse;
+};
+
+export type PostSopsError = PostSopsErrors[keyof PostSopsErrors];
+
+export type PostSopsResponses = {
+    /**
+     * Created
+     */
+    201: ApiSopDto;
+};
+
+export type PostSopsResponse = PostSopsResponses[keyof PostSopsResponses];
+
+export type DeleteSopsBySlugData = {
+    body?: never;
+    path: {
+        /**
+         * Sop slug
+         */
+        slug: string;
+    };
+    query?: never;
+    url: '/sops/{slug}';
+};
+
+export type DeleteSopsBySlugErrors = {
+    /**
+     * Bad Request
+     */
+    400: UtilsErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: UtilsErrorResponse;
+    /**
+     * Not Found
+     */
+    404: UtilsErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: UtilsErrorResponse;
+};
+
+export type DeleteSopsBySlugError = DeleteSopsBySlugErrors[keyof DeleteSopsBySlugErrors];
+
+export type DeleteSopsBySlugResponses = {
+    /**
+     * No Content
+     */
+    204: unknown;
+};
+
+export type GetSopsBySlugData = {
+    body?: never;
+    path: {
+        /**
+         * Sop slug
+         */
+        slug: string;
+    };
+    query?: never;
+    url: '/sops/{slug}';
+};
+
+export type GetSopsBySlugErrors = {
+    /**
+     * Bad Request
+     */
+    400: UtilsErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: UtilsErrorResponse;
+    /**
+     * Not Found
+     */
+    404: UtilsErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: UtilsErrorResponse;
+};
+
+export type GetSopsBySlugError = GetSopsBySlugErrors[keyof GetSopsBySlugErrors];
+
+export type GetSopsBySlugResponses = {
+    /**
+     * OK
+     */
+    200: ApiSopDto;
+};
+
+export type GetSopsBySlugResponse = GetSopsBySlugResponses[keyof GetSopsBySlugResponses];
+
+export type PatchSopsBySlugData = {
+    /**
+     * Fields to change
+     */
+    body: ApiPatchSopRequest;
+    path: {
+        /**
+         * Sop slug
+         */
+        slug: string;
+    };
+    query?: never;
+    url: '/sops/{slug}';
+};
+
+export type PatchSopsBySlugErrors = {
+    /**
+     * Bad Request
+     */
+    400: UtilsErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: UtilsErrorResponse;
+    /**
+     * Not Found
+     */
+    404: UtilsErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: UtilsErrorResponse;
+};
+
+export type PatchSopsBySlugError = PatchSopsBySlugErrors[keyof PatchSopsBySlugErrors];
+
+export type PatchSopsBySlugResponses = {
+    /**
+     * OK
+     */
+    200: ApiSopDto;
+};
+
+export type PatchSopsBySlugResponse = PatchSopsBySlugResponses[keyof PatchSopsBySlugResponses];
+
 export type GetSwaggerJsonData = {
     body?: never;
     path?: never;
@@ -2266,6 +2875,52 @@ export type PutTasksByUuidResponses = {
 };
 
 export type PutTasksByUuidResponse = PutTasksByUuidResponses[keyof PutTasksByUuidResponses];
+
+export type PostTasksByUuidRunData = {
+    body?: never;
+    path: {
+        /**
+         * Task ID
+         */
+        uuid: string;
+    };
+    query?: never;
+    url: '/tasks/{uuid}/run';
+};
+
+export type PostTasksByUuidRunErrors = {
+    /**
+     * Bad Request
+     */
+    400: UtilsErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: UtilsErrorResponse;
+    /**
+     * Not Found
+     */
+    404: UtilsErrorResponse;
+    /**
+     * Conflict
+     */
+    409: UtilsErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: UtilsErrorResponse;
+};
+
+export type PostTasksByUuidRunError = PostTasksByUuidRunErrors[keyof PostTasksByUuidRunErrors];
+
+export type PostTasksByUuidRunResponses = {
+    /**
+     * Accepted
+     */
+    202: ApiTaskDto;
+};
+
+export type PostTasksByUuidRunResponse = PostTasksByUuidRunResponses[keyof PostTasksByUuidRunResponses];
 
 export type GetTasksByUuidRunsData = {
     body?: never;

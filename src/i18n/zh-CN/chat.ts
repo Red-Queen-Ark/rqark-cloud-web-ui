@@ -22,5 +22,8 @@ export const chat = {
   statusConnecting: '连接中',
   statusConnected: '已连接',
   statusError: '连接出错',
+  slashPanelLabel: '斜线指令',
+  slashCompact: '压缩当前对话',
+  slashStop: '停止当前回应',
   scrollToBottom: '回到最新',
 };

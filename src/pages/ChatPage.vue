@@ -36,6 +36,9 @@ import { useStickyScroll } from '@/composables/useStickyScroll';
 import { useVisualViewportInsets } from '@/composables/useVisualViewportInsets';
 import { useChatStore } from '@/stores/chatStore';
 
+/** The one command the page answers itself; see handleSubmit. */
+const STOP_COMMAND = '/stop';
+
 const route = useRoute();
 const sessionId = computed(() => (typeof route.params.uuid === 'string' ? route.params.uuid : undefined));
 const chatSocket = useChatSocket(sessionId);
@@ -55,6 +58,13 @@ let planObserver: ResizeObserver | undefined;
 watch(sessionId, () => scrollToBottom());
 
 function handleSubmit(payload: { content: string; agent: string; provider: string }) {
+  // `/stop` is answered here rather than sent: it ends the turn already running,
+  // so a message carrying it would only queue behind the one it means to stop.
+  if (payload.content === STOP_COMMAND) {
+    chatSocket.stop();
+    inputArea.value?.clear();
+    return;
+  }
   chatSocket.send(payload.content, payload.agent, payload.provider, () => inputArea.value?.clear());
   scrollToBottom();
 }
