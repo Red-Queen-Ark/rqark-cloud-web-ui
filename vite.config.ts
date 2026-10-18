@@ -1,9 +1,30 @@
 import { defineConfig, loadEnv, type ViteDevServer } from 'vite';
 import vue from '@vitejs/plugin-vue';
-import { VitePWA } from 'vite-plugin-pwa';
+import { VitePWA, type ManifestOptions } from 'vite-plugin-pwa';
 import tailwindcss from '@tailwindcss/vite';
 import { resolve } from 'path';
 import type { IncomingMessage, ServerResponse } from 'http';
+
+function buildManifest(appName: string, appDescription: string): Partial<ManifestOptions> {
+  return {
+    id: '/',
+    name: appName,
+    short_name: appName,
+    description: appDescription,
+    start_url: '/',
+    scope: '/',
+    display: 'standalone',
+    background_color: '#141414',
+    theme_color: '#ffffff',
+    lang: 'en',
+    icons: [
+      { src: 'pwa-64x64.png', sizes: '64x64', type: 'image/png' },
+      { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },
+      { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png' },
+      { src: 'maskable-icon-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+    ],
+  };
+}
 
 function manifestDevPlugin(appName: string, appDescription: string) {
   return {
@@ -13,24 +34,8 @@ function manifestDevPlugin(appName: string, appDescription: string) {
         if (req.method !== 'GET' && req.method !== 'HEAD') {
           return next();
         }
-        const manifest = {
-          name: appName,
-          short_name: appName,
-          description: appDescription,
-          start_url: '/',
-          display: 'standalone',
-          background_color: '#ffffff',
-          theme_color: '#ffffff',
-          lang: 'en',
-          scope: '/',
-          icons: [
-            { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },
-            { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png' },
-            { src: 'maskable-icon-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
-          ],
-        };
         res.setHeader('Content-Type', 'application/manifest+json');
-        res.end(JSON.stringify(manifest));
+        res.end(JSON.stringify(buildManifest(appName, appDescription)));
       });
     },
   };
@@ -86,33 +91,12 @@ export default defineConfig(({ mode }) => {
       manifestDevPlugin(appName, appDescription),
       VitePWA({
         registerType: 'autoUpdate',
-        includeAssets: ['favicon.svg', 'favicon.ico', 'logo.png', 'apple-touch-icon-180x180.png', 'icons.svg'],
-        manifest: {
-          name: appName,
-          short_name: appName,
-          description: appDescription,
-          theme_color: '#ffffff',
-          icons: [
-            {
-              src: 'pwa-192x192.png',
-              sizes: '192x192',
-              type: 'image/png',
-            },
-            {
-              src: 'pwa-512x512.png',
-              sizes: '512x512',
-              type: 'image/png',
-            },
-            {
-              src: 'maskable-icon-512x512.png',
-              sizes: '512x512',
-              type: 'image/png',
-              purpose: 'maskable',
-            },
-          ],
-        },
+        includeAssets: ['favicon.svg', 'favicon.ico', 'logo.png', 'logo.svg', 'apple-touch-icon-180x180.png', 'pwa-64x64.png', 'icons.svg'],
+        manifest: buildManifest(appName, appDescription),
         workbox: {
-          globPatterns: ['**/*.{js,css,html,svg,png,woff2,webmanifest}'],
+          globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2,webmanifest}'],
+          globIgnores: ['**/apple-splash/**'],
+          maximumFileSizeToCacheInBytes: 2 * 1024 * 1024,
         },
       }),
     ],
