@@ -101,6 +101,18 @@ export interface MockTask {
   updated_at?: string;
 }
 
+export interface MockTodo {
+  id: string;
+  title: string;
+  description: string;
+  done: boolean;
+  done_at: string | null;
+  due_at: string | null;
+  sort_order: number;
+  created_at: string;
+  updated_at?: string;
+}
+
 export const boss: MockUser = {
   id: '11111111-1111-4111-8111-111111111111',
   username: 'boss',
@@ -163,6 +175,7 @@ export interface MockBackend {
   sessions: MockSession[];
   tasks: MockTask[];
   taskRuns: MockTaskRun[];
+  todos: MockTodo[];
   userConfig: Record<string, unknown>;
   /** The default agent per session source, held as the agent id the API stores. */
   agentDefaults: Record<string, string>;
@@ -188,6 +201,7 @@ export interface MockBackendOptions {
   sessions?: MockSession[];
   tasks?: MockTask[];
   taskRuns?: MockTaskRun[];
+  todos?: MockTodo[];
   userConfig?: Record<string, unknown>;
   /** Seeds the stored default agent per session source, keyed by source. */
   agentDefaults?: Record<string, string>;
@@ -225,6 +239,7 @@ export async function mockBackend(page_: Page, options: MockBackendOptions = {})
     sessions: options.sessions ?? [],
     tasks: options.tasks ?? [],
     taskRuns: options.taskRuns ?? [],
+    todos: options.todos ?? [],
     userConfig: options.userConfig ?? {},
     agentDefaults: options.agentDefaults ?? {},
     sops: options.sops ?? [],
@@ -241,7 +256,7 @@ export async function mockBackend(page_: Page, options: MockBackendOptions = {})
       const path = url.pathname.replace(/^\/api/, '');
       const method = route.request().method();
       const body = route.request().postDataJSON?.() as Record<string, unknown> | undefined;
-      state.requests.push(`${method} ${path}`);
+      state.requests.push(`${method} ${path}${url.search}`);
       if (body !== undefined) {
         state.writes.push({ method, path, body });
       }
@@ -423,6 +438,63 @@ export async function mockBackend(page_: Page, options: MockBackendOptions = {})
         }
         if (method === 'DELETE') {
           state.agents = state.agents.filter((candidate) => candidate.id !== agent.id);
+          return route.fulfill({ status: 204, body: '' });
+        }
+      }
+
+      if (path === '/todos' && method === 'GET') {
+        const filter = url.searchParams.get('done');
+        const items = filter === null ? state.todos : state.todos.filter((candidate) => candidate.done === (filter === 'true'));
+        return json(route, 200, items);
+      }
+
+      if (path === '/todos' && method === 'POST') {
+        const created: MockTodo = {
+          id: `todo-${state.todos.length + 1}`,
+          title: String(body?.title ?? ''),
+          description: String(body?.description ?? ''),
+          done: false,
+          done_at: null,
+          due_at: (body?.due_at as string | undefined) ?? null,
+          sort_order: Number(body?.sort_order ?? 0),
+          created_at: WRITE_TIMESTAMP,
+          updated_at: WRITE_TIMESTAMP,
+        };
+        state.todos.push(created);
+        return json(route, 201, created);
+      }
+
+      const todoMatch = /^\/todos\/([^/]+)$/.exec(path);
+      if (todoMatch) {
+        const todo = state.todos.find((candidate) => candidate.id === todoMatch[1]);
+        if (!todo) {
+          return json(route, 404, error(404, 'NOT_FOUND', 'Todo not found.').body);
+        }
+        if (method === 'GET') {
+          return json(route, 200, todo);
+        }
+        if (method === 'PUT') {
+          if (body?.title !== undefined) {
+            todo.title = String(body.title);
+          }
+          if (body?.description !== undefined) {
+            todo.description = String(body.description);
+          }
+          if (body?.due_at !== undefined) {
+            todo.due_at = (body.due_at as string | null) ?? null;
+          }
+          if (body?.sort_order !== undefined) {
+            todo.sort_order = Number(body.sort_order);
+          }
+          if (body?.done !== undefined) {
+            todo.done = body.done === true;
+            todo.done_at = todo.done ? WRITE_TIMESTAMP : null;
+          }
+          todo.updated_at = WRITE_TIMESTAMP;
+          return json(route, 200, todo);
+        }
+        if (method === 'DELETE') {
+          state.todos = state.todos.filter((candidate) => candidate.id !== todo.id);
           return route.fulfill({ status: 204, body: '' });
         }
       }

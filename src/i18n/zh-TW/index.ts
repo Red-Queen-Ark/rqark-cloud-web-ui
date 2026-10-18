@@ -20,6 +20,7 @@ import { groups } from './groups';
 import { settings } from './settings';
 import { workspace } from './workspace';
 import { tasks } from './tasks';
+import { todos } from './todos';
 
 export const basis = {
   common,
@@ -44,4 +45,5 @@ export const basis = {
   settings,
   workspace,
   tasks,
+  todos,
 };

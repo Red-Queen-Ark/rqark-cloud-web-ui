@@ -119,6 +119,13 @@ export type ApiCreateTaskRequest = {
     timezone?: string;
 };
 
+export type ApiCreateTodoRequest = {
+    description?: string;
+    due_at?: string;
+    sort_order?: number;
+    title?: string;
+};
+
 export type ApiCreateUserRequest = {
     display_name?: string;
     email?: string;
@@ -333,6 +340,18 @@ export type ApiTaskRunDto = {
     trigger?: string;
 };
 
+export type ApiTodoDto = {
+    created_at?: string;
+    description?: string;
+    done?: boolean;
+    done_at?: string;
+    due_at?: string;
+    id?: string;
+    sort_order?: number;
+    title?: string;
+    updated_at?: string;
+};
+
 export type ApiTokenPair = {
     access_token?: string;
     refresh_token?: string;
@@ -400,6 +419,14 @@ export type ApiUpdateTaskRequest = {
     run_at?: string;
     schedule_kind?: string;
     timezone?: string;
+};
+
+export type ApiUpdateTodoRequest = {
+    description?: string;
+    done?: boolean;
+    due_at?: string;
+    sort_order?: number;
+    title?: string;
 };
 
 export type ApiUpdateUserRequest = {
@@ -2972,6 +2999,207 @@ export type GetTasksByUuidRunsResponses = {
 };
 
 export type GetTasksByUuidRunsResponse = GetTasksByUuidRunsResponses[keyof GetTasksByUuidRunsResponses];
+
+export type GetTodosData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Keep only open (false) or done (true) items
+         */
+        done?: boolean;
+    };
+    url: '/todos';
+};
+
+export type GetTodosErrors = {
+    /**
+     * Bad Request
+     */
+    400: UtilsErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: UtilsErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: UtilsErrorResponse;
+};
+
+export type GetTodosError = GetTodosErrors[keyof GetTodosErrors];
+
+export type GetTodosResponses = {
+    /**
+     * OK
+     */
+    200: Array<ApiTodoDto>;
+};
+
+export type GetTodosResponse = GetTodosResponses[keyof GetTodosResponses];
+
+export type PostTodosData = {
+    /**
+     * Todo to create
+     */
+    body: ApiCreateTodoRequest;
+    path?: never;
+    query?: never;
+    url: '/todos';
+};
+
+export type PostTodosErrors = {
+    /**
+     * Bad Request
+     */
+    400: UtilsErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: UtilsErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: UtilsErrorResponse;
+};
+
+export type PostTodosError = PostTodosErrors[keyof PostTodosErrors];
+
+export type PostTodosResponses = {
+    /**
+     * Created
+     */
+    201: ApiTodoDto;
+};
+
+export type PostTodosResponse = PostTodosResponses[keyof PostTodosResponses];
+
+export type DeleteTodosByUuidData = {
+    body?: never;
+    path: {
+        /**
+         * Todo ID
+         */
+        uuid: string;
+    };
+    query?: never;
+    url: '/todos/{uuid}';
+};
+
+export type DeleteTodosByUuidErrors = {
+    /**
+     * Bad Request
+     */
+    400: UtilsErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: UtilsErrorResponse;
+    /**
+     * Not Found
+     */
+    404: UtilsErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: UtilsErrorResponse;
+};
+
+export type DeleteTodosByUuidError = DeleteTodosByUuidErrors[keyof DeleteTodosByUuidErrors];
+
+export type DeleteTodosByUuidResponses = {
+    /**
+     * No Content
+     */
+    204: unknown;
+};
+
+export type GetTodosByUuidData = {
+    body?: never;
+    path: {
+        /**
+         * Todo ID
+         */
+        uuid: string;
+    };
+    query?: never;
+    url: '/todos/{uuid}';
+};
+
+export type GetTodosByUuidErrors = {
+    /**
+     * Bad Request
+     */
+    400: UtilsErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: UtilsErrorResponse;
+    /**
+     * Not Found
+     */
+    404: UtilsErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: UtilsErrorResponse;
+};
+
+export type GetTodosByUuidError = GetTodosByUuidErrors[keyof GetTodosByUuidErrors];
+
+export type GetTodosByUuidResponses = {
+    /**
+     * OK
+     */
+    200: ApiTodoDto;
+};
+
+export type GetTodosByUuidResponse = GetTodosByUuidResponses[keyof GetTodosByUuidResponses];
+
+export type PutTodosByUuidData = {
+    /**
+     * Fields to change
+     */
+    body: ApiUpdateTodoRequest;
+    path: {
+        /**
+         * Todo ID
+         */
+        uuid: string;
+    };
+    query?: never;
+    url: '/todos/{uuid}';
+};
+
+export type PutTodosByUuidErrors = {
+    /**
+     * Bad Request
+     */
+    400: UtilsErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: UtilsErrorResponse;
+    /**
+     * Not Found
+     */
+    404: UtilsErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: UtilsErrorResponse;
+};
+
+export type PutTodosByUuidError = PutTodosByUuidErrors[keyof PutTodosByUuidErrors];
+
+export type PutTodosByUuidResponses = {
+    /**
+     * OK
+     */
+    200: ApiTodoDto;
+};
+
+export type PutTodosByUuidResponse = PutTodosByUuidResponses[keyof PutTodosByUuidResponses];
 
 export type GetUserConfigData = {
     body?: never;

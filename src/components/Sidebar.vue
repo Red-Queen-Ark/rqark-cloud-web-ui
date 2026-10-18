@@ -28,6 +28,12 @@
               {{ t('tasks.title') }}
             </RouterLink>
           </li>
+          <li>
+            <RouterLink :to="{ name: 'todos', params: { lang: route.params.lang as string } }" :class="{ 'menu-active': route.name === 'todos' }" data-testid="sidebar-todos-link">
+              <ListIcon class="h-4 w-4" />
+              {{ t('todos.title') }}
+            </RouterLink>
+          </li>
           <SidebarChatSessionsList />
           <!-- <li v-for="item in visibleItems" :key="item.pageId">
             <RouterLink :to="{ name: item.pageId }" :class="{ 'menu-active': isActive(item) }">
@@ -52,6 +58,7 @@
 import LogoutIcon from '@/components/svg/LogoutIcon.vue';
 import FolderIcon from '@/components/svg/FolderIcon.vue';
 import BoltIcon from '@/components/svg/BoltIcon.vue';
+import ListIcon from '@/components/svg/ListIcon.vue';
 import { useAuthStore } from '@/stores/authStore';
 import type { SiderItem } from '@/config/siderbar';
 import { computed, ref, watch } from 'vue';
