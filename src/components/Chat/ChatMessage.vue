@@ -5,16 +5,22 @@
       <ThinkMessage :message="message.data" class="px-4 py-1" />
       <AssistantMessage :message="message.data" class="px-4 py-1" />
       <ToolMessage :message="message.data" :tool-result="toolResult" class="px-4 py-1" />
-      <div v-if="message.data.created_at" class="px-4">
-        <span data-testid="assistant-message-time" class="text-base-content/40 text-xs">{{ formatDateTime(message.data.created_at) }}</span>
+      <div v-if="message.data.created_at" class="flex items-center justify-start gap-1.5 px-4">
+        <p data-testid="assistant-message-time" class="text-base-content/40 text-xs pr-1">{{ formatDateTime(message.data.created_at) }}</p>
+        <button v-if="message.data.content" type="button" data-testid="assistant-message-copy" class="btn btn-ghost btn-square btn-xs text-success" :title="t('chat.copy')" :aria-label="t('chat.copy')" @click="copy(message.data.content)">
+          <CopyIcon class="h-3.5 w-3.5" />
+        </button>
       </div>
     </template>
   </template>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import CopyIcon from '@/components/svg/CopyIcon.vue';
+import { useAlertStore } from '@/stores/alertStore';
 import { formatDateTime } from '@/utils/datetime';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import UserMessage from './message/UserMessage.vue';
 import ThinkMessage from './message/ThinkMessage.vue';
 import AssistantMessage from './message/AssistantMessage.vue';
@@ -26,6 +32,18 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{ revert: [messageId: string] }>();
+
+const { t } = useI18n();
+const alertStore = useAlertStore();
+
+async function copy(content: string) {
+  try {
+    await navigator.clipboard.writeText(content);
+    alertStore.addItem({ level: 'success', message: t('chat.copied') });
+  } catch {
+    alertStore.addItem({ level: 'error', message: t('chat.copyError') });
+  }
+}
 
 const openingTurn = computed(() => props.messages.find((message) => message.role === 'user'));
 

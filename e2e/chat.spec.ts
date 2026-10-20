@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page, type WebSocketRoute } from '@playwright/test';
-import { boss, jwtExpiringIn, mockBackend, seedSession, type MockAgent, type MockProvider, type MockSession } from './support/mock-backend';
+import { boss, jwtExpiringIn, mockBackend, seedSession, type MockAgent, type MockProvider, type MockSession, type MockSessionMessage } from './support/mock-backend';
 import { waitForShellStyles } from './support/styles';
 
 const first: MockSession = {
@@ -395,6 +395,76 @@ test('reverts a user turn once the confirm dialog is accepted', async ({ page })
   await expect(history).not.toContainText('second question');
   await expect(history).toContainText('first answer');
   await expect(page.getByTestId('user-message-revert')).toHaveCount(0);
+});
+
+const copyMessages: MockSessionMessage[] = [
+  { seq: 0, role: 'user', data: { role: 'user', content: [{ type: 'text', text: 'first question' }], created_at: turnTimestamp, id: 'm1' }, created_at: turnTimestamp },
+  { seq: 1, role: 'assistant', data: { role: 'assistant', content: 'first answer', created_at: turnTimestamp, id: 'a1' }, created_at: turnTimestamp },
+  { seq: 2, role: 'user', data: { role: 'user', content: [{ type: 'text', text: 'second question' }], created_at: turnTimestamp, id: 'm2' }, created_at: turnTimestamp },
+];
+
+async function openSeededChat(page: Page, messages: MockSessionMessage[]) {
+  await mockBackend(page, { session: boss, sessions: [{ ...first, messages }], agents: [agent], providers: [provider] });
+  await seedSession(page);
+  await page.routeWebSocket(/\/agent-api\/chat\/ws\//, () => undefined);
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: {
+        writeText: (text: string) => {
+          (window as Window & { copiedText?: string }).copiedText = text;
+          return Promise.resolve();
+        },
+      },
+    });
+  });
+  await page.goto(`/en/chat/${first.id}`);
+  await expect(page.getByTestId('user-message').first()).toBeVisible();
+}
+
+function copiedText(page: Page) {
+  return page.evaluate(() => (window as Window & { copiedText?: string }).copiedText);
+}
+
+test.describe('copy', () => {
+  test('copies a user turn to the clipboard and confirms it', async ({ page }) => {
+    await openSeededChat(page, copyMessages);
+
+    await page.getByTestId('user-message-copy').first().click();
+
+    await expect(page.getByRole('alert')).toContainText('Copied the message.');
+    await expect.poll(() => copiedText(page)).toBe('first question');
+  });
+
+  test('copies the answer of an assistant turn', async ({ page }) => {
+    await openSeededChat(page, copyMessages);
+
+    await page.getByTestId('assistant-message-copy').click();
+
+    await expect(page.getByRole('alert')).toContainText('Copied the message.');
+    await expect.poll(() => copiedText(page)).toBe('first answer');
+  });
+
+  test('keeps the time, copy and revert controls on one row', async ({ page }) => {
+    await openSeededChat(page, copyMessages);
+
+    const row = await Promise.all(
+      ['user-message-time', 'user-message-copy', 'user-message-revert'].map(async (testId) => {
+        const box = await page.getByTestId(testId).last().boundingBox();
+        return box ? box.y + box.height / 2 : undefined;
+      }),
+    );
+
+    expect(row.every((centre) => centre !== undefined)).toBe(true);
+    expect(Math.max(...(row as number[])) - Math.min(...(row as number[]))).toBeLessThanOrEqual(2);
+  });
+
+  test('leaves out the copy control when a turn has no text', async ({ page }) => {
+    await openSeededChat(page, [{ ...copyMessages[0], data: { ...copyMessages[0].data, content: [{ type: 'image_url', image_url: { url: 'a.png' } }] } }]);
+
+    await expect(page.getByTestId('user-message')).toHaveCount(1);
+    await expect(page.getByTestId('user-message-copy')).toHaveCount(0);
+  });
 });
 
 test('reconnects when the socket drops and shows the connection again', async ({ page }) => {

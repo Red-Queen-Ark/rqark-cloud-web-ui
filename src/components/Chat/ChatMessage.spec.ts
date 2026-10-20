@@ -1,7 +1,9 @@
 import { i18n } from '@/i18n';
+import { useAlertStore } from '@/stores/alertStore';
+import { createPinia, setActivePinia } from 'pinia';
 import { formatDateTime } from '@/utils/datetime';
 import { mount } from '@vue/test-utils';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import ChatMessage from './ChatMessage.vue';
 
 const created_at = '2026-01-01T00:00:00Z';
@@ -9,9 +11,15 @@ const created_at = '2026-01-01T00:00:00Z';
 // The revert dialog is teleported to the body, so it is outside the wrapper's tree.
 const dialog = () => document.querySelector('[data-testid="form-modal-box"]');
 const REVERT = '[data-testid="user-message-revert"]';
+const ANSWER_COPY = '[data-testid="assistant-message-copy"]';
+
+beforeEach(() => {
+  setActivePinia(createPinia());
+});
 
 afterEach(() => {
   document.body.innerHTML = '';
+  vi.unstubAllGlobals();
 });
 
 function mountMessages(messages: ChatHistoryEntry[]) {
@@ -25,6 +33,10 @@ function expectPadded(component: { classes: () => string[] }, py = 'py-1') {
 
 function user(seq: number, text: string, id?: string): ChatHistoryEntry {
   return { seq, role: 'user', data: { role: 'user', content: [{ type: 'text', text }], created_at, id }, created_at };
+}
+
+function assistant(seq: number, content: string): ChatHistoryEntry {
+  return { seq, role: 'assistant', data: { role: 'assistant', content, created_at }, created_at };
 }
 
 function revertibleFlags(wrapper: ReturnType<typeof mountMessages>): (boolean | undefined)[] {
@@ -70,6 +82,25 @@ describe('ChatMessage', () => {
     const messages: ChatHistoryEntry[] = [{ seq: 0, role: 'user', data: { role: 'user', content: [{ type: 'text', text: 'hi' }], created_at: '' }, created_at: '' }];
     const wrapper = mountMessages(messages);
     expect(wrapper.find('[data-testid="user-message-time"]').exists()).toBe(false);
+  });
+
+  it('copies an assistant turn and confirms it', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    vi.stubGlobal('navigator', { ...navigator, clipboard: { writeText } });
+    const wrapper = mountMessages([user(0, 'hi', 'm1'), assistant(1, 'answer')]);
+
+    await wrapper.get(ANSWER_COPY).trigger('click');
+
+    expect(writeText).toHaveBeenCalledWith('answer');
+    expect(useAlertStore().alertList.map((item) => item.level)).toEqual(['success']);
+  });
+
+  it('leaves out the copy button when an assistant turn has no answer text', () => {
+    expect(
+      mountMessages([assistant(1, '')])
+        .find(ANSWER_COPY)
+        .exists(),
+    ).toBe(false);
   });
 
   it('offers revert on every user turn but the opening one', () => {
