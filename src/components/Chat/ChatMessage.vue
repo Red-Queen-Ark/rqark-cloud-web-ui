@@ -2,10 +2,10 @@
   <template v-for="(message, index) in props.messages" :key="message.data.id ?? index">
     <UserMessage v-if="message.role === 'user'" :message="message.data" :revertible="revertible(message)" :busy="props.busy" class="px-4 py-2" @revert="emit('revert', $event)" />
     <template v-else-if="message.role === 'assistant'">
-      <ThinkMessage :message="message.data" class="px-4 py-1" />
-      <AssistantMessage :message="message.data" class="px-4 py-1" />
-      <ToolMessage :message="message.data" :tool-result="toolResult" class="px-4 py-1" />
-      <div v-if="message.data.created_at" class="flex items-center justify-start gap-1.5 px-4 py-1">
+      <ThinkMessage :message="message.data" class="px-4 pb-2" />
+      <AssistantMessage :message="message.data" class="px-4 pb-2" />
+      <ToolMessage :message="message.data" :tool-result="toolResult" class="px-4" />
+      <div v-if="message.data.created_at" class="flex items-center justify-start gap-1.5 px-4 pb-2">
         <p data-testid="assistant-message-time" class="text-base-content/40 text-xs pr-1">{{ formatDateTime(message.data.created_at) }}</p>
         <button v-if="message.data.content" type="button" data-testid="assistant-message-copy" class="btn btn-ghost btn-square btn-xs text-success" :title="t('chat.copy')" :aria-label="t('chat.copy')" @click="copy(message.data.content)">
           <CopyIcon class="h-3.5 w-3.5" />
