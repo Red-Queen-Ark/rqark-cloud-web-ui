@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { boss, mockBackend, seedSession, type MockTodo } from './support/mock-backend';
+import { openRowActions } from './support/row-actions';
 
 const writeIssue: MockTodo = {
   id: 'todo-1',
@@ -103,7 +104,8 @@ test('the filter asks the backend for one half of the list', async ({ page }) =>
 test('editing a todo sends only the changed fields', async ({ page }) => {
   const backend = await openTodos(page, [writeIssue]);
 
-  await page.getByTestId('todo-row-todo-1').getByRole('button', { name: 'Edit' }).click();
+  const menu = await openRowActions(page, page.getByTestId('todo-row-todo-1'));
+  await menu.getByRole('button', { name: 'Edit' }).click();
   await page.locator('#todo-title').fill('Write both issues');
   await page.getByTestId('form-modal').getByRole('button', { name: 'Save' }).click();
 
@@ -114,7 +116,8 @@ test('editing a todo sends only the changed fields', async ({ page }) => {
 test('deleting a todo asks first and then removes the row', async ({ page }) => {
   const backend = await openTodos(page, [writeIssue]);
 
-  await page.getByTestId('todo-row-todo-1').getByRole('button', { name: 'Delete' }).click();
+  const menu = await openRowActions(page, page.getByTestId('todo-row-todo-1'));
+  await menu.getByRole('button', { name: 'Delete' }).click();
   await page.locator('#todo-delete-confirm-btn').click();
 
   await expect(page.getByTestId('todo-page-empty')).toBeVisible();

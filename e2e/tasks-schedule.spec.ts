@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { boss, mockBackend, seedSession, type MockTask } from './support/mock-backend';
+import { openRowActions } from './support/row-actions';
 
 const weekdayTask: MockTask = {
   id: 'task-1',
@@ -74,7 +75,8 @@ test('shows an existing cron a user wrote by hand as a custom expression', async
 
   await expect(page.getByTestId('task-row-task-1')).toContainText('*/5 * * * *');
 
-  await page.getByTestId('task-row-task-1').getByRole('button', { name: 'Edit' }).click();
+  const menu = await openRowActions(page, page.getByTestId('task-row-task-1'));
+  await menu.getByRole('button', { name: 'Edit' }).click();
   await expect(page.locator('#task-repeat')).toHaveValue('custom');
   await expect(page.locator('#task-cron-expr')).toHaveValue('*/5 * * * *');
 });

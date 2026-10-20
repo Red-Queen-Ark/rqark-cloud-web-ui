@@ -53,9 +53,17 @@
               </td>
               <td class="bg-base-200 sticky right-0 text-right">
                 <div class="flex items-center justify-end gap-1">
-                  <RouterLink v-if="task.id" :data-testid="`task-view-${task.id}`" class="btn btn-ghost btn-xs" :to="{ name: 'taskDetail', params: { lang, uuid: task.id } }">{{ t('tasks.view') }}</RouterLink>
-                  <button class="btn btn-ghost btn-xs" @click="openEdit(task)">{{ t('tasks.edit') }}</button>
-                  <button class="btn btn-ghost btn-xs text-error" @click="deleteTarget = task">{{ t('tasks.delete') }}</button>
+                  <RowActionsMenu>
+                    <li v-if="task.id">
+                      <RouterLink :data-testid="`task-view-${task.id}`" :to="{ name: 'taskDetail', params: { lang, uuid: task.id } }">{{ t('tasks.view') }}</RouterLink>
+                    </li>
+                    <li>
+                      <button @click="openEdit(task)">{{ t('tasks.edit') }}</button>
+                    </li>
+                    <li>
+                      <button class="text-error" @click="deleteTarget = task">{{ t('tasks.delete') }}</button>
+                    </li>
+                  </RowActionsMenu>
                 </div>
               </td>
             </tr>
@@ -188,6 +196,7 @@
 <script setup lang="ts">
 import { deleteTasksByUuid, getAgentsNames, getProvidersModels, getTasks, postTasks, putTasksByUuid, type ApiCreateTaskRequest, type ApiTaskDto } from '@/api';
 import FormModal from '@/components/FormModal.vue';
+import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import PlusIcon from '@/components/svg/PlusIcon.vue';
 import RefreshIcon from '@/components/svg/RefreshIcon.vue';
 import { useApiError } from '@/composables/useApiError';

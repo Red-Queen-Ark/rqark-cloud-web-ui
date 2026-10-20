@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { boss, mockBackend, seedSession, type MockTask, type MockTaskRun } from './support/mock-backend';
+import { openRowActions } from './support/row-actions';
 
 const SESSION_ID = 'dddddddd-1111-4111-8111-dddddddddddd';
 
@@ -82,10 +83,16 @@ async function openTasks(page: Page, tasks: MockTask[] = [task], taskRuns: MockT
   return backend;
 }
 
+/** The list keeps the read action behind the same menu as the ones that write. */
+async function openTaskDetail(page: Page): Promise<void> {
+  const menu = await openRowActions(page, page.getByTestId('task-row-task-1'));
+  await menu.getByTestId('task-view-task-1').click();
+}
+
 test('a task row opens its detail, which lists the runs', async ({ page }) => {
   await openTasks(page);
 
-  await page.getByTestId('task-view-task-1').click();
+  await openTaskDetail(page);
 
   await expect(page).toHaveURL(/\/en\/tasks\/task-1$/);
   await expect(page.getByTestId('task-detail-name')).toHaveText('Morning brief');
@@ -117,7 +124,7 @@ test('a run states how long it took, and one that never finished states nothing'
       },
     ],
   );
-  await page.getByTestId('task-view-task-1').click();
+  await openTaskDetail(page);
 
   // 12 seconds.
   await expect(page.getByTestId('task-run-row-run-1')).toContainText('12.0 s');
@@ -130,7 +137,7 @@ test('a run states how long it took, and one that never finished states nothing'
 
 test('a run opens its transcript read only', async ({ page }) => {
   await openTasks(page);
-  await page.getByTestId('task-view-task-1').click();
+  await openTaskDetail(page);
 
   await page.getByTestId('task-run-view-run-1').click();
 
@@ -145,7 +152,7 @@ test('a run opens its transcript read only', async ({ page }) => {
 
 test('a run that opened no session offers no transcript', async ({ page }) => {
   await openTasks(page);
-  await page.getByTestId('task-view-task-1').click();
+  await openTaskDetail(page);
 
   await expect(page.getByTestId('task-run-view-run-2')).toHaveCount(0);
 });
@@ -172,7 +179,7 @@ test('the runs are paged, newest first', async ({ page }) => {
   }));
 
   await openTasks(page, [task], many);
-  await page.getByTestId('task-view-task-1').click();
+  await openTaskDetail(page);
 
   // 20 per page: the newest is on the first page, the oldest is not.
   await expect(page.getByTestId('task-run-row-run-20')).toBeVisible();
@@ -186,7 +193,7 @@ test('the runs are paged, newest first', async ({ page }) => {
 
 test('the back link returns to the task list, and sits above the task card', async ({ page }) => {
   await openTasks(page);
-  await page.getByTestId('task-view-task-1').click();
+  await openTaskDetail(page);
 
   // The name lives in the card with the task's own facts, so the way back is a
   // row of its own above it rather than competing with it on one line.
@@ -200,7 +207,7 @@ test('the back link returns to the task list, and sits above the task card', asy
 
 test('the transcript page puts its back link above the heading', async ({ page }) => {
   await openTasks(page);
-  await page.getByTestId('task-view-task-1').click();
+  await openTaskDetail(page);
   await page.getByTestId('task-run-view-run-1').click();
 
   const back = await page.locator('#task-session-back-btn').boundingBox();

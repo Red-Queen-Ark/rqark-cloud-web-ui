@@ -45,8 +45,14 @@
           </div>
 
           <div class="flex items-center gap-1">
-            <button class="btn btn-ghost btn-xs" @click="openEdit(todo)">{{ t('todos.edit') }}</button>
-            <button class="btn btn-ghost btn-xs text-error" @click="deleteTarget = todo">{{ t('todos.delete') }}</button>
+            <RowActionsMenu>
+              <li>
+                <button @click="openEdit(todo)">{{ t('todos.edit') }}</button>
+              </li>
+              <li>
+                <button class="text-error" @click="deleteTarget = todo">{{ t('todos.delete') }}</button>
+              </li>
+            </RowActionsMenu>
           </div>
         </li>
       </ul>
@@ -92,6 +98,7 @@
 <script setup lang="ts">
 import { deleteTodosByUuid, getTodos, postTodos, putTodosByUuid, type ApiCreateTodoRequest, type ApiTodoDto, type ApiUpdateTodoRequest } from '@/api';
 import FormModal from '@/components/FormModal.vue';
+import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import PlusIcon from '@/components/svg/PlusIcon.vue';
 import RefreshIcon from '@/components/svg/RefreshIcon.vue';
 import { useApiError } from '@/composables/useApiError';

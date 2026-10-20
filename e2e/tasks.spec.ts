@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { boss, mockBackend, seedSession, type MockTask } from './support/mock-backend';
+import { openRowActions } from './support/row-actions';
 
 const morning: MockTask = {
   id: 'task-1',
@@ -129,7 +130,8 @@ test('creates an every task in whole minutes', async ({ page }) => {
 test('edits a task and pauses it', async ({ page }) => {
   const backend = await openTasks(page, [morning]);
 
-  await page.getByTestId('task-row-task-1').getByRole('button', { name: 'Edit' }).click();
+  const menu = await openRowActions(page, page.getByTestId('task-row-task-1'));
+  await menu.getByRole('button', { name: 'Edit' }).click();
   await page.locator('#task-name').fill('Evening brief');
   await page.locator('#task-enabled').uncheck();
   await page.getByTestId('form-modal').getByRole('button', { name: 'Save' }).click();
@@ -143,7 +145,8 @@ test('edits a task and pauses it', async ({ page }) => {
 test('deletes a task after confirming', async ({ page }) => {
   await openTasks(page, [morning, hourly]);
 
-  await page.getByTestId('task-row-task-1').getByRole('button', { name: 'Delete' }).click();
+  const menu = await openRowActions(page, page.getByTestId('task-row-task-1'));
+  await menu.getByRole('button', { name: 'Delete' }).click();
   await expect(page.getByTestId('form-modal')).toContainText('Delete Morning brief?');
   await page.getByTestId('form-modal').getByRole('button', { name: 'Delete' }).click();
 

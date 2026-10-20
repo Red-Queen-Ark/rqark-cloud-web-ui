@@ -1,5 +1,6 @@
-import { expect, test } from '@playwright/test';
+import { test } from '@playwright/test';
 import { boss, mockBackend, seedSession, type MockTask } from './support/mock-backend';
+import { expectRowActions } from './support/row-actions';
 
 const task: MockTask = {
   id: 'task-1',
@@ -29,7 +30,6 @@ test('the task row orders its actions the way the rest of the app does', async (
 
   await page.goto('/en/tasks');
 
-  // Read first, then the two that change or remove it.
-  await expect(page.getByTestId('task-row-task-1').getByRole('link', { name: 'View' })).toBeVisible();
-  await expect(page.getByTestId('task-row-task-1').getByRole('button')).toHaveText(['Edit', 'Delete']);
+  // Read first, then the two that change or remove it, in the menu the row opens.
+  await expectRowActions(page, page.getByTestId('task-row-task-1'), ['View', 'Edit', 'Delete']);
 });
