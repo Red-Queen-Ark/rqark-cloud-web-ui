@@ -1,11 +1,5 @@
 <template>
   <div data-testid="workspace-page" class="flex min-h-0 flex-col gap-3 lg:flex-row lg:gap-4">
-    <aside class="hidden w-56 shrink-0 lg:block">
-      <div class="bg-base-200/50 rounded-box sticky top-0 max-h-[70vh] overflow-y-auto p-2">
-        <FileTree :path="''" :current-path="path" :root-label="t('workspace.root')" :show-hidden="showHidden" :refresh-key="refreshKey" @navigate="openPath" />
-      </div>
-    </aside>
-
     <section class="flex min-w-0 flex-1 flex-col gap-3">
       <FileBreadcrumb :path="path" :root-label="t('workspace.root')" @navigate="openPath" />
 
@@ -85,7 +79,6 @@ import FileBreadcrumb from '@/components/Workspace/FileBreadcrumb.vue';
 import FileList from '@/components/Workspace/FileList.vue';
 import FilePreview from '@/components/Workspace/FilePreview.vue';
 import FileToolbar from '@/components/Workspace/FileToolbar.vue';
-import FileTree from '@/components/Workspace/FileTree.vue';
 import NewItemModal from '@/components/Workspace/NewItemModal.vue';
 import RenameModal from '@/components/Workspace/RenameModal.vue';
 import UploadDropzone from '@/components/Workspace/UploadDropzone.vue';
