@@ -1,4 +1,5 @@
 import { i18n } from '@/i18n';
+import { formatDateTime } from '@/utils/datetime';
 import { mount } from '@vue/test-utils';
 import { afterEach, describe, expect, it } from 'vitest';
 import ChatMessage from './ChatMessage.vue';
@@ -56,6 +57,19 @@ describe('ChatMessage', () => {
     expectPadded(wrapper.getComponent({ name: 'ThinkMessage' }));
     expectPadded(wrapper.getComponent({ name: 'AssistantMessage' }));
     expectPadded(wrapper.getComponent({ name: 'ToolMessage' }));
+  });
+
+  it('shows the created time inside the user bubble and under the assistant turn', () => {
+    const messages: ChatHistoryEntry[] = [user(0, 'hi', 'm1'), { seq: 1, role: 'assistant', data: { role: 'assistant', content: 'answer', created_at }, created_at }];
+    const wrapper = mountMessages(messages);
+    expect(wrapper.get('[data-testid="user-message-time"]').text()).toBe(formatDateTime(created_at));
+    expect(wrapper.get('[data-testid="assistant-message-time"]').text()).toBe(formatDateTime(created_at));
+  });
+
+  it('omits the time when the message carries none', () => {
+    const messages: ChatHistoryEntry[] = [{ seq: 0, role: 'user', data: { role: 'user', content: [{ type: 'text', text: 'hi' }], created_at: '' }, created_at: '' }];
+    const wrapper = mountMessages(messages);
+    expect(wrapper.find('[data-testid="user-message-time"]').exists()).toBe(false);
   });
 
   it('offers revert on every user turn but the opening one', () => {

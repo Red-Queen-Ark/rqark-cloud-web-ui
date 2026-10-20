@@ -7,6 +7,7 @@
           <!-- info.image_url -->
         </div>
       </template>
+      <p v-if="props.message.created_at" data-testid="user-message-time" class="text-base-content/40 mt-1 text-end text-xs">{{ formatDateTime(props.message.created_at) }}</p>
     </div>
     <div v-if="props.revertible" class="flex justify-end p-1">
       <button type="button" data-testid="user-message-revert" class="btn btn-ghost btn-square btn-xs text-warning" :title="t('chat.revert')" :disabled="props.busy" @click="ask">
@@ -24,6 +25,7 @@
 import FormModal from '@/components/FormModal.vue';
 import MessageBody from '@/components/Session/MessageBody.vue';
 import RevertIcon from '@/components/svg/RevertIcon.vue';
+import { formatDateTime } from '@/utils/datetime';
 import { renderMarkdown } from '@/utils/markdown';
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';

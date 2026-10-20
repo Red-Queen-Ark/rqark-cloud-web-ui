@@ -5,12 +5,16 @@
       <ThinkMessage :message="message.data" class="px-4 py-1" />
       <AssistantMessage :message="message.data" class="px-4 py-1" />
       <ToolMessage :message="message.data" :tool-result="toolResult" class="px-4 py-1" />
+      <div v-if="message.data.created_at" class="px-4">
+        <span data-testid="assistant-message-time" class="text-base-content/40 text-xs">{{ formatDateTime(message.data.created_at) }}</span>
+      </div>
     </template>
   </template>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import { formatDateTime } from '@/utils/datetime';
 import UserMessage from './message/UserMessage.vue';
 import ThinkMessage from './message/ThinkMessage.vue';
 import AssistantMessage from './message/AssistantMessage.vue';
