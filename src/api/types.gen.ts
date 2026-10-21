@@ -42,9 +42,51 @@ export type ApiAgentDefaultDto = {
     updated_at?: string;
 };
 
+export type ApiAgentStateDto = {
+    agent_id?: string;
+    content?: string;
+    created_at?: string;
+    source?: string;
+    updated_at?: string;
+    version?: number;
+};
+
 export type ApiChangePasswordRequest = {
     new_password?: string;
     old_password?: string;
+};
+
+export type ApiChatRequest = {
+    /**
+     * Messages is required and forwarded unchanged.
+     */
+    messages?: Array<{
+        [key: string]: unknown;
+    }>;
+    /**
+     * Model is forwarded as it arrives. When it is absent or empty, the
+     * provider's own model_name is sent instead.
+     */
+    model?: string;
+    /**
+     * ProviderID names the provider whose credential and api_base the call uses.
+     */
+    provider_id?: string;
+    reasoning_effort?: string;
+    /**
+     * Stream asks the provider for a server-sent event stream. The events are
+     * relayed as they arrive.
+     */
+    stream?: boolean;
+    stream_options?: {
+        [key: string]: unknown;
+    };
+    /**
+     * Tools, StreamOptions and ReasoningEffort are forwarded unchanged.
+     */
+    tools?: Array<{
+        [key: string]: unknown;
+    }>;
 };
 
 export type ApiCreateApiKeyRequest = {
@@ -68,6 +110,7 @@ export type ApiCreateMemoryRequest = {
     agent_id?: string;
     content?: string;
     keywords?: Array<string>;
+    kind?: 'fact' | 'event';
     occurred_at?: string;
     pinned?: boolean;
     source?: string;
@@ -157,6 +200,7 @@ export type ApiMemoryDto = {
     hits?: number;
     id?: string;
     keywords?: Array<string>;
+    kind?: 'fact' | 'event';
     last_used_at?: string;
     occurred_at?: string;
     pinned?: boolean;
@@ -171,6 +215,7 @@ export type ApiMemoryDetailDto = {
     hits?: number;
     id?: string;
     keywords?: Array<string>;
+    kind?: 'fact' | 'event';
     last_used_at?: string;
     occurred_at?: string;
     pinned?: boolean;
@@ -184,6 +229,11 @@ export type ApiMemoryDetailDto = {
 export type ApiMemoryPage = {
     items?: Array<ApiMemoryDto>;
     next_cursor?: string;
+};
+
+export type ApiMemoryPromptResponse = {
+    memories?: Array<ApiMemoryDto>;
+    state?: ApiAgentStateDto;
 };
 
 export type ApiMessageResponse = {
@@ -209,7 +259,6 @@ export type ApiPromptMemoryRequest = {
 
 export type ApiProviderDto = {
     api_base?: string;
-    api_key?: string;
     combine?: boolean;
     created_at?: string;
     frequency_penalty?: number;
@@ -241,6 +290,13 @@ export type ApiProviderSummaryDto = {
 
 export type ApiPutAgentDefaultRequest = {
     agent_id?: string;
+};
+
+export type ApiPutAgentStateRequest = {
+    agent_id?: string;
+    content?: string;
+    source?: string;
+    version?: number;
 };
 
 export type ApiPutUserConfigRequest = {
@@ -456,6 +512,7 @@ export type ApiUserDto = {
     is_active?: boolean;
     is_staff?: boolean;
     is_superuser?: boolean;
+    last_seen_at?: string;
     updated_at?: string;
     username?: string;
 };
@@ -489,7 +546,7 @@ export type RepositorySessionPlanItem = {
     status?: string;
 };
 
-export type UtilsCode = 'UNAUTHORIZED' | 'FORBIDDEN' | 'BAD_REQUEST' | 'NOT_FOUND' | 'CONFLICT' | 'INVALID_CONTENT' | 'IMMUTABLE_FIELD' | 'PINNED_LIMIT' | 'AGENT_AMBIGUOUS' | 'PROVIDER_AMBIGUOUS' | 'LAST_SUPERUSER' | 'INTERNAL';
+export type UtilsCode = 'UNAUTHORIZED' | 'FORBIDDEN' | 'BAD_REQUEST' | 'NOT_FOUND' | 'CONFLICT' | 'INVALID_CONTENT' | 'IMMUTABLE_FIELD' | 'PINNED_LIMIT' | 'STATE_CONFLICT' | 'AGENT_AMBIGUOUS' | 'PROVIDER_AMBIGUOUS' | 'LAST_SUPERUSER' | 'BAD_GATEWAY' | 'INTERNAL';
 
 export type UtilsError = {
     code?: UtilsCode;
@@ -1254,6 +1311,97 @@ export type PostAuthResetPasswordResponses = {
 
 export type PostAuthResetPasswordResponse = PostAuthResetPasswordResponses[keyof PostAuthResetPasswordResponses];
 
+export type PostChatData = {
+    /**
+     * OpenAI chat completion body, plus provider_id
+     */
+    body: ApiChatRequest;
+    path?: never;
+    query?: never;
+    url: '/chat';
+};
+
+export type PostChatErrors = {
+    /**
+     * Bad Request
+     */
+    400: UtilsErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: UtilsErrorResponse;
+    /**
+     * Not Found
+     */
+    404: UtilsErrorResponse;
+    /**
+     * Bad Gateway
+     */
+    502: UtilsErrorResponse;
+};
+
+export type PostChatError = PostChatErrors[keyof PostChatErrors];
+
+export type PostChatResponses = {
+    /**
+     * OK
+     */
+    200: {
+        [key: string]: unknown;
+    };
+};
+
+export type PostChatResponse = PostChatResponses[keyof PostChatResponses];
+
+export type PostChatByUuidChatCompletionsData = {
+    /**
+     * OpenAI chat completion body
+     */
+    body: {
+        [key: string]: unknown;
+    };
+    path: {
+        /**
+         * Provider ID
+         */
+        uuid: string;
+    };
+    query?: never;
+    url: '/chat/{uuid}/chat/completions';
+};
+
+export type PostChatByUuidChatCompletionsErrors = {
+    /**
+     * Bad Request
+     */
+    400: UtilsErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: UtilsErrorResponse;
+    /**
+     * Not Found
+     */
+    404: UtilsErrorResponse;
+    /**
+     * Bad Gateway
+     */
+    502: UtilsErrorResponse;
+};
+
+export type PostChatByUuidChatCompletionsError = PostChatByUuidChatCompletionsErrors[keyof PostChatByUuidChatCompletionsErrors];
+
+export type PostChatByUuidChatCompletionsResponses = {
+    /**
+     * OK
+     */
+    200: {
+        [key: string]: unknown;
+    };
+};
+
+export type PostChatByUuidChatCompletionsResponse = PostChatByUuidChatCompletionsResponses[keyof PostChatByUuidChatCompletionsResponses];
+
 export type GetGroupsData = {
     body?: never;
     path?: never;
@@ -1611,6 +1759,10 @@ export type GetMemoryData = {
          */
         agent_id?: string;
         /**
+         * Restrict to one kind: fact or event
+         */
+        kind?: 'fact' | 'event';
+        /**
          * next_cursor of the previous page
          */
         cursor?: string;
@@ -1731,7 +1883,7 @@ export type PostMemoryPromptResponses = {
     /**
      * OK
      */
-    200: Array<ApiMemoryDto>;
+    200: ApiMemoryPromptResponse;
 };
 
 export type PostMemoryPromptResponse = PostMemoryPromptResponses[keyof PostMemoryPromptResponses];
@@ -1775,6 +1927,132 @@ export type PostMemorySearchResponses = {
 };
 
 export type PostMemorySearchResponse = PostMemorySearchResponses[keyof PostMemorySearchResponses];
+
+export type DeleteMemoryStateData = {
+    body?: never;
+    path?: never;
+    query: {
+        /**
+         * Agent ID
+         */
+        agent_id: string;
+    };
+    url: '/memory/state';
+};
+
+export type DeleteMemoryStateErrors = {
+    /**
+     * Bad Request
+     */
+    400: UtilsErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: UtilsErrorResponse;
+    /**
+     * Not Found
+     */
+    404: UtilsErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: UtilsErrorResponse;
+};
+
+export type DeleteMemoryStateError = DeleteMemoryStateErrors[keyof DeleteMemoryStateErrors];
+
+export type DeleteMemoryStateResponses = {
+    /**
+     * No Content
+     */
+    204: unknown;
+};
+
+export type GetMemoryStateData = {
+    body?: never;
+    path?: never;
+    query: {
+        /**
+         * Agent ID
+         */
+        agent_id: string;
+    };
+    url: '/memory/state';
+};
+
+export type GetMemoryStateErrors = {
+    /**
+     * Bad Request
+     */
+    400: UtilsErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: UtilsErrorResponse;
+    /**
+     * Not Found
+     */
+    404: UtilsErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: UtilsErrorResponse;
+};
+
+export type GetMemoryStateError = GetMemoryStateErrors[keyof GetMemoryStateErrors];
+
+export type GetMemoryStateResponses = {
+    /**
+     * OK
+     */
+    200: ApiAgentStateDto;
+};
+
+export type GetMemoryStateResponse = GetMemoryStateResponses[keyof GetMemoryStateResponses];
+
+export type PutMemoryStateData = {
+    /**
+     * State to store
+     */
+    body: ApiPutAgentStateRequest;
+    path?: never;
+    query?: never;
+    url: '/memory/state';
+};
+
+export type PutMemoryStateErrors = {
+    /**
+     * Bad Request
+     */
+    400: UtilsErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: UtilsErrorResponse;
+    /**
+     * Not Found
+     */
+    404: UtilsErrorResponse;
+    /**
+     * Conflict
+     */
+    409: UtilsErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: UtilsErrorResponse;
+};
+
+export type PutMemoryStateError = PutMemoryStateErrors[keyof PutMemoryStateErrors];
+
+export type PutMemoryStateResponses = {
+    /**
+     * OK
+     */
+    200: ApiAgentStateDto;
+};
+
+export type PutMemoryStateResponse = PutMemoryStateResponses[keyof PutMemoryStateResponses];
 
 export type DeleteMemoryByUuidData = {
     body?: never;

@@ -22,9 +22,12 @@ export const REASONING_EFFORT_DEFAULT: (typeof REASONING_EFFORTS)[number] = 'hig
 /**
  * The writable half of a provider. `key` is spelled exactly as the API spells
  * it, so the form, the request body and the DTO line up without a rename table;
- * the intersection drops the read-only `id`/`created_at`/`updated_at`.
+ * taking it from the request body drops the read-only
+ * `id`/`created_at`/`updated_at`. It is not an intersection with the DTO,
+ * because `api_key` is write-only: the API accepts it and never sends it back
+ * (see `writeOnly`).
  */
-export type ProviderFieldKey = keyof ApiProviderDto & keyof ApiCreateProviderRequest;
+export type ProviderFieldKey = keyof ApiCreateProviderRequest;
 
 /** Selects the control the form renders for a field. */
 export type ProviderFieldControl = 'text' | 'password' | 'number' | 'integer' | 'toggle' | 'select';
@@ -38,6 +41,15 @@ export interface ProviderFieldSpec {
    * blank, so the 400 never happens.
    */
   required?: boolean;
+  /**
+   * A credential the API takes but never sends back: `api_key` goes in on
+   * create and on update, and `GET /api/providers` omits it, because data cloud
+   * keeps the key and adds it when it proxies the call. The form therefore only
+   * insists on it when creating; on edit the control reads back blank, and a
+   * blank one stays out of the body, which the API reads as "keep the stored
+   * key".
+   */
+  writeOnly?: boolean;
   /**
    * Kept behind the dialog's "Advanced options" disclosure, because a create
    * only needs the required fields. The API validates these loosely (or not at
@@ -74,7 +86,7 @@ export const PROVIDER_FIELDS: ProviderFieldSpec[] = [
   { key: 'name', control: 'text' },
   { key: 'model_name', control: 'text', required: true },
   { key: 'api_base', control: 'text', required: true },
-  { key: 'api_key', control: 'password', required: true },
+  { key: 'api_key', control: 'password', required: true, writeOnly: true },
   { key: 'priority', control: 'integer', required: true },
   { key: 'temperature', control: 'number', advanced: true },
   { key: 'top_p', control: 'number', advanced: true },
@@ -90,9 +102,14 @@ export const PROVIDER_FIELDS: ProviderFieldSpec[] = [
  * The fields for one half of the dialog. `advanced` selects the ones behind the
  * disclosure; the rest are shown straight away, and together the two halves are
  * the whole form.
+ *
+ * `creating` is false when the dialog edits a stored provider. Then a
+ * `writeOnly` field stops being required: the API never sends the stored
+ * credential back, so its control is blank, and refusing to submit a blank one
+ * would make editing impossible.
  */
-export function providerFields(advanced: boolean): ProviderFieldSpec[] {
-  return PROVIDER_FIELDS.filter((field) => (field.advanced === true) === advanced);
+export function providerFields(advanced: boolean, creating = true): ProviderFieldSpec[] {
+  return PROVIDER_FIELDS.filter((field) => (field.advanced === true) === advanced).map((field) => (creating || field.writeOnly !== true ? field : { ...field, required: false }));
 }
 
 /** What a form control holds: a string, a number, or a toggle's boolean. */
@@ -105,8 +122,8 @@ export type ProviderFormValues = Record<ProviderFieldKey, ProviderFieldValue>;
  * the form can be submitted. Empty is tested against `''` rather than falsiness,
  * because a priority of `0` is a real value.
  */
-export function firstMissingRequiredField(values: ProviderFormValues): ProviderFieldSpec | undefined {
-  return PROVIDER_FIELDS.find((field) => field.required === true && values[field.key] === '');
+export function firstMissingRequiredField(values: ProviderFormValues, fields: readonly ProviderFieldSpec[] = PROVIDER_FIELDS, creating = true): ProviderFieldSpec | undefined {
+  return fields.find((field) => field.required === true && (creating || field.writeOnly !== true) && values[field.key] === '');
 }
 
 /**
@@ -119,9 +136,12 @@ export function firstMissingRequiredField(values: ProviderFormValues): ProviderF
  */
 export function toProviderFormValues(provider?: ApiProviderDto): ProviderFormValues {
   const values = {} as ProviderFormValues;
+  // A `writeOnly` field (`api_key`) is absent from the DTO, so the lookup is
+  // typed as the wire object rather than the DTO's own keys.
+  const stored = (provider ?? {}) as Record<string, unknown>;
 
   for (const field of PROVIDER_FIELDS) {
-    const value = provider?.[field.key];
+    const value = stored[field.key];
 
     if (field.control !== 'toggle') {
       const unset = value === undefined || value === null || value === '';
