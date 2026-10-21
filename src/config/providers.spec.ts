@@ -29,7 +29,6 @@ describe('provider form', () => {
       id: 'provider-1',
       name: 'primary',
       model_name: 'deepseek-v4-pro',
-      api_key: 'sk-rqark-0000',
       api_base: 'https://api.deepseek.com/v1',
       priority: 1,
       temperature: 0.7,
@@ -44,6 +43,9 @@ describe('provider form', () => {
     // The two switches hold booleans; only the request body spells them out.
     expect(values.thinking).toBe(true);
     expect(values.combine).toBe(true);
+    // `api_key` is write-only: the DTO never carries it, so the control is blank
+    // whatever key the provider stores.
+    expect(values.api_key).toBe('');
   });
 
   it('leaves the values a provider does not carry blank, save for the defaulted select', () => {
@@ -65,7 +67,9 @@ describe('provider form', () => {
   });
 
   it('omits empty parameters but keeps the required ones, the switches and the defaulted select', () => {
-    const body = toProviderRequestBody(toProviderFormValues({ model_name: 'kimi-k3', api_base: 'https://api.moonshot.cn/v1', api_key: 'sk-x', priority: 2 }));
+    const form = toProviderFormValues({ model_name: 'kimi-k3', api_base: 'https://api.moonshot.cn/v1', priority: 2 });
+    form.api_key = 'sk-x';
+    const body = toProviderRequestBody(form);
 
     expect(body).toEqual({
       model_name: 'kimi-k3',
@@ -82,8 +86,25 @@ describe('provider form', () => {
     const blank = toProviderFormValues();
     expect(firstMissingRequiredField(blank)?.key).toBe('model_name');
 
-    const zero = toProviderFormValues({ model_name: 'kimi-k3', api_base: 'https://api.moonshot.cn/v1', api_key: 'sk-x', priority: 0 });
+    const zero = toProviderFormValues({ model_name: 'kimi-k3', api_base: 'https://api.moonshot.cn/v1', priority: 0 });
+    // A create has to name the key; an edit cannot, so the same form passes.
+    expect(firstMissingRequiredField(zero)?.key).toBe('api_key');
+    zero.api_key = 'sk-x';
     expect(firstMissingRequiredField(zero)).toBeUndefined();
+    expect(firstMissingRequiredField(zero, PROVIDER_FIELDS, false)).toBeUndefined();
+  });
+
+  it('stops requiring the write-only key once the dialog edits a provider', () => {
+    const editing = toProviderFormValues({ model_name: 'kimi-k3', api_base: 'https://api.moonshot.cn/v1', priority: 1 });
+
+    // The control is still rendered — a caller may rotate the key — but on an
+    // edit it reads back blank and is no longer flagged as required.
+    const key = providerFields(false, false).find((field) => field.key === 'api_key');
+    expect(key?.writeOnly).toBe(true);
+    expect(key?.required).not.toBe(true);
+    expect(providerFields(false, true).find((field) => field.key === 'api_key')?.required).toBe(true);
+    // A blank key stays out of the body, which the API reads as "keep it".
+    expect(toProviderRequestBody(editing).api_key).toBeUndefined();
   });
 
   it('falls back to model_name when a provider has no name', () => {

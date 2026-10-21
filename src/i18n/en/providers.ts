@@ -1,7 +1,7 @@
 export const providers = {
   title: 'Providers',
   subtitle: 'Connect the model providers your agents run on.',
-  hint: 'Providers belong to your account. An API key is stored on the server and only ever shown to you.',
+  hint: 'Providers belong to your account. An API key is stored on the server and is never sent back to any client: calls are proxied and the key is added server-side.',
   loading: 'Loading',
   empty: 'No providers found.',
   emptyDesc: 'Add a provider to connect a model.',

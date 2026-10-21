@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { DeleteAgentDefaultsBySourceData, DeleteAgentDefaultsBySourceErrors, DeleteAgentDefaultsBySourceResponses, DeleteAgentsByUuidData, DeleteAgentsByUuidErrors, DeleteAgentsByUuidResponses, DeleteApiKeysByUuidData, DeleteApiKeysByUuidErrors, DeleteApiKeysByUuidResponses, DeleteGroupsByUuidData, DeleteGroupsByUuidErrors, DeleteGroupsByUuidResponses, DeleteGroupsByUuidUsersByUserUuidData, DeleteGroupsByUuidUsersByUserUuidErrors, DeleteGroupsByUuidUsersByUserUuidResponses, DeleteMemoryByUuidData, DeleteMemoryByUuidErrors, DeleteMemoryByUuidResponses, DeleteProvidersByUuidData, DeleteProvidersByUuidErrors, DeleteProvidersByUuidResponses, DeleteSessionsByUuidData, DeleteSessionsByUuidErrors, DeleteSessionsByUuidResponses, DeleteSopsBySlugData, DeleteSopsBySlugErrors, DeleteSopsBySlugResponses, DeleteTasksByUuidData, DeleteTasksByUuidErrors, DeleteTasksByUuidResponses, DeleteTodosByUuidData, DeleteTodosByUuidErrors, DeleteTodosByUuidResponses, DeleteUserConfigByKeyData, DeleteUserConfigByKeyErrors, DeleteUserConfigByKeyResponses, DeleteUsersByUuidData, DeleteUsersByUuidErrors, DeleteUsersByUuidResponses, GetAgentDefaultsBySourceData, GetAgentDefaultsBySourceErrors, GetAgentDefaultsBySourceResponses, GetAgentDefaultsData, GetAgentDefaultsErrors, GetAgentDefaultsResponses, GetAgentsByUuidData, GetAgentsByUuidErrors, GetAgentsByUuidResponses, GetAgentsData, GetAgentsErrors, GetAgentsNamesData, GetAgentsNamesErrors, GetAgentsNamesResponses, GetAgentsResponses, GetApiKeysData, GetApiKeysErrors, GetApiKeysResponses, GetGroupsByUuidData, GetGroupsByUuidErrors, GetGroupsByUuidResponses, GetGroupsByUuidUsersData, GetGroupsByUuidUsersErrors, GetGroupsByUuidUsersResponses, GetGroupsData, GetGroupsErrors, GetGroupsResponses, GetMemoryByUuidData, GetMemoryByUuidErrors, GetMemoryByUuidResponses, GetMemoryData, GetMemoryErrors, GetMemoryResponses, GetPingData, GetPingResponses, GetProvidersByUuidData, GetProvidersByUuidErrors, GetProvidersByUuidResponses, GetProvidersData, GetProvidersErrors, GetProvidersModelsData, GetProvidersModelsErrors, GetProvidersModelsResponses, GetProvidersResponses, GetSessionsByUuidData, GetSessionsByUuidErrors, GetSessionsByUuidMessagesData, GetSessionsByUuidMessagesErrors, GetSessionsByUuidMessagesResponses, GetSessionsByUuidResponses, GetSessionsData, GetSessionsErrors, GetSessionsResponses, GetSopsBySlugData, GetSopsBySlugErrors, GetSopsBySlugResponses, GetSopsData, GetSopsErrors, GetSopsResponses, GetSwaggerJsonData, GetSwaggerJsonResponses, GetSwaggerYmlData, GetSwaggerYmlResponses, GetTasksByUuidData, GetTasksByUuidErrors, GetTasksByUuidResponses, GetTasksByUuidRunsData, GetTasksByUuidRunsErrors, GetTasksByUuidRunsResponses, GetTasksData, GetTasksErrors, GetTasksResponses, GetTodosByUuidData, GetTodosByUuidErrors, GetTodosByUuidResponses, GetTodosData, GetTodosErrors, GetTodosResponses, GetUserConfigData, GetUserConfigErrors, GetUserConfigResponses, GetUsersByUuidData, GetUsersByUuidErrors, GetUsersByUuidResponses, GetUsersData, GetUsersErrors, GetUsersMeData, GetUsersMeErrors, GetUsersMeResponses, GetUsersResponses, GetVersionData, GetVersionResponses, OptionsSwaggerJsonData, OptionsSwaggerJsonResponses, PatchApiKeysByUuidData, PatchApiKeysByUuidErrors, PatchApiKeysByUuidResponses, PatchGroupsByUuidData, PatchGroupsByUuidErrors, PatchGroupsByUuidResponses, PatchMemoryByUuidData, PatchMemoryByUuidErrors, PatchMemoryByUuidResponses, PatchSopsBySlugData, PatchSopsBySlugErrors, PatchSopsBySlugResponses, PatchUsersByUuidData, PatchUsersByUuidErrors, PatchUsersByUuidResponses, PatchUsersMeData, PatchUsersMeErrors, PatchUsersMeResponses, PostAgentsData, PostAgentsErrors, PostAgentsResponses, PostApiKeysData, PostApiKeysErrors, PostApiKeysResponses, PostAuthForgotPasswordData, PostAuthForgotPasswordErrors, PostAuthForgotPasswordResponses, PostAuthLoginData, PostAuthLoginErrors, PostAuthLoginResponses, PostAuthRefreshData, PostAuthRefreshErrors, PostAuthRefreshResponses, PostAuthRegisterData, PostAuthRegisterErrors, PostAuthRegisterResponses, PostAuthResetPasswordData, PostAuthResetPasswordErrors, PostAuthResetPasswordResponses, PostGroupsData, PostGroupsErrors, PostGroupsResponses, PostMemoryData, PostMemoryErrors, PostMemoryPromptData, PostMemoryPromptErrors, PostMemoryPromptResponses, PostMemoryResponses, PostMemorySearchData, PostMemorySearchErrors, PostMemorySearchResponses, PostProvidersData, PostProvidersErrors, PostProvidersResponses, PostSessionsData, PostSessionsErrors, PostSessionsResponses, PostSopsData, PostSopsErrors, PostSopsResponses, PostTasksByUuidRunData, PostTasksByUuidRunErrors, PostTasksByUuidRunResponses, PostTasksData, PostTasksErrors, PostTasksResponses, PostTodosData, PostTodosErrors, PostTodosResponses, PostUsersData, PostUsersErrors, PostUsersResponses, PutAgentDefaultsBySourceData, PutAgentDefaultsBySourceErrors, PutAgentDefaultsBySourceResponses, PutAgentsByUuidData, PutAgentsByUuidErrors, PutAgentsByUuidResponses, PutGroupsByUuidUsersByUserUuidData, PutGroupsByUuidUsersByUserUuidErrors, PutGroupsByUuidUsersByUserUuidResponses, PutProvidersByUuidData, PutProvidersByUuidErrors, PutProvidersByUuidPriorityData, PutProvidersByUuidPriorityErrors, PutProvidersByUuidPriorityResponses, PutProvidersByUuidResponses, PutSessionsByUuidData, PutSessionsByUuidErrors, PutSessionsByUuidResponses, PutTasksByUuidData, PutTasksByUuidErrors, PutTasksByUuidResponses, PutTodosByUuidData, PutTodosByUuidErrors, PutTodosByUuidResponses, PutUserConfigByKeyData, PutUserConfigByKeyErrors, PutUserConfigByKeyResponses, PutUsersByUuidPasswordData, PutUsersByUuidPasswordErrors, PutUsersByUuidPasswordResponses, PutUsersMePasswordData, PutUsersMePasswordErrors, PutUsersMePasswordResponses } from './types.gen';
+import type { DeleteAgentDefaultsBySourceData, DeleteAgentDefaultsBySourceErrors, DeleteAgentDefaultsBySourceResponses, DeleteAgentsByUuidData, DeleteAgentsByUuidErrors, DeleteAgentsByUuidResponses, DeleteApiKeysByUuidData, DeleteApiKeysByUuidErrors, DeleteApiKeysByUuidResponses, DeleteGroupsByUuidData, DeleteGroupsByUuidErrors, DeleteGroupsByUuidResponses, DeleteGroupsByUuidUsersByUserUuidData, DeleteGroupsByUuidUsersByUserUuidErrors, DeleteGroupsByUuidUsersByUserUuidResponses, DeleteMemoryByUuidData, DeleteMemoryByUuidErrors, DeleteMemoryByUuidResponses, DeleteMemoryStateData, DeleteMemoryStateErrors, DeleteMemoryStateResponses, DeleteProvidersByUuidData, DeleteProvidersByUuidErrors, DeleteProvidersByUuidResponses, DeleteSessionsByUuidData, DeleteSessionsByUuidErrors, DeleteSessionsByUuidResponses, DeleteSopsBySlugData, DeleteSopsBySlugErrors, DeleteSopsBySlugResponses, DeleteTasksByUuidData, DeleteTasksByUuidErrors, DeleteTasksByUuidResponses, DeleteTodosByUuidData, DeleteTodosByUuidErrors, DeleteTodosByUuidResponses, DeleteUserConfigByKeyData, DeleteUserConfigByKeyErrors, DeleteUserConfigByKeyResponses, DeleteUsersByUuidData, DeleteUsersByUuidErrors, DeleteUsersByUuidResponses, GetAgentDefaultsBySourceData, GetAgentDefaultsBySourceErrors, GetAgentDefaultsBySourceResponses, GetAgentDefaultsData, GetAgentDefaultsErrors, GetAgentDefaultsResponses, GetAgentsByUuidData, GetAgentsByUuidErrors, GetAgentsByUuidResponses, GetAgentsData, GetAgentsErrors, GetAgentsNamesData, GetAgentsNamesErrors, GetAgentsNamesResponses, GetAgentsResponses, GetApiKeysData, GetApiKeysErrors, GetApiKeysResponses, GetGroupsByUuidData, GetGroupsByUuidErrors, GetGroupsByUuidResponses, GetGroupsByUuidUsersData, GetGroupsByUuidUsersErrors, GetGroupsByUuidUsersResponses, GetGroupsData, GetGroupsErrors, GetGroupsResponses, GetMemoryByUuidData, GetMemoryByUuidErrors, GetMemoryByUuidResponses, GetMemoryData, GetMemoryErrors, GetMemoryResponses, GetMemoryStateData, GetMemoryStateErrors, GetMemoryStateResponses, GetPingData, GetPingResponses, GetProvidersByUuidData, GetProvidersByUuidErrors, GetProvidersByUuidResponses, GetProvidersData, GetProvidersErrors, GetProvidersModelsData, GetProvidersModelsErrors, GetProvidersModelsResponses, GetProvidersResponses, GetSessionsByUuidData, GetSessionsByUuidErrors, GetSessionsByUuidMessagesData, GetSessionsByUuidMessagesErrors, GetSessionsByUuidMessagesResponses, GetSessionsByUuidResponses, GetSessionsData, GetSessionsErrors, GetSessionsResponses, GetSopsBySlugData, GetSopsBySlugErrors, GetSopsBySlugResponses, GetSopsData, GetSopsErrors, GetSopsResponses, GetSwaggerJsonData, GetSwaggerJsonResponses, GetSwaggerYmlData, GetSwaggerYmlResponses, GetTasksByUuidData, GetTasksByUuidErrors, GetTasksByUuidResponses, GetTasksByUuidRunsData, GetTasksByUuidRunsErrors, GetTasksByUuidRunsResponses, GetTasksData, GetTasksErrors, GetTasksResponses, GetTodosByUuidData, GetTodosByUuidErrors, GetTodosByUuidResponses, GetTodosData, GetTodosErrors, GetTodosResponses, GetUserConfigData, GetUserConfigErrors, GetUserConfigResponses, GetUsersByUuidData, GetUsersByUuidErrors, GetUsersByUuidResponses, GetUsersData, GetUsersErrors, GetUsersMeData, GetUsersMeErrors, GetUsersMeResponses, GetUsersResponses, GetVersionData, GetVersionResponses, OptionsSwaggerJsonData, OptionsSwaggerJsonResponses, PatchApiKeysByUuidData, PatchApiKeysByUuidErrors, PatchApiKeysByUuidResponses, PatchGroupsByUuidData, PatchGroupsByUuidErrors, PatchGroupsByUuidResponses, PatchMemoryByUuidData, PatchMemoryByUuidErrors, PatchMemoryByUuidResponses, PatchSopsBySlugData, PatchSopsBySlugErrors, PatchSopsBySlugResponses, PatchUsersByUuidData, PatchUsersByUuidErrors, PatchUsersByUuidResponses, PatchUsersMeData, PatchUsersMeErrors, PatchUsersMeResponses, PostAgentsData, PostAgentsErrors, PostAgentsResponses, PostApiKeysData, PostApiKeysErrors, PostApiKeysResponses, PostAuthForgotPasswordData, PostAuthForgotPasswordErrors, PostAuthForgotPasswordResponses, PostAuthLoginData, PostAuthLoginErrors, PostAuthLoginResponses, PostAuthRefreshData, PostAuthRefreshErrors, PostAuthRefreshResponses, PostAuthRegisterData, PostAuthRegisterErrors, PostAuthRegisterResponses, PostAuthResetPasswordData, PostAuthResetPasswordErrors, PostAuthResetPasswordResponses, PostChatByUuidChatCompletionsData, PostChatByUuidChatCompletionsErrors, PostChatByUuidChatCompletionsResponses, PostChatData, PostChatErrors, PostChatResponses, PostGroupsData, PostGroupsErrors, PostGroupsResponses, PostMemoryData, PostMemoryErrors, PostMemoryPromptData, PostMemoryPromptErrors, PostMemoryPromptResponses, PostMemoryResponses, PostMemorySearchData, PostMemorySearchErrors, PostMemorySearchResponses, PostProvidersData, PostProvidersErrors, PostProvidersResponses, PostSessionsData, PostSessionsErrors, PostSessionsResponses, PostSopsData, PostSopsErrors, PostSopsResponses, PostTasksByUuidRunData, PostTasksByUuidRunErrors, PostTasksByUuidRunResponses, PostTasksData, PostTasksErrors, PostTasksResponses, PostTodosData, PostTodosErrors, PostTodosResponses, PostUsersData, PostUsersErrors, PostUsersResponses, PutAgentDefaultsBySourceData, PutAgentDefaultsBySourceErrors, PutAgentDefaultsBySourceResponses, PutAgentsByUuidData, PutAgentsByUuidErrors, PutAgentsByUuidResponses, PutGroupsByUuidUsersByUserUuidData, PutGroupsByUuidUsersByUserUuidErrors, PutGroupsByUuidUsersByUserUuidResponses, PutMemoryStateData, PutMemoryStateErrors, PutMemoryStateResponses, PutProvidersByUuidData, PutProvidersByUuidErrors, PutProvidersByUuidPriorityData, PutProvidersByUuidPriorityErrors, PutProvidersByUuidPriorityResponses, PutProvidersByUuidResponses, PutSessionsByUuidData, PutSessionsByUuidErrors, PutSessionsByUuidResponses, PutTasksByUuidData, PutTasksByUuidErrors, PutTasksByUuidResponses, PutTodosByUuidData, PutTodosByUuidErrors, PutTodosByUuidResponses, PutUserConfigByKeyData, PutUserConfigByKeyErrors, PutUserConfigByKeyResponses, PutUsersByUuidPasswordData, PutUsersByUuidPasswordErrors, PutUsersByUuidPasswordResponses, PutUsersMePasswordData, PutUsersMePasswordErrors, PutUsersMePasswordResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -371,6 +371,50 @@ export const postAuthResetPassword = <ThrowOnError extends boolean = false>(opti
 };
 
 /**
+ * Chat through a stored provider
+ *
+ * Forwards an OpenAI chat completion to the provider named by provider_id and relays the provider's response as it arrives, including a server-sent event stream when stream is true. The provider's api_key is added server-side. The provider's status, headers and body are returned unchanged, so an upstream 401 or 429 reaches the caller as it was sent.
+ */
+export const postChat = <ThrowOnError extends boolean = false>(options: Options<PostChatData, ThrowOnError>) => {
+    return (options.client ?? client).post<PostChatResponses, PostChatErrors, ThrowOnError>({
+        security: [
+            {
+                name: 'Authorization',
+                type: 'apiKey'
+            }
+        ],
+        url: '/chat',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
+};
+
+/**
+ * Chat through a stored provider, addressed by path
+ *
+ * Same as POST /chat, except the provider is named by the path and the body carries no provider_id. It exists so an OpenAI client can reach the proxy by setting base_url to /api/chat/{uuid} and its api_key to a data cloud token.
+ */
+export const postChatByUuidChatCompletions = <ThrowOnError extends boolean = false>(options: Options<PostChatByUuidChatCompletionsData, ThrowOnError>) => {
+    return (options.client ?? client).post<PostChatByUuidChatCompletionsResponses, PostChatByUuidChatCompletionsErrors, ThrowOnError>({
+        security: [
+            {
+                name: 'Authorization',
+                type: 'apiKey'
+            }
+        ],
+        url: '/chat/{uuid}/chat/completions',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
+};
+
+/**
  * List groups
  *
  * Requires a bearer token. Returns groups only, never their members.
@@ -525,7 +569,7 @@ export const putGroupsByUuidUsersByUserUuid = <ThrowOnError extends boolean = fa
 /**
  * List memory
  *
- * Returns the caller's memory records ordered by occurred_at descending, then id descending. agent_id narrows the page to one of the caller's own agents; leaving it out covers every agent. The page continues from cursor, which is the next_cursor of the previous response. Rows are not ordered by score: score depends on now(), so a cursor built from it would drift and repeat or skip rows between pages.
+ * Returns the caller's memory records ordered by occurred_at descending, then id descending. agent_id narrows the page to one agent the caller may use, its own or a public one; leaving it out covers every agent. The page continues from cursor, which is the next_cursor of the previous response. Rows are not ordered by score: score depends on now(), so a cursor built from it would drift and repeat or skip rows between pages.
  */
 export const getMemory = <ThrowOnError extends boolean = false>(options?: Options<GetMemoryData, ThrowOnError>) => {
     return (options?.client ?? client).get<GetMemoryResponses, GetMemoryErrors, ThrowOnError>({
@@ -565,7 +609,7 @@ export const postMemory = <ThrowOnError extends boolean = false>(options: Option
 /**
  * Memory injection prompt
  *
- * Returns at most 20 records of one of the caller's agents, ordered pinned first, then the decayed score, then recency. This is the one ordering the injection prompt uses and search does not: pinned rows here are exempt from decay. Every returned row counts as injected, recorded at most once per UTC day.
+ * One round trip for a turn's head: state is the current state board (null when the pair has none yet) and memories are at most 20 fact rows of one agent the caller may use, ordered pinned first, then the decayed score, then recency. This is the one ordering the injection prompt uses and search does not: pinned rows here are exempt from decay. Events are never injected. Every returned memory row counts as injected, recorded at most once per UTC day.
  */
 export const postMemoryPrompt = <ThrowOnError extends boolean = false>(options: Options<PostMemoryPromptData, ThrowOnError>) => {
     return (options.client ?? client).post<PostMemoryPromptResponses, PostMemoryPromptErrors, ThrowOnError>({
@@ -587,7 +631,7 @@ export const postMemoryPrompt = <ThrowOnError extends boolean = false>(options: 
 /**
  * Search memory
  *
- * Returns at most 20 records of one of the caller's agents. Rows are ranked by how many of the requested keywords they carry, then by the decayed score, then by recency; pinned is ignored here and only orders the injection prompt. query matches content or a keyword as a substring. at bounds occurred_at from above, so asking what the user wanted on a date means at plus keywords, not at alone. Every returned row counts as one hit, recorded at most once per UTC day.
+ * Returns at most 20 records of one agent the caller may use. Rows are ranked by how many of the requested keywords they carry, then by the decayed score, then by recency; pinned is ignored here and only orders the injection prompt. query matches content or a keyword as a substring. at bounds occurred_at from above, so asking what the user wanted on a date means at plus keywords, not at alone. Every returned row counts as one hit, recorded at most once per UTC day.
  */
 export const postMemorySearch = <ThrowOnError extends boolean = false>(options: Options<PostMemorySearchData, ThrowOnError>) => {
     return (options.client ?? client).post<PostMemorySearchResponses, PostMemorySearchErrors, ThrowOnError>({
@@ -598,6 +642,64 @@ export const postMemorySearch = <ThrowOnError extends boolean = false>(options: 
             }
         ],
         url: '/memory/search',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
+};
+
+/**
+ * Delete the state board
+ *
+ * Hard deletes the state board of one agent the caller may use. The next write starts again at version 1.
+ */
+export const deleteMemoryState = <ThrowOnError extends boolean = false>(options: Options<DeleteMemoryStateData, ThrowOnError>) => {
+    return (options.client ?? client).delete<DeleteMemoryStateResponses, DeleteMemoryStateErrors, ThrowOnError>({
+        security: [
+            {
+                name: 'Authorization',
+                type: 'apiKey'
+            }
+        ],
+        url: '/memory/state',
+        ...options
+    });
+};
+
+/**
+ * Get the state board
+ *
+ * Returns the current state board of one agent the caller may use. A pair that has never been written answers 404 NOT_FOUND: an agent without a state is not an error, it simply has nothing to show.
+ */
+export const getMemoryState = <ThrowOnError extends boolean = false>(options: Options<GetMemoryStateData, ThrowOnError>) => {
+    return (options.client ?? client).get<GetMemoryStateResponses, GetMemoryStateErrors, ThrowOnError>({
+        security: [
+            {
+                name: 'Authorization',
+                type: 'apiKey'
+            }
+        ],
+        url: '/memory/state',
+        ...options
+    });
+};
+
+/**
+ * Overwrite the state board
+ *
+ * Upserts the state board of one agent the caller may use. The agent may write here, unlike memory, which only the user deletes. version, when sent, is the version the caller read: a write carrying a version the row no longer holds answers 409 STATE_CONFLICT and changes nothing, so a stale writer cannot silently undo a newer board. Omitting version overwrites whatever is stored. content is markdown, at most 2000 characters, and blank is refused: DELETE removes the board.
+ */
+export const putMemoryState = <ThrowOnError extends boolean = false>(options: Options<PutMemoryStateData, ThrowOnError>) => {
+    return (options.client ?? client).put<PutMemoryStateResponses, PutMemoryStateErrors, ThrowOnError>({
+        security: [
+            {
+                name: 'Authorization',
+                type: 'apiKey'
+            }
+        ],
+        url: '/memory/state',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -755,7 +857,7 @@ export const deleteProvidersByUuid = <ThrowOnError extends boolean = false>(opti
 /**
  * Get a provider
  *
- * Returns a provider the caller may use: one it owns, or one another user shares. api_key is included, since the client needs it to reach the model. A provider the caller may not use is reported as 404.
+ * Returns a provider the caller may use: one it owns, or one another user shares. The provider's api_key is never included: the client names the provider by id and the proxy adds the key server-side. A provider the caller may not use is reported as 404.
  */
 export const getProvidersByUuid = <ThrowOnError extends boolean = false>(options: Options<GetProvidersByUuidData, ThrowOnError>) => {
     return (options.client ?? client).get<GetProvidersByUuidResponses, GetProvidersByUuidErrors, ThrowOnError>({
