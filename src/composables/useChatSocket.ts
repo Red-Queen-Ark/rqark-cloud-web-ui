@@ -32,6 +32,19 @@ const TOKEN_RENEWAL_SKEW_MS = 60000;
 const TOKEN_RENEWAL_MIN_DELAY_MS = 5000;
 const SOCKET_TOKEN_REJECTED = 4401;
 
+function isUserMessage(payload: ChatPayload): boolean {
+  return !Array.isArray(payload) && !('type' in payload) && payload.role === 'user';
+}
+
+function lastUserSeq(messages: ChatHistoryEntry[]): number | undefined {
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    if (messages[index].role === 'user') {
+      return messages[index].seq;
+    }
+  }
+  return undefined;
+}
+
 export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
   const authStore = useAuthStore();
   const alertStore = useAlertStore();
@@ -47,6 +60,7 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
   const ws = shallowRef<WebSocket>();
   const status = ref<ChatStatus>('idle');
   const streaming = ref(false);
+  const streamingUserSeq = ref<number | null | undefined>(undefined);
   const history = ref<ChatHistoryEntry[]>([]);
   const planItems = ref<PlanItem[]>([]);
   let stream = openChatStream();
@@ -109,7 +123,7 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
   async function load() {
     pendingTurn = null;
     hasConnected = false;
-    streaming.value = false;
+    endStreaming();
     await connect();
     await loadAgents();
     await loadAgentDefault();
@@ -204,6 +218,9 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
     // failed, and that one is over: its last event is the error.
     const last = events[events.length - 1].payload;
     streaming.value = !chatTurnDone(last) && chatPayloadError(last) === null;
+    if (streaming.value) {
+      streamingUserSeq.value = lastUserSeq(history.value);
+    }
   }
 
   async function resync() {
@@ -245,8 +262,11 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
     }
     stream = applyChatPayload(stream, envelope.agent_id, envelope.payload);
     history.value = stream.messages;
+    if (isUserMessage(envelope.payload)) {
+      streamingUserSeq.value = stream.messages[stream.messages.length - 1]?.seq;
+    }
     if (chatTurnDone(envelope.payload)) {
-      streaming.value = false;
+      endStreaming();
     }
   }
 
@@ -259,7 +279,7 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
     }
     const error = chatPayloadError(envelope.payload);
     if (error) {
-      streaming.value = false;
+      endStreaming();
       if (error === CHAT_STOPPED) {
         // The runner saves the partial turn before it announces the stop, so the
         // stored session is now the truth for this turn: drop the locally
@@ -290,6 +310,7 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
       return;
     }
     socket.send(JSON.stringify({ content: turn.content, provider: turn.provider, agent: turn.agent }));
+    streamingUserSeq.value = null;
     streaming.value = true;
     turn.onSent?.();
   }
@@ -387,6 +408,11 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
     () => load(),
   );
 
+  function endStreaming() {
+    streamingUserSeq.value = undefined;
+    streaming.value = false;
+  }
+
   function send(content: string, agent: string, provider: string, onSent?: () => void) {
     const id = toValue(sessionId);
     if (!id) {
@@ -395,6 +421,7 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
     const socket = ws.value;
     if (socket?.readyState === WebSocket.OPEN && !accessTokenNeedsRenewal()) {
       socket.send(JSON.stringify({ content, provider, agent }));
+      streamingUserSeq.value = null;
       streaming.value = true;
       onSent?.();
       return;
@@ -403,13 +430,14 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
     if (socket?.readyState !== WebSocket.CONNECTING) {
       void connect();
     }
+    streamingUserSeq.value = null;
     streaming.value = true;
   }
 
   function stop() {
     if (pendingTurn) {
       pendingTurn = null;
-      streaming.value = false;
+      endStreaming();
       return;
     }
     const socket = ws.value;
@@ -429,6 +457,7 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
     providers,
     status,
     streaming,
+    streamingUserSeq,
     ws,
     history,
     planItems,

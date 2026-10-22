@@ -416,6 +416,52 @@ describe('useChatSocket', () => {
     expect(chatSocket.streaming).toBe(false);
   });
 
+  it('names no turn until the sent one is echoed back', async () => {
+    const chatSocket = openChat(ref('session-a'));
+    await chatSocket.load();
+
+    chatSocket.send('hello', 'researcher', 'openai');
+
+    expect(chatSocket.streamingUserSeq).toBeNull();
+  });
+
+  it('names the turn it is writing once that turn reaches the history', async () => {
+    (api.getSessionsByUuidMessages as Mock).mockResolvedValue({ data: [{ seq: 1, role: 'user', data: { content: 'earlier' } }] });
+
+    const chatSocket = openChat(ref('session-a'));
+    await chatSocket.load();
+    chatSocket.send('hello', 'researcher', 'openai');
+
+    const socket = FakeSocket.instances[0] as FakeSocket;
+    socket.onmessage?.({ data: JSON.stringify({ agent_id: 'researcher:session-a', path: [], payload: { role: 'user', content: [{ type: 'text', text: 'hello' }], created_at: '2026-01-01T00:00:00Z' } }) });
+
+    expect(chatSocket.streamingUserSeq).toBe(chatSocket.history[1].seq);
+  });
+
+  it('forgets the turn it wrote once the assistant lands', async () => {
+    const chatSocket = openChat(ref('session-a'));
+    await chatSocket.load();
+    chatSocket.send('hello', 'researcher', 'openai');
+
+    const socket = FakeSocket.instances[0] as FakeSocket;
+    socket.onmessage?.({ data: JSON.stringify({ agent_id: 'researcher:session-a', path: [], payload: { role: 'user', content: [{ type: 'text', text: 'hello' }], created_at: '2026-01-01T00:00:00Z' } }) });
+    socket.onmessage?.({ data: JSON.stringify({ agent_id: 'researcher:session-a', path: [], payload: { role: 'assistant', content: 'hi', created_at: '2026-01-01T00:00:00Z' } }) });
+
+    expect(chatSocket.streamingUserSeq).toBeUndefined();
+  });
+
+  it('names the turn a running chat was already writing', async () => {
+    (fetch as Mock).mockResolvedValue({
+      ok: true,
+      json: async () => [envelope({ role: 'user', content: [{ type: 'text', text: 'hi' }], created_at: at }), envelope({ type: 'content', content: 'Hel' })],
+    });
+
+    const chatSocket = openChat(ref('session-a'));
+    await chatSocket.load();
+
+    expect(chatSocket.streamingUserSeq).toBe(0);
+  });
+
   it('ends the turn in flight when an error lands', async () => {
     const chatSocket = openChat(ref('session-a'));
     await chatSocket.load();
