@@ -89,6 +89,22 @@ describe('TurnGroup', () => {
     expect(think.text()).toContain('thinking');
   });
 
+  it('keeps the reasoning and the tool calls in the order they arrived', () => {
+    // What actually happens: think, call a tool, think again about the result.
+    // Hoisting both reasoning blocks to the top would claim it thought once,
+    // before it had seen anything.
+    const entries = [
+      assistant(1, { reasoning_content: 'first thought', tool_calls: [{ id: 'a', type: 'function', function: { name: 'read_file', arguments: '{}' } }] }),
+      tool(2, 'a', 'ok'),
+      assistant(3, { reasoning_content: 'second thought', tool_calls: [{ id: 'b', type: 'function', function: { name: 'exec', arguments: '{}' } }] }),
+      tool(4, 'b', 'ok'),
+    ];
+    const text = mountTurn(entries).get('details').text();
+    expect(text.indexOf('first thought')).toBeLessThan(text.indexOf('read_file'));
+    expect(text.indexOf('read_file')).toBeLessThan(text.indexOf('second thought'));
+    expect(text.indexOf('second thought')).toBeLessThan(text.indexOf('exec'));
+  });
+
   it('joins the answers of the turn in order', () => {
     const entries = [assistant(1, { content: 'first' }), assistant(2, { content: 'second' })];
     expect(mountTurn(entries).text()).toContain('first');

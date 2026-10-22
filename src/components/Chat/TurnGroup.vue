@@ -16,8 +16,15 @@
       </summary>
 
       <div class="border-base-300/60 mt-1 space-y-1 border-s-2 ps-3">
-        <ThinkMessage v-for="entry in thinkingEntries" :key="`think-${entry.seq}`" :message="entry.data" class="px-4 py-1" />
-        <ToolMessage v-for="entry in toolEntries" :key="`tools-${entry.seq}`" :message="entry.data" :tool-result="props.toolResult" class="px-4 py-1" />
+        <!--
+          In arrival order, not grouped by kind: a model often thinks, calls a
+          tool, then thinks again about the result, and hoisting every reasoning
+          block above every tool call would say it thought once, upfront.
+        -->
+        <template v-for="entry in activityEntries" :key="`activity-${entry.seq}`">
+          <ThinkMessage v-if="entry.data.reasoning_content" :message="entry.data" class="px-4 py-1" />
+          <ToolMessage v-if="entry.data.tool_calls?.length" :message="entry.data" :tool-result="props.toolResult" class="px-4 py-1" />
+        </template>
       </div>
     </details>
 
@@ -63,14 +70,12 @@ const open = ref(false);
 
 const assistantEntries = computed(() => props.entries.filter((entry): entry is AssistantEntry => entry.role === 'assistant'));
 
-/** Reasoning is always drawn, folded inside its own block, for turns that produced some. */
-const thinkingEntries = computed(() => assistantEntries.value.filter((entry) => entry.data.reasoning_content));
-
-const toolEntries = computed(() => assistantEntries.value.filter((entry) => entry.data.tool_calls?.length));
+/** The entries that carry something to fold: reasoning, tool calls, or both. */
+const activityEntries = computed(() => assistantEntries.value.filter((entry) => entry.data.reasoning_content || entry.data.tool_calls?.length));
 
 const toolCount = computed(() => assistantEntries.value.reduce((total, entry) => total + (entry.data.tool_calls?.length ?? 0), 0));
 
-const hasActivity = computed(() => thinkingEntries.value.length > 0 || toolEntries.value.length > 0);
+const hasActivity = computed(() => activityEntries.value.length > 0);
 
 /** Every answer line of the turn, in order: intermediate chatter and the final reply read as one. */
 const answer = computed(() =>
