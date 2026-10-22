@@ -1,6 +1,6 @@
 <template>
   <div class="w-full">
-    <details v-if="hasActivity" :open="open" class="collapse collapse-arrow mb-1 overflow-clip" :data-testid="`turn-activity-${anchor}`" @toggle="touched = true">
+    <details v-if="hasActivity" ref="fold" :open="open" class="collapse collapse-arrow mb-1 overflow-clip" :data-testid="`turn-activity-${anchor}`" @toggle="onToggle">
       <summary :style="{ top: 'var(--chat-sticky-top, 0px)' }" class="collapse-title bg-base-100 text-base-content/50 hover:text-base-content/70 sticky z-10 inline-flex min-h-0 items-center gap-1.5 py-1 ps-1 pe-7 text-xs select-none">
         <span v-if="durationLabel" data-testid="turn-duration">{{ t('chat.workedFor', { duration: durationLabel }) }}</span>
         <span v-if="durationLabel && toolCount > 0" aria-hidden="true">·</span>
@@ -53,6 +53,7 @@ const props = defineProps<{
 const { t } = useI18n();
 const alertStore = useAlertStore();
 
+const fold = ref<HTMLDetailsElement | null>(null);
 const touched = ref(false);
 const open = ref(false);
 
@@ -99,6 +100,20 @@ const durationLabel = computed(() => {
   const rest = Math.round(seconds % 60);
   return `${minutes}m ${rest}s`;
 });
+
+/**
+ * A toggle fired by binding `open` is the turn starting or ending, not the user
+ * reaching for the fold: it is dropped so that the end of the turn can shut it.
+ * Only a click that leaves the element disagreeing with `open` counts.
+ */
+function onToggle() {
+  const element = fold.value;
+  if (!element || element.open === open.value) {
+    return;
+  }
+  touched.value = true;
+  open.value = element.open;
+}
 
 watch(
   () => props.streaming,

@@ -13,8 +13,8 @@ import { computed } from 'vue';
 const props = defineProps<{
   messages: ChatHistoryEntry[];
   busy?: boolean;
-  /** The user entry of the turn being written; null while that turn is still unsent, undefined when nothing is streaming. */
-  streamingUserSeq?: number | null;
+  /** The seq the turn being written starts at; null while that turn is still unsent, undefined when the socket names none. */
+  streamingFromSeq?: number | null;
 }>();
 
 const emit = defineEmits<{ revert: [messageId: string] }>();
@@ -75,8 +75,11 @@ function isStreaming(turn: Turn, index: number): boolean {
   if (!props.busy) {
     return false;
   }
-  if (props.streamingUserSeq !== undefined) {
-    return turn.user?.seq === props.streamingUserSeq;
+  if (props.streamingFromSeq === null) {
+    return false;
+  }
+  if (props.streamingFromSeq !== undefined) {
+    return turn.user?.seq === props.streamingFromSeq || turn.entries.some((entry) => entry.seq === props.streamingFromSeq);
   }
   return index === turns.value.length - 1;
 }
