@@ -97,5 +97,6 @@ test('the older turn stays shut for the whole of the newer one', async ({ page }
 
   await expect(page.locator('#chat-history')).toContainText('the newer answer');
   await expect(folds()).toHaveCount(2);
+  await expect(folds().nth(1)).not.toHaveAttribute('open', '');
   await expect(older).not.toHaveAttribute('open', '');
 });

@@ -32,19 +32,6 @@ const TOKEN_RENEWAL_SKEW_MS = 60000;
 const TOKEN_RENEWAL_MIN_DELAY_MS = 5000;
 const SOCKET_TOKEN_REJECTED = 4401;
 
-function isUserMessage(payload: ChatPayload): boolean {
-  return !Array.isArray(payload) && !('type' in payload) && payload.role === 'user';
-}
-
-function lastUserSeq(messages: ChatHistoryEntry[]): number | undefined {
-  for (let index = messages.length - 1; index >= 0; index -= 1) {
-    if (messages[index].role === 'user') {
-      return messages[index].seq;
-    }
-  }
-  return undefined;
-}
-
 export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
   const authStore = useAuthStore();
   const alertStore = useAlertStore();
@@ -60,7 +47,7 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
   const ws = shallowRef<WebSocket>();
   const status = ref<ChatStatus>('idle');
   const streaming = ref(false);
-  const streamingUserSeq = ref<number | null | undefined>(undefined);
+  const streamingFromSeq = ref<number | null | undefined>(undefined);
   const history = ref<ChatHistoryEntry[]>([]);
   const planItems = ref<PlanItem[]>([]);
   let stream = openChatStream();
@@ -219,7 +206,7 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
     const last = events[events.length - 1].payload;
     streaming.value = !chatTurnDone(last) && chatPayloadError(last) === null;
     if (streaming.value) {
-      streamingUserSeq.value = lastUserSeq(history.value);
+      streamingFromSeq.value = undefined;
     }
   }
 
@@ -260,10 +247,13 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
       planItems.value = plan;
       return;
     }
+    const before = stream.messages.length;
     stream = applyChatPayload(stream, envelope.agent_id, envelope.payload);
     history.value = stream.messages;
-    if (isUserMessage(envelope.payload)) {
-      streamingUserSeq.value = stream.messages[stream.messages.length - 1]?.seq;
+    // The first entry to land after a send is where the turn being written
+    // begins, whatever its role: that is the fold the reader came to watch.
+    if (streaming.value && streamingFromSeq.value === null && stream.messages.length > before) {
+      streamingFromSeq.value = stream.messages[before]?.seq;
     }
     if (chatTurnDone(envelope.payload)) {
       endStreaming();
@@ -310,7 +300,7 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
       return;
     }
     socket.send(JSON.stringify({ content: turn.content, provider: turn.provider, agent: turn.agent }));
-    streamingUserSeq.value = null;
+    streamingFromSeq.value = null;
     streaming.value = true;
     turn.onSent?.();
   }
@@ -409,7 +399,7 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
   );
 
   function endStreaming() {
-    streamingUserSeq.value = undefined;
+    streamingFromSeq.value = undefined;
     streaming.value = false;
   }
 
@@ -421,7 +411,7 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
     const socket = ws.value;
     if (socket?.readyState === WebSocket.OPEN && !accessTokenNeedsRenewal()) {
       socket.send(JSON.stringify({ content, provider, agent }));
-      streamingUserSeq.value = null;
+      streamingFromSeq.value = null;
       streaming.value = true;
       onSent?.();
       return;
@@ -430,7 +420,7 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
     if (socket?.readyState !== WebSocket.CONNECTING) {
       void connect();
     }
-    streamingUserSeq.value = null;
+    streamingFromSeq.value = null;
     streaming.value = true;
   }
 
@@ -457,7 +447,7 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
     providers,
     status,
     streaming,
-    streamingUserSeq,
+    streamingFromSeq,
     ws,
     history,
     planItems,

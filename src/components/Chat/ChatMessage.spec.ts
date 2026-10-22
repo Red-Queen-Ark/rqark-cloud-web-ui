@@ -151,8 +151,8 @@ describe('ChatMessage streaming turn', () => {
     return wrapper.findAllComponents({ name: 'TurnGroup' }).map((component) => (component.props() as { streaming?: boolean }).streaming);
   }
 
-  function mountStreaming(streamingUserSeq: number | null | undefined) {
-    return mount(ChatMessage, { props: { messages: twoTurns, busy: true, streamingUserSeq }, global: { plugins: [i18n] } });
+  function mountStreaming(streamingFromSeq: number | null | undefined) {
+    return mount(ChatMessage, { props: { messages: twoTurns, busy: true, streamingFromSeq }, global: { plugins: [i18n] } });
   }
 
   it('opens nothing while the sent turn is not in the history yet', () => {
@@ -163,8 +163,14 @@ describe('ChatMessage streaming turn', () => {
     expect(streamingFlags(mountStreaming(2))).toEqual([false, true]);
   });
 
+  it('opens a turn whose user message has not been echoed yet', () => {
+    // The fold belongs to the entry that is arriving, not to the turn before it.
+    const wrapper = mount(ChatMessage, { props: { messages: twoTurns, busy: true, streamingFromSeq: 3 }, global: { plugins: [i18n] } });
+    expect(streamingFlags(wrapper)).toEqual([false, true]);
+  });
+
   it('leaves the earlier turn shut even when the socket names it', () => {
-    expect(streamingFlags(mountStreaming(0))).toEqual([true, false]);
+    expect(streamingFlags(mountStreaming(1))).toEqual([true, false]);
   });
 
   it('falls back to the last turn when the socket names none', () => {
@@ -172,7 +178,7 @@ describe('ChatMessage streaming turn', () => {
   });
 
   it('opens nothing once the run is over', () => {
-    const wrapper = mount(ChatMessage, { props: { messages: twoTurns, busy: false, streamingUserSeq: 2 }, global: { plugins: [i18n] } });
+    const wrapper = mount(ChatMessage, { props: { messages: twoTurns, busy: false, streamingFromSeq: 2 }, global: { plugins: [i18n] } });
     expect(streamingFlags(wrapper)).toEqual([false, false]);
   });
 });

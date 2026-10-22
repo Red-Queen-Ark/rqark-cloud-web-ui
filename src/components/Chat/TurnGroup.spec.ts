@@ -73,6 +73,32 @@ describe('TurnGroup', () => {
     expect(mountTurn(entries, START, true).get('details').attributes('open')).toBeDefined();
   });
 
+  it('shuts the fold once the turn it was opened for is over', async () => {
+    const entries = [assistant(1, { reasoning_content: 'thinking' })];
+    const wrapper = mountTurn(entries, START, true);
+    const fold = wrapper.get('details');
+    expect(fold.attributes('open')).toBeDefined();
+
+    await wrapper.setProps({ streaming: false });
+
+    expect(fold.attributes('open')).toBeUndefined();
+  });
+
+  it('leaves a fold the user shut while the turn ran shut when it ends', async () => {
+    const entries = [assistant(1, { reasoning_content: 'thinking' })];
+    const wrapper = mountTurn(entries, START, true);
+    const fold = wrapper.get('details');
+
+    // jsdom leaves the disclosure to the browser, so the click is spelled out:
+    // the element shuts, then announces it.
+    (fold.element as HTMLDetailsElement).open = false;
+    await fold.trigger('toggle');
+
+    await wrapper.setProps({ streaming: false });
+
+    expect(fold.attributes('open')).toBeUndefined();
+  });
+
   it('draws no activity block for a plain answer', () => {
     expect(
       mountTurn([assistant(1, { content: 'answer' })])
