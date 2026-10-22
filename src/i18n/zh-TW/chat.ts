@@ -28,5 +28,12 @@ export const chat = {
   slashPanelLabel: '斜線指令',
   slashCompact: '壓縮目前對話',
   slashStop: '停止目前回應',
+  workedFor: '做咗 {duration}',
+  toolCountOne: '{count} 個工具',
+  toolCount: '{count} 個工具',
+  details: '詳情',
+  thinking: '思考',
+  toolRunning: '執行緊…',
+  showAllLines: '顯示其餘 {count} 行',
   scrollToBottom: '去返最新',
 };

@@ -1,30 +1,19 @@
 <template>
-  <template v-for="(message, index) in props.messages" :key="message.data.id ?? index">
-    <UserMessage v-if="message.role === 'user'" :message="message.data" :revertible="revertible(message)" :busy="props.busy" class="px-4 py-2" @revert="emit('revert', $event)" />
-    <template v-else-if="message.role === 'assistant'">
-      <ThinkMessage :message="message.data" class="px-4 pb-2" />
-      <AssistantMessage :message="message.data" class="px-4 pb-2" />
-      <ToolMessage :message="message.data" :tool-result="toolResult" class="px-4" />
-      <div v-if="message.data.created_at" class="flex items-center justify-start gap-1.5 px-4 pb-2">
-        <p data-testid="assistant-message-time" class="text-base-content/40 text-xs pr-1">{{ formatDateTime(message.data.created_at) }}</p>
-        <button v-if="message.data.content" type="button" data-testid="assistant-message-copy" class="btn btn-ghost btn-square btn-xs text-success" :title="t('chat.copy')" :aria-label="t('chat.copy')" @click="copy(message.data.content)">
-          <CopyIcon class="h-3.5 w-3.5" />
-        </button>
-      </div>
-    </template>
+  <template v-for="(turn, index) in turns" :key="turn.key">
+    <UserMessage v-if="turn.user" :message="turn.user.data" :revertible="revertible(turn.user)" :busy="props.busy" class="px-4 py-2" @revert="emit('revert', $event)" />
+    <!--
+      Everything after a user message belongs to that turn until the next user
+      message: the thinking, the tool calls and the answer are one unit of work,
+      so they are drawn by one component that can fold the work away.
+    -->
+    <TurnGroup v-if="turn.entries.length" :entries="turn.entries" :tool-result="toolResult" :started-at="turn.user?.created_at" :streaming="Boolean(props.busy) && index === turns.length - 1" class="px-4 pb-2" />
   </template>
 </template>
 
 <script setup lang="ts">
-import CopyIcon from '@/components/svg/CopyIcon.vue';
-import { useAlertStore } from '@/stores/alertStore';
-import { formatDateTime } from '@/utils/datetime';
+import TurnGroup from '@/components/Chat/TurnGroup.vue';
+import UserMessage from '@/components/Chat/message/UserMessage.vue';
 import { computed } from 'vue';
-import { useI18n } from 'vue-i18n';
-import UserMessage from './message/UserMessage.vue';
-import ThinkMessage from './message/ThinkMessage.vue';
-import AssistantMessage from './message/AssistantMessage.vue';
-import ToolMessage from './message/ToolMessage.vue';
 
 const props = defineProps<{
   messages: ChatHistoryEntry[];
@@ -33,17 +22,39 @@ const props = defineProps<{
 
 const emit = defineEmits<{ revert: [messageId: string] }>();
 
-const { t } = useI18n();
-const alertStore = useAlertStore();
+type UserEntry = Extract<ChatHistoryEntry, { role: 'user' }>;
 
-async function copy(content: string) {
-  try {
-    await navigator.clipboard.writeText(content);
-    alertStore.addItem({ level: 'success', message: t('chat.copied') });
-  } catch {
-    alertStore.addItem({ level: 'error', message: t('chat.copyError') });
-  }
+interface Turn {
+  key: string;
+  user?: UserEntry;
+  /** Assistant and tool entries, in arrival order. */
+  entries: ChatHistoryEntry[];
 }
+
+const turns = computed<Turn[]>(() => {
+  const grouped: Turn[] = [];
+  let current: Turn | null = null;
+
+  for (const entry of props.messages) {
+    if (entry.role === 'user') {
+      current = { key: `turn-user-${entry.data.id ?? entry.seq}`, user: entry, entries: [] };
+      grouped.push(current);
+      continue;
+    }
+    if (entry.role !== 'assistant' && entry.role !== 'tool') {
+      // A system or summary row is not part of a turn; it is left out here just
+      // as it was before turns were grouped.
+      continue;
+    }
+    if (!current) {
+      current = { key: `turn-open-${entry.seq}`, entries: [] };
+      grouped.push(current);
+    }
+    current.entries.push(entry);
+  }
+
+  return grouped;
+});
 
 const openingTurn = computed(() => props.messages.find((message) => message.role === 'user'));
 
