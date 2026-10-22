@@ -1,7 +1,7 @@
 <template>
   <template v-for="(turn, index) in turns" :key="turn.key">
     <UserMessage v-if="turn.user" :message="turn.user.data" :revertible="revertible(turn.user)" :busy="props.busy" class="px-4 py-2" @revert="emit('revert', $event)" />
-    <TurnGroup v-if="turn.entries.length" :entries="turn.entries" :tool-result="toolResult" :started-at="turn.user?.created_at" :streaming="Boolean(props.busy) && index === turns.length - 1" class="px-4 pb-2" />
+    <TurnGroup v-if="turn.entries.length" :entries="turn.entries" :tool-result="toolResult" :started-at="turn.user?.created_at" :streaming="isStreaming(turn, index)" class="px-4 pb-2" />
   </template>
 </template>
 
@@ -13,6 +13,8 @@ import { computed } from 'vue';
 const props = defineProps<{
   messages: ChatHistoryEntry[];
   busy?: boolean;
+  /** The user entry of the turn being written; null while that turn is still unsent, undefined when nothing is streaming. */
+  streamingUserSeq?: number | null;
 }>();
 
 const emit = defineEmits<{ revert: [messageId: string] }>();
@@ -67,5 +69,15 @@ function revertible(message: ChatHistoryEntry): boolean {
   // Reverting trims the session back to before the message, so the opening turn
   // would wipe the whole chat; only a later user turn may be reverted.
   return message.role === 'user' && message !== openingTurn.value && Boolean(message.data.id);
+}
+
+function isStreaming(turn: Turn, index: number): boolean {
+  if (!props.busy) {
+    return false;
+  }
+  if (props.streamingUserSeq !== undefined) {
+    return turn.user?.seq === props.streamingUserSeq;
+  }
+  return index === turns.value.length - 1;
 }
 </script>

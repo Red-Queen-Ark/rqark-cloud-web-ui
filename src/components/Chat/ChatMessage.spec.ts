@@ -138,3 +138,41 @@ describe('ChatMessage', () => {
     expect(dialog()).not.toBeNull();
   });
 });
+
+describe('ChatMessage streaming turn', () => {
+  const twoTurns: ChatHistoryEntry[] = [
+    user(0, 'old', 'm1'),
+    assistant(1, 'old answer'),
+    user(2, 'new', 'm2'),
+    { seq: 3, role: 'assistant', data: { role: 'assistant', content: 'thinking', reasoning_content: 'hmm', created_at }, created_at },
+  ];
+
+  function streamingFlags(wrapper: ReturnType<typeof mountMessages>): (boolean | undefined)[] {
+    return wrapper.findAllComponents({ name: 'TurnGroup' }).map((component) => (component.props() as { streaming?: boolean }).streaming);
+  }
+
+  function mountStreaming(streamingUserSeq: number | null | undefined) {
+    return mount(ChatMessage, { props: { messages: twoTurns, busy: true, streamingUserSeq }, global: { plugins: [i18n] } });
+  }
+
+  it('opens nothing while the sent turn is not in the history yet', () => {
+    expect(streamingFlags(mountStreaming(null))).toEqual([false, false]);
+  });
+
+  it('opens the turn the socket is writing, not the one before it', () => {
+    expect(streamingFlags(mountStreaming(2))).toEqual([false, true]);
+  });
+
+  it('leaves the earlier turn shut even when the socket names it', () => {
+    expect(streamingFlags(mountStreaming(0))).toEqual([true, false]);
+  });
+
+  it('falls back to the last turn when the socket names none', () => {
+    expect(streamingFlags(mountStreaming(undefined))).toEqual([false, true]);
+  });
+
+  it('opens nothing once the run is over', () => {
+    const wrapper = mount(ChatMessage, { props: { messages: twoTurns, busy: false, streamingUserSeq: 2 }, global: { plugins: [i18n] } });
+    expect(streamingFlags(wrapper)).toEqual([false, false]);
+  });
+});
