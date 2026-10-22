@@ -6,16 +6,15 @@
       streaming, so activity is visible as it happens, and closed once it lands —
       unless the reader opened it themselves.
     -->
-    <details v-if="hasActivity" :open="open" class="group mb-1" :data-testid="`turn-activity-${anchor}`" @toggle="touched = true">
-      <summary class="text-base-content/50 hover:text-base-content/70 inline-flex cursor-pointer list-none items-center gap-1.5 rounded px-1 py-0.5 text-xs select-none">
-        <ChevronRightIcon class="h-3 w-3 transition-transform group-open:rotate-90" />
+    <details v-if="hasActivity" :open="open" class="collapse collapse-arrow mb-1" :data-testid="`turn-activity-${anchor}`" @toggle="touched = true">
+      <summary class="collapse-title text-base-content/50 hover:text-base-content/70 inline-flex min-h-0 items-center gap-1.5 py-1 ps-1 pe-7 text-xs select-none">
         <span v-if="durationLabel" data-testid="turn-duration">{{ t('chat.workedFor', { duration: durationLabel }) }}</span>
         <span v-if="durationLabel && toolCount > 0" aria-hidden="true">·</span>
         <span v-if="toolCount > 0" data-testid="turn-tool-count">{{ t(toolCount === 1 ? 'chat.toolCountOne' : 'chat.toolCount', { count: toolCount }) }}</span>
         <span v-if="!durationLabel && toolCount === 0">{{ t('chat.details') }}</span>
       </summary>
 
-      <div class="border-base-300/60 mt-1 space-y-1 border-s-2 ps-3">
+      <div class="collapse-content border-base-300/60 space-y-1 border-s-2 ps-3">
         <!--
           In arrival order, not grouped by kind: a model often thinks, calls a
           tool, then thinks again about the result, and hoisting every reasoning
@@ -44,7 +43,6 @@ import AssistantMessage from '@/components/Chat/message/AssistantMessage.vue';
 import ThinkMessage from '@/components/Chat/message/ThinkMessage.vue';
 import ToolMessage from '@/components/Chat/message/ToolMessage.vue';
 import CopyIcon from '@/components/svg/CopyIcon.vue';
-import ChevronRightIcon from '@/components/svg/ChevronRightIcon.vue';
 import { useAlertStore } from '@/stores/alertStore';
 import { formatDateTime } from '@/utils/datetime';
 import { computed, ref, watch } from 'vue';

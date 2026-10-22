@@ -75,10 +75,23 @@ function finalizeAssistant(stream: ChatStream, agentId: string, message: ChatAss
   const drafts = withoutDraft(stream.drafts, agentId);
   if (index !== undefined && entry?.role === 'assistant') {
     const messages = [...stream.messages];
-    messages[index] = assistantEntry(entry.seq, message);
+    messages[index] = assistantEntry(entry.seq, withStreamedReasoning(entry.data, message));
     return { messages, drafts };
   }
   return { messages: [...stream.messages, messageEntry(stream.messages.length, message)], drafts };
+}
+
+/**
+ * The engine's final message replaces the draft, and it carries the answer and
+ * the tool calls but usually not the reasoning it streamed on the way there.
+ * Keeping the draft's reasoning when the final message has none is what stops a
+ * finished turn from losing the explanation it had a moment ago.
+ */
+function withStreamedReasoning(draft: ChatAssistantMessage, message: ChatAssistantMessage): ChatAssistantMessage {
+  if (message.reasoning_content || !draft.reasoning_content) {
+    return message;
+  }
+  return { ...message, reasoning_content: draft.reasoning_content };
 }
 
 function withoutDraft(drafts: Record<string, number>, agentId: string): Record<string, number> {

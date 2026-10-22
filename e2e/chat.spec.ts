@@ -182,10 +182,11 @@ test('shows the reasoning the agent streamed, folded into its own block', async 
   const think = history.getByTestId('think-block');
   await expect(think).toContainText('Let me check the sky.');
   await expect(think).not.toHaveAttribute('open', '');
-  await expect(history.getByText('Thinking')).toBeVisible();
+  await expect(think.locator('.collapse-content')).toBeHidden();
 
   await think.locator('summary').click();
   await expect(think).toHaveAttribute('open', '');
+  await expect(think.locator('.collapse-content')).toBeVisible();
 });
 
 test('shows the tool calls the agent made and the result of each', async ({ page }) => {
