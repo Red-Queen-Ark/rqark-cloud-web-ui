@@ -28,5 +28,12 @@ export const chat = {
   slashPanelLabel: 'Slash commands',
   slashCompact: 'Compact the current conversation',
   slashStop: 'Stop the current response',
+  workedFor: 'Worked for {duration}',
+  toolCountOne: '1 tool',
+  toolCount: '{count} tools',
+  details: 'Details',
+  thinking: 'Thinking',
+  toolRunning: 'Running…',
+  showAllLines: 'Show all {count} more lines',
   scrollToBottom: 'Scroll to the latest',
 };

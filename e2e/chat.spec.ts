@@ -172,13 +172,20 @@ test('shows the turn and the answer as the agent streams them', async ({ page })
   await expect(history).toContainText('It is sunny.');
 });
 
-test('shows the reasoning the agent streamed', async ({ page }) => {
+test('shows the reasoning the agent streamed, folded into its own block', async ({ page }) => {
   const { socket, history } = await openTurn(page, first);
 
   socket.send(frame({ type: 'reasoning_content', content: 'Let me check the sky.' }));
 
-  await expect(history.getByText('think')).toBeVisible();
-  await expect(history).toContainText('Let me check the sky.');
+  // Reasoning is always kept, but it is the least re-read part of a turn, so it
+  // sits behind its own disclosure rather than in the answer's way.
+  const think = history.getByTestId('think-block');
+  await expect(think).toContainText('Let me check the sky.');
+  await expect(think).not.toHaveAttribute('open', '');
+  await expect(history.getByText('Thinking')).toBeVisible();
+
+  await think.locator('summary').click();
+  await expect(think).toHaveAttribute('open', '');
 });
 
 test('shows the tool calls the agent made and the result of each', async ({ page }) => {
@@ -193,13 +200,37 @@ test('shows the tool calls the agent made and the result of each', async ({ page
       tool_calls: [{ id: 'call_1', type: 'function', function: { name: 'plan_update', arguments: '{}' } }],
     }),
   );
-  await expect(history).toContainText('use plan_update');
+  await expect(history.getByTestId('tool-call-call_1')).toContainText('plan_update');
 
   const result = { role: 'tool', tool_call_id: 'call_1', content: 'plan updated', created_at: turnTimestamp };
   socket.send(frame(result));
 
-  await expect(history.getByText('plan_update - result')).toHaveCount(1);
-  await expect(history).toContainText('plan updated');
+  await expect(history.getByTestId('tool-result-call_1')).toContainText('plan updated');
+  await expect(history.getByTestId('turn-tool-count')).toContainText('1 tool');
+});
+
+test('reads an edit as a diff built from its arguments', async ({ page }) => {
+  const { socket, history } = await openTurn(page, first);
+
+  const args = JSON.stringify({ path: 'src/app.ts', old_string: 'const a = 1;', new_string: 'const a = 2;' });
+  socket.send(
+    frame({
+      role: 'assistant',
+      content: 'Done.',
+      created_at: turnTimestamp,
+      tool_calls: [{ id: 'call_1', type: 'function', function: { name: 'edit_file', arguments: args } }],
+    }),
+  );
+  socket.send(frame({ role: 'tool', tool_call_id: 'call_1', content: 'Successfully edited src/app.ts', created_at: turnTimestamp }));
+
+  // The tool only reports a verdict, so the change itself has to come from the
+  // arguments: that is the whole reason the diff is worth rendering.
+  const diff = history.getByTestId('tool-diff-call_1');
+  await expect(diff).toContainText('@@ src/app.ts @@');
+  await expect(diff).toContainText('- const a = 1;');
+  await expect(diff).toContainText('+ const a = 2;');
+  await expect(history.getByTestId('tool-meta-call_1')).toContainText('+1 −1');
+  await expect(history.getByTestId('tool-result-call_1')).toHaveCount(0);
 });
 
 test('surfaces a stream error in the alert stack', async ({ page }) => {
