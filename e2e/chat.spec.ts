@@ -356,10 +356,13 @@ test('keeps a user bubble inside a narrow viewport', async ({ page }) => {
   }
 });
 
-test('keeps the fixed bubble width when the column has room', async ({ page }) => {
+test('keeps a short bubble at a readable width and a long one at the column edge', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
 
-  const messages = [{ seq: 0, role: 'user', data: { role: 'user', content: [{ type: 'text', text: 'hello there' }], created_at: turnTimestamp }, created_at: turnTimestamp }];
+  const messages = [
+    { seq: 0, role: 'user', data: { role: 'user', content: [{ type: 'text', text: 'hi' }], created_at: turnTimestamp }, created_at: turnTimestamp },
+    { seq: 1, role: 'user', data: { role: 'user', content: [{ type: 'text', text: 'word '.repeat(120) }], created_at: turnTimestamp }, created_at: turnTimestamp },
+  ];
 
   await mockBackend(page, { session: boss, sessions: [{ ...first, messages }], agents: [agent], providers: [provider] });
   await seedSession(page);
@@ -368,9 +371,22 @@ test('keeps the fixed bubble width when the column has room', async ({ page }) =
 
   await page.goto(`/en/chat/${first.id}`);
 
-  const box = await page.getByTestId('user-message').boundingBox();
-  expect(box).not.toBeNull();
-  expect(box?.width ?? 0).toBeCloseTo(384, 0);
+  const bubbles = page.getByTestId('user-message');
+  await expect(bubbles).toHaveCount(2);
+
+  const short = await bubbles.nth(0).boundingBox();
+  expect(short).not.toBeNull();
+  expect(short?.width ?? 0).toBeCloseTo(384, 0);
+
+  const long = await bubbles.nth(1).evaluate((el) => {
+    const parent = el.parentElement as HTMLElement;
+    const padding = parseFloat(getComputedStyle(parent).paddingLeft) + parseFloat(getComputedStyle(parent).paddingRight);
+    const box = el.getBoundingClientRect();
+    return { width: box.width, right: box.right, limit: (parent.clientWidth - padding) * 0.9, edge: parent.getBoundingClientRect().right - padding / 2 };
+  });
+
+  expect(long.width).toBeCloseTo(long.limit, 0);
+  expect(long.right).toBeCloseTo(long.edge, 0);
 });
 
 test('shows the socket as connected while it is open', async ({ page }) => {

@@ -31,11 +31,12 @@ afterEach(() => {
 });
 
 describe('UserMessage', () => {
-  it('right-aligns the bubble within a fixed, max-width capped box', () => {
+  it('right-aligns the bubble and lets it hug its text up to a share of the column', () => {
     const bubble = mountMessage().get(BUBBLE);
     expect(bubble.classes()).toContain('ms-auto');
-    expect(bubble.classes()).toContain('w-96');
-    expect(bubble.classes()).toContain('max-w-full');
+    expect(bubble.classes()).toContain('w-fit');
+    expect(bubble.classes()).toContain('min-w-[min(24rem,90%)]');
+    expect(bubble.classes()).toContain('max-w-[90%]');
   });
 
   it('copies the text parts of the message and confirms it', async () => {
