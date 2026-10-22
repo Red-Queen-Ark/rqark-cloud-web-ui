@@ -1,13 +1,13 @@
 <template>
   <div v-if="props.message.tool_calls" class="w-full space-y-1">
-    <details v-for="tool_call in props.message.tool_calls" :key="tool_call.id" class="group rounded-box border border-base-300/60 bg-base-200/40" :data-testid="`tool-call-${tool_call.id}`">
+    <details v-for="tool_call in props.message.tool_calls" :key="tool_call.id" class="collapse collapse-arrow bg-base-200/40 border-base-300/60 rounded-box border" :data-testid="`tool-call-${tool_call.id}`">
       <!--
         A native disclosure rather than a hand-rolled toggle: the row is a
         summary, so it is reachable by keyboard and its body stays in the DOM
         while closed, which keeps `find`-style assertions and browser search
         working over a collapsed turn.
       -->
-      <summary class="flex cursor-pointer list-none items-center gap-2 px-2 py-1 text-xs select-none hover:bg-base-200/70">
+      <summary class="collapse-title flex min-h-0 items-center gap-2 py-1 ps-2 pe-9 text-xs select-none hover:bg-base-200/70">
         <span class="inline-flex shrink-0 items-center" :data-testid="`tool-status-${tool_call.id}`">
           <span v-if="state(tool_call) === 'running'" class="loading loading-spinner loading-xs text-warning"></span>
           <AlertIcon v-else-if="state(tool_call) === 'error'" level="error" class="h-3.5 w-3.5 text-error" />
@@ -19,11 +19,9 @@
         <span v-if="summary(tool_call).detail" class="min-w-0 truncate font-mono text-base-content/50" :data-testid="`tool-detail-${tool_call.id}`">{{ summary(tool_call).detail }}</span>
 
         <span v-if="summary(tool_call).meta" class="badge badge-ghost badge-xs shrink-0 font-mono" :data-testid="`tool-meta-${tool_call.id}`">{{ summary(tool_call).meta }}</span>
-
-        <ChevronDownIcon class="ms-auto h-3 w-3 shrink-0 opacity-40 transition-transform group-open:rotate-180" />
       </summary>
 
-      <div class="border-t border-base-300/60 px-2 py-2">
+      <div class="collapse-content border-base-300/60 border-t px-2 py-2">
         <!-- A diff is the point of an edit call, so it is preferred over the verdict the tool returns. -->
         <template v-if="diffFor(tool_call)">
           <pre
@@ -54,7 +52,6 @@
 <script setup lang="ts">
 import AlertIcon from '@/components/svg/AlertIcon.vue';
 import CheckIcon from '@/components/svg/CheckIcon.vue';
-import ChevronDownIcon from '@/components/svg/ChevronDownIcon.vue';
 import { buildToolDiff, clipResult, resultBody, summariseTool, toolState, type DiffLine, type ToolState } from '@/utils/toolDisplay';
 import { reactive } from 'vue';
 import { useI18n } from 'vue-i18n';

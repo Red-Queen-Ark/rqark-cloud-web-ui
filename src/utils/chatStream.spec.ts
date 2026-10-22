@@ -81,6 +81,22 @@ describe('applyChatPayload', () => {
     expect(stream.messages[0]).toMatchObject({ created_at: at, data: { content: 'It is sunny.', created_at: at } });
   });
 
+  it('keeps the reasoning the draft streamed when the final message carries none', () => {
+    let stream = openChatStream();
+    stream = applyChatPayload(stream, 'agent', { type: 'reasoning_content', content: 'Let me check.' });
+    stream = applyChatPayload(stream, 'agent', { role: 'assistant', content: 'Sunny.', created_at: at });
+
+    expect(stream.messages[0].data).toMatchObject({ content: 'Sunny.', reasoning_content: 'Let me check.' });
+  });
+
+  it('prefers the reasoning on the final message when it has one', () => {
+    let stream = openChatStream();
+    stream = applyChatPayload(stream, 'agent', { type: 'reasoning_content', content: 'draft' });
+    stream = applyChatPayload(stream, 'agent', { role: 'assistant', content: 'Sunny.', reasoning_content: 'final', created_at: at });
+
+    expect(stream.messages[0].data).toMatchObject({ reasoning_content: 'final' });
+  });
+
   it('starts a new message for the answer that follows a tool result', () => {
     let stream = openChatStream();
     stream = applyChatPayload(stream, 'agent', { type: 'content', content: 'Checking.' });
