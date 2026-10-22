@@ -11,12 +11,13 @@
       <div class="collapse-content border-base-300/60 space-y-1 overflow-hidden border-s-2 ps-3">
         <template v-for="entry in activityEntries" :key="`activity-${entry.seq}`">
           <ThinkMessage v-if="entry.data.reasoning_content" :message="entry.data" class="px-4 py-1" />
+          <AssistantMessage v-if="entry.data.tool_calls?.length && entry.data.content" :message="entry.data" class="px-4 py-1" data-testid="turn-chatter" />
           <ToolMessage v-if="entry.data.tool_calls?.length" :message="entry.data" :tool-result="props.toolResult" class="px-4 py-1" />
         </template>
       </div>
     </details>
 
-    <AssistantMessage :message="answerMessage" class="px-4 py-1" />
+    <AssistantMessage :message="answerMessage" class="px-4 py-1" data-testid="turn-answer" />
 
     <div class="flex items-center justify-start gap-1.5 px-4">
       <p v-if="endedAt" data-testid="assistant-message-time" class="text-base-content/40 pr-1 text-xs">{{ formatDateTime(endedAt) }}</p>
@@ -64,9 +65,10 @@ const toolCount = computed(() => assistantEntries.value.reduce((total, entry) =>
 
 const hasActivity = computed(() => activityEntries.value.length > 0);
 
-/** Every answer line of the turn, in order: intermediate chatter and the final reply read as one. */
+/** What the turn says once it has stopped calling tools, read in order. */
 const answer = computed(() =>
   assistantEntries.value
+    .filter((entry) => !entry.data.tool_calls?.length)
     .map((entry) => entry.data.content)
     .filter((content) => content)
     .join('\n\n'),

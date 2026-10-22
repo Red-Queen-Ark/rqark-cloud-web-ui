@@ -111,6 +111,48 @@ describe('TurnGroup', () => {
     expect(mountTurn(entries).text()).toContain('second');
   });
 
+  it('folds what it said between tool calls instead of passing it off as the answer', () => {
+    const entries = [
+      assistant(1, { content: 'now the repository change:', reasoning_content: 'first thought', tool_calls: [{ id: 'a', type: 'function', function: { name: 'edit', arguments: '{}' } }] }),
+      tool(2, 'a', 'ok'),
+      assistant(3, { content: 'now update the call sites:', reasoning_content: 'second thought', tool_calls: [{ id: 'b', type: 'function', function: { name: 'edit', arguments: '{}' } }] }),
+      tool(4, 'b', 'ok'),
+      assistant(5, { content: 'done' }),
+    ];
+    const wrapper = mountTurn(entries);
+
+    const chatter = wrapper.findAll('[data-testid="turn-chatter"]').map((node) => node.text());
+    expect(chatter).toEqual(['now the repository change:', 'now update the call sites:']);
+    expect(wrapper.get('[data-testid="turn-chatter"]').element.closest('details')).not.toBeNull();
+
+    expect(wrapper.get('[data-testid="turn-answer"]').text()).toBe('done');
+  });
+
+  it('keeps the chatter between its own thought and its own tool call', () => {
+    const entries = [
+      assistant(1, { content: 'looking first', reasoning_content: 'first thought', tool_calls: [{ id: 'a', type: 'function', function: { name: 'read_file', arguments: '{}' } }] }),
+      tool(2, 'a', 'ok'),
+      assistant(3, { content: 'now writing', reasoning_content: 'second thought', tool_calls: [{ id: 'b', type: 'function', function: { name: 'edit', arguments: '{}' } }] }),
+      tool(4, 'b', 'ok'),
+    ];
+    const text = mountTurn(entries).get('details').text();
+    expect(text.indexOf('first thought')).toBeLessThan(text.indexOf('looking first'));
+    expect(text.indexOf('looking first')).toBeLessThan(text.indexOf('read_file'));
+    expect(text.indexOf('read_file')).toBeLessThan(text.indexOf('second thought'));
+    expect(text.indexOf('second thought')).toBeLessThan(text.indexOf('now writing'));
+    expect(text.indexOf('now writing')).toBeLessThan(text.indexOf('edit'));
+  });
+
+  it('copies the answer without the chatter it folded away', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    vi.stubGlobal('navigator', { ...navigator, clipboard: { writeText } });
+    const wrapper = mountTurn([assistant(1, { content: 'chatter', tool_calls: [{ id: 'a', type: 'function', function: { name: 'edit', arguments: '{}' } }] }), tool(2, 'a', 'ok'), assistant(3, { content: 'the answer' })]);
+
+    await wrapper.get('[data-testid="assistant-message-copy"]').trigger('click');
+
+    expect(writeText).toHaveBeenCalledWith('the answer');
+  });
+
   it('copies the joined answer', async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     vi.stubGlobal('navigator', { ...navigator, clipboard: { writeText } });
