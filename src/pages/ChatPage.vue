@@ -13,6 +13,7 @@
       <ChatInputArea
         ref="inputArea"
         :agents="chatSocket.agentNames"
+        :initial-agent="chatStore.agentFor(sessionId)"
         :default-agent="chatSocket.defaultAgent"
         :providers="chatSocket.providers"
         :status="chatSocket.status"
@@ -66,6 +67,12 @@ function handleSubmit(payload: { content: string; agent: string; provider: strin
     return;
   }
   chatSocket.send(payload.content, payload.agent, payload.provider, () => inputArea.value?.clear());
+  // Kept beside the session so the picker comes back to this agent rather than
+  // the first one in the listing, both after the pending turn is flushed and
+  // when the chat is reopened later in the same page load.
+  if (sessionId.value) {
+    chatStore.setSessionAgent(sessionId.value, payload.agent);
+  }
   scrollToBottom();
 }
 
@@ -91,6 +98,11 @@ onMounted(async () => {
   await chatSocket.load();
   const pending = chatStore.takePendingTurn(sessionId.value ?? '');
   if (pending) {
+    // The turn arrives from the home page, which never showed this session: the
+    // agent it was written for is the one the picker has to come up on. Taking
+    // the turn clears the store's only copy, so it is recorded as the session's
+    // agent before it is sent.
+    chatStore.setSessionAgent(pending.sessionId, pending.agent);
     chatSocket.send(pending.content, pending.agent, pending.provider);
   }
 });

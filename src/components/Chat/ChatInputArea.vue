@@ -72,6 +72,8 @@ import UserIcon from '@/components/svg/UserIcon.vue';
 
 const props = defineProps<{
   agents: string[];
+  /** The agent this chat was last sent to, when it is still on offer. */
+  initialAgent?: string;
   /** The agent stored as the default for this app's session source, when one resolves. */
   defaultAgent?: string;
   providers: ApiProviderSummaryDto[];
@@ -106,18 +108,23 @@ const slashIndex = ref(0);
 const composing = ref(false);
 
 watch(
-  () => [props.agents, props.defaultAgent] as const,
-  ([agents, defaultAgent]) => {
+  () => [props.agents, props.defaultAgent, props.initialAgent] as const,
+  ([agents, defaultAgent, initialAgent]) => {
     // A hand-made choice outranks the stored default: the two arrive on separate
     // requests, so the default can land after the user has already picked one.
     if (agentChosen.value && agents.includes(selectedAgent.value)) {
       return;
     }
-    const preferred = defaultAgent && agents.includes(defaultAgent) ? defaultAgent : agents[0];
+    const preferred = firstOnOffer(agents, initialAgent) ?? firstOnOffer(agents, defaultAgent) ?? agents[0];
     selectedAgent.value = preferred ?? '';
   },
   { immediate: true },
 );
+
+/** The first of `names` that the picker can actually offer, or undefined. */
+function firstOnOffer(agents: string[], name?: string): string | undefined {
+  return name && agents.includes(name) ? name : undefined;
+}
 
 function chooseAgent(event: Event) {
   agentChosen.value = true;

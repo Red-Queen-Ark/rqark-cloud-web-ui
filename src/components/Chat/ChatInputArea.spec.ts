@@ -17,10 +17,11 @@ beforeEach(() => {
   (api.getSops as Mock).mockResolvedValue({ data: { items: [{ slug: 'trip-itinerary', title: 'Trip itinerary' }] } });
 });
 
-function mountArea(overrides: { agents?: string[]; defaultAgent?: string; providers?: { name?: string; model_name?: string }[]; status?: ChatStatus; streaming?: boolean } = {}) {
+function mountArea(overrides: { agents?: string[]; initialAgent?: string; defaultAgent?: string; providers?: { name?: string; model_name?: string }[]; status?: ChatStatus; streaming?: boolean } = {}) {
   return mount(ChatInputArea, {
     props: {
       agents: overrides.agents ?? ['researcher'],
+      initialAgent: overrides.initialAgent,
       defaultAgent: overrides.defaultAgent,
       providers: overrides.providers ?? [{ name: 'openai', model_name: 'gpt-5' }],
       status: overrides.status,
@@ -114,6 +115,22 @@ describe('ChatInputArea', () => {
     // The default is read on its own request, so it can land after the user has
     // already chosen; the choice is the newer intent of the two.
     await wrapper.setProps({ defaultAgent: 'researcher' });
+
+    expect((agentSelect(wrapper).element as HTMLSelectElement).value).toBe('writer');
+  });
+
+  it("starts on the chat's own agent rather than the stored default", async () => {
+    const wrapper = mountArea({ agents: ['researcher', 'writer'], initialAgent: 'writer', defaultAgent: 'researcher' });
+
+    expect((agentSelect(wrapper).element as HTMLSelectElement).value).toBe('writer');
+  });
+
+  it("moves to the chat's own agent when it arrives after the mount", async () => {
+    const wrapper = mountArea({ agents: ['researcher', 'writer'] });
+
+    // A chat started from the home page mounts before the turn it was handed
+    // over has been read, so the agent can land a tick later.
+    await wrapper.setProps({ initialAgent: 'writer' });
 
     expect((agentSelect(wrapper).element as HTMLSelectElement).value).toBe('writer');
   });

@@ -66,6 +66,7 @@ describe('ChatPage', () => {
     // The mock is shared, so a call recorded by one test would otherwise be read
     // as the call of the next one.
     vi.clearAllMocks();
+    socket.agentsValue = [{ id: 'agent-1', name: 'researcher' }];
     socket.send.mockImplementation((...args: unknown[]) => (args[3] as (() => void) | undefined)?.());
     pinia = createPinia();
     setActivePinia(pinia);
@@ -163,4 +164,40 @@ describe('ChatPage', () => {
 
     expect(socket.send).not.toHaveBeenCalled();
   });
+
+  it('comes up on the agent the start page sent the turn to', async () => {
+    socket.agentsValue = [
+      { id: 'agent-1', name: 'researcher' },
+      { id: 'agent-2', name: 'writer' },
+    ];
+    useChatStore().setPendingTurn({ sessionId: 'session-a', content: 'hello there', agent: 'writer', provider: 'openai' });
+
+    const { wrapper } = await mountChat('/en/chat/session-a');
+
+    // The home page picks the agent, then hands the turn over to a page that
+    // never saw it; the picker must not fall back to the first agent there.
+    expect((agentSelect(wrapper).element as HTMLSelectElement).value).toBe('writer');
+  });
+
+  it('remembers the agent a session was sent to', async () => {
+    socket.agentsValue = [
+      { id: 'agent-1', name: 'researcher' },
+      { id: 'agent-2', name: 'writer' },
+    ];
+    const { wrapper } = await mountChat('/en/chat/session-a');
+
+    await agentSelect(wrapper).setValue('writer');
+    const input = wrapper.get('[data-testid="chat-input"]');
+    input.element.textContent = 'hello there';
+    await input.trigger('input');
+    await wrapper.get('[data-testid="chat-send"]').trigger('click');
+
+    expect(socket.send).toHaveBeenCalledWith('hello there', 'writer', 'openai', expect.any(Function));
+    expect(useChatStore().agentFor('session-a')).toBe('writer');
+  });
 });
+
+function agentSelect(wrapper: ReturnType<typeof mount>): ReturnType<ReturnType<typeof mount>['findAll']>[number] {
+  // The provider picker comes first in the toolbar.
+  return wrapper.findAll('select')[1];
+}

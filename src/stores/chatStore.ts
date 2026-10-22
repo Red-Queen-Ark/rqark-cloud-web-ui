@@ -13,8 +13,33 @@ export const useChatStore = defineStore('chatStore', {
     pendingTurn: null as PendingTurn | null,
     /** Titles of the sessions the sidebar has seen, keyed by session id. */
     sessionTitles: {} as Record<string, string>,
+    /**
+     * The agent each chat was last sent to, keyed by session id.
+     *
+     * The picker lives in a component that is remounted on every navigation
+     * (starting a chat from the home page lands on a new one), and nothing on
+     * the wire says which agent a session belongs to, so without this the
+     * picker falls back to the first agent the moment a turn is submitted.
+     */
+    sessionAgents: {} as Record<string, string>,
   }),
+  getters: {
+    /** The agent a chat should come up on, from the last turn or one still in flight. */
+    agentFor: (state) => (sessionId: string | undefined) => {
+      if (!sessionId) {
+        return undefined;
+      }
+      const chosen = state.sessionAgents[sessionId];
+      if (chosen) {
+        return chosen;
+      }
+      return state.pendingTurn?.sessionId === sessionId ? state.pendingTurn.agent : undefined;
+    },
+  },
   actions: {
+    setSessionAgent(sessionId: string, agent: string) {
+      this.sessionAgents[sessionId] = agent;
+    },
     setPendingTurn(turn: PendingTurn) {
       this.pendingTurn = turn;
     },
