@@ -1,25 +1,14 @@
 <template>
   <div class="w-full">
-    <!--
-      One turn reads as one thing: what the agent did folded away, what it
-      answered always in view. The fold is opened while the turn is the one still
-      streaming, so activity is visible as it happens, and closed once it lands —
-      unless the reader opened it themselves.
-    -->
-    <details v-if="hasActivity" :open="open" class="collapse collapse-arrow mb-1" :data-testid="`turn-activity-${anchor}`" @toggle="touched = true">
-      <summary class="collapse-title text-base-content/50 hover:text-base-content/70 inline-flex min-h-0 items-center gap-1.5 py-1 ps-1 pe-7 text-xs select-none">
+    <details v-if="hasActivity" :open="open" class="collapse collapse-arrow mb-1 overflow-clip" :data-testid="`turn-activity-${anchor}`" @toggle="touched = true">
+      <summary :style="{ top: 'var(--chat-sticky-top, 0px)' }" class="collapse-title bg-base-100 text-base-content/50 hover:text-base-content/70 sticky z-10 inline-flex min-h-0 items-center gap-1.5 py-1 ps-1 pe-7 text-xs select-none">
         <span v-if="durationLabel" data-testid="turn-duration">{{ t('chat.workedFor', { duration: durationLabel }) }}</span>
         <span v-if="durationLabel && toolCount > 0" aria-hidden="true">·</span>
         <span v-if="toolCount > 0" data-testid="turn-tool-count">{{ t(toolCount === 1 ? 'chat.toolCountOne' : 'chat.toolCount', { count: toolCount }) }}</span>
         <span v-if="!durationLabel && toolCount === 0">{{ t('chat.details') }}</span>
       </summary>
 
-      <div class="collapse-content border-base-300/60 space-y-1 border-s-2 ps-3">
-        <!--
-          In arrival order, not grouped by kind: a model often thinks, calls a
-          tool, then thinks again about the result, and hoisting every reasoning
-          block above every tool call would say it thought once, upfront.
-        -->
+      <div class="collapse-content border-base-300/60 space-y-1 overflow-hidden border-s-2 ps-3">
         <template v-for="entry in activityEntries" :key="`activity-${entry.seq}`">
           <ThinkMessage v-if="entry.data.reasoning_content" :message="entry.data" class="px-4 py-1" />
           <ToolMessage v-if="entry.data.tool_calls?.length" :message="entry.data" :tool-result="props.toolResult" class="px-4 py-1" />

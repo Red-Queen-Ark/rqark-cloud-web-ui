@@ -3,7 +3,7 @@
     <div ref="planDock" class="fixed inset-x-0 top-14 z-30 sm:top-14 lg:left-72 md:mx-10" data-testid="chat-plan-dock">
       <ChatPlanCard :items="chatSocket.planItems" class="shadow-md" />
     </div>
-    <div id="chat-history" ref="history" class="mb-30 md:mx-10 flex flex-col" :style="{ paddingTop: `${planHeight}px` }">
+    <div id="chat-history" ref="history" class="mb-30 md:mx-10 flex flex-col" :style="historyStyle">
       <ChatMessage :messages="chatSocket.history" :busy="reverting || chatSocket.streaming" @revert="handleRevert" />
     </div>
     <div class="chat-input-dock fixed inset-x-0 z-30 lg:left-72 md:mx-8 mb-2" data-testid="chat-input-dock">
@@ -53,6 +53,11 @@ const planHeight = ref(0);
 const history = ref<HTMLElement | null>(null);
 const reverting = ref(false);
 const { pinned, scrollToBottom } = useStickyScroll(history);
+
+const historyStyle = computed<Record<string, string>>(() => ({
+  paddingTop: `${planHeight.value}px`,
+  '--chat-sticky-top': `${planHeight.value}px`,
+}));
 
 let planObserver: ResizeObserver | undefined;
 

@@ -1,11 +1,6 @@
 <template>
   <template v-for="(turn, index) in turns" :key="turn.key">
     <UserMessage v-if="turn.user" :message="turn.user.data" :revertible="revertible(turn.user)" :busy="props.busy" class="px-4 py-2" @revert="emit('revert', $event)" />
-    <!--
-      Everything after a user message belongs to that turn until the next user
-      message: the thinking, the tool calls and the answer are one unit of work,
-      so they are drawn by one component that can fold the work away.
-    -->
     <TurnGroup v-if="turn.entries.length" :entries="turn.entries" :tool-result="toolResult" :started-at="turn.user?.created_at" :streaming="Boolean(props.busy) && index === turns.length - 1" class="px-4 pb-2" />
   </template>
 </template>
