@@ -26,7 +26,7 @@
       </button>
     </form>
 
-    <p class="mt-6 text-center text-sm text-base-content/75">
+    <p v-if="allowRegistration" class="mt-6 text-center text-sm text-base-content/75">
       {{ t('login.noAccount') }}
       <RouterLink :to="{ name: 'register', params: { lang: route.params.lang } }" class="link link-primary">
         {{ t('login.register') }}
@@ -43,8 +43,9 @@ import { useRoute } from 'vue-router';
 withDefaults(
   defineProps<{
     loading?: boolean;
+    allowRegistration?: boolean;
   }>(),
-  { loading: false },
+  { loading: false, allowRegistration: false },
 );
 
 const username = defineModel<string>('username', { default: '' });
