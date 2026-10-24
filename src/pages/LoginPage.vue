@@ -4,17 +4,18 @@
       <LanguageSwitcher />
       <ThemeSwitcher />
     </div>
-    <LoginBox v-model:username="username" v-model:password="password" :loading="loading" @login="login" />
+    <LoginBox v-model:username="username" v-model:password="password" :loading="loading" :allow-registration="allowRegistration" @login="login" />
   </div>
 </template>
 
 <script setup lang="ts">
+import { getSystemConfig } from '@/api';
 import LoginBox from '@/components/Login/LoginBox.vue';
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue';
 import ThemeSwitcher from '@/components/ThemeSwitcher.vue';
 import { useAlertStore } from '@/stores/alertStore';
 import { useAuthStore } from '@/stores/authStore';
-import { ref } from 'vue';
+import { onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 
@@ -27,6 +28,12 @@ const { t } = useI18n();
 const username = ref<string>('');
 const password = ref<string>('');
 const loading = ref(false);
+const allowRegistration = ref(false);
+
+onMounted(async () => {
+  const { data } = await getSystemConfig();
+  allowRegistration.value = Boolean(data?.allow_self_registration);
+});
 
 async function login() {
   if (!username.value || !password.value) {

@@ -41,6 +41,26 @@ describe('LoginBox', () => {
     expect(wrapper.emitted('login')).toHaveLength(1);
   });
 
+  it('hides the registration link when the deployment forbids it', async () => {
+    const router = createTestRouter();
+    await router.push('/en/login');
+    await router.isReady();
+
+    const wrapper = mount(LoginBox, { global: { plugins: [i18n, router] } });
+
+    expect(wrapper.text()).not.toContain('No account yet?');
+  });
+
+  it('shows the registration link when the deployment allows it', async () => {
+    const router = createTestRouter();
+    await router.push('/en/login');
+    await router.isReady();
+
+    const wrapper = mount(LoginBox, { props: { allowRegistration: true }, global: { plugins: [i18n, router] } });
+
+    expect(wrapper.text()).toContain('No account yet?');
+  });
+
   it('disables the submit button while loading', async () => {
     const router = createTestRouter();
     await router.push('/en/login');
