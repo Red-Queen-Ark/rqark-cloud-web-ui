@@ -96,6 +96,15 @@ describe('ToolMessage', () => {
     expect(diff).toContain('+ TWO');
   });
 
+  it('draws one row per diff line, with no whitespace of its own between them', () => {
+    const args = JSON.stringify({ path: 'src/a.ts', old_string: 'one\ntwo', new_string: 'one\nTWO' });
+    const wrapper = mountTool(assistantMessage([{ id: 'call_1', name: 'edit_file', arguments: args }]), {
+      call_1: result('call_1', 'Successfully edited src/a.ts'),
+    });
+    const rows = [...wrapper.get('[data-testid="tool-diff-call_1"]').element.childNodes];
+    expect(rows.filter((node) => node.nodeType === Node.TEXT_NODE && node.textContent)).toHaveLength(0);
+  });
+
   it('keeps the raw result for a tool that carries no before/after text', () => {
     const wrapper = mountTool(assistantMessage([{ id: 'call_1', name: 'exec', arguments: '{"command":"make"}' }]), {
       call_1: result('call_1', 'exit code: 0\nstdout:\ndone'),

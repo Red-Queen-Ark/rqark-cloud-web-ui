@@ -27,8 +27,7 @@
           <pre
             class="scrollbar-thin max-h-72 overflow-auto font-mono text-xs leading-relaxed"
             :data-testid="`tool-diff-${tool_call.id}`"
-          ><template v-for="(line, index) in shownDiff(tool_call)" :key="index"><span :class="DIFF_CLASS[line.kind]">{{ diffGutter(line.kind) }}{{ line.text }}</span>
-</template></pre>
+          ><span v-for="(line, index) in shownDiff(tool_call)" :key="index" :class="DIFF_CLASS[line.kind]">{{ diffGutter(line.kind) }}{{ line.text }}</span></pre>
           <button v-if="foldedDiff(tool_call)" class="btn btn-ghost btn-xs mt-1" :data-testid="`tool-diff-more-${tool_call.id}`" @click.prevent="showAll(tool_call.id)">
             {{ t('chat.showAllLines', { count: hiddenDiff(tool_call) }) }}
           </button>
