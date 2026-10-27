@@ -144,6 +144,10 @@ export async function mockWorkspaceApi(page: Page, options: MockWorkspaceOptions
       }
 
       if (endpoint === '/file' && method === 'PUT') {
+        const since = route.request().headers()['if-unmodified-since'];
+        if (since && node && node.mtime > Math.floor(Date.parse(since) / 1000)) {
+          return json(route, 412, { error: { code: 'PRECONDITION_FAILED', message: `file changed since ${Math.floor(Date.parse(since) / 1000)}: ${path}` } });
+        }
         const content = route.request().postDataBuffer() ?? Buffer.alloc(0);
         state.nodes.set(path, { type: 'file', content, mtime: MTIME + 60 });
         return json(route, 200, entryPayload(path, state.nodes.get(path) as MockWorkspaceNode));

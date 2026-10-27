@@ -95,6 +95,22 @@ test('previews markdown and saves an edit', async ({ page }) => {
   await expect(page.getByTestId('workspace-preview').locator('.markdown-body')).toContainText('Edited');
 });
 
+test('saves the same file twice without a precondition failure', async ({ page }) => {
+  await openWorkspace(page);
+
+  await page.getByTestId('workspace-row-notes.md').getByRole('button', { name: 'notes.md' }).click();
+  await page.getByTestId('workspace-preview-edit').click();
+  await page.getByTestId('workspace-preview-editor').fill('# First\n');
+  await page.getByTestId('workspace-preview-save').click();
+  await expect(page.getByTestId('workspace-preview').locator('.markdown-body')).toContainText('First');
+
+  await page.getByTestId('workspace-preview-edit').click();
+  await page.getByTestId('workspace-preview-editor').fill('# Second\n');
+  await page.getByTestId('workspace-preview-save').click();
+
+  await expect(page.getByTestId('workspace-preview').locator('.markdown-body')).toContainText('Second');
+});
+
 test('does not preview a sensitive file', async ({ page }) => {
   await openWorkspace(page);
   await page.getByTestId('workspace-toggle-hidden').click();
