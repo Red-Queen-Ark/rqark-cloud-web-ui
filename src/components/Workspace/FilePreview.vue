@@ -8,7 +8,7 @@
             <span class="truncate" data-testid="workspace-preview-name">{{ entry.name }}</span>
             <span v-if="sensitive" class="badge badge-warning badge-sm">{{ t('workspace.sensitive') }}</span>
           </h3>
-          <p class="text-base-content/60 text-xs">{{ entry.path }} · {{ formatSize(entry.size) }} · {{ formatMtime(entry.mtime, locale) }}</p>
+          <p class="text-base-content/60 text-xs">{{ entry.path }} · {{ formatSize(stats.size) }} · {{ formatMtime(stats.mtime, locale) }}</p>
         </div>
         <div class="flex shrink-0 items-center gap-1">
           <button data-testid="workspace-preview-download" class="btn btn-sm" :title="t('workspace.download')" @click="emit('download', entry)">
@@ -81,7 +81,7 @@ import { downloadWorkspaceFile, writeWorkspaceFile } from '@/api-client/workspac
 import { formatMtime, formatSize, isSensitivePath, previewKind, type WorkspaceEntry } from '@/config/workspace';
 import { useAlertStore } from '@/stores/alertStore';
 import { renderMarkdown } from '@/utils/markdown';
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useApiError } from '@/composables/useApiError';
 
@@ -108,6 +108,14 @@ const draft = ref('');
 const editing = ref(false);
 const saving = ref(false);
 const objectUrl = ref('');
+const stats = ref({ size: props.entry.size, mtime: props.entry.mtime });
+
+watch(
+  () => props.entry,
+  (entry) => {
+    stats.value = { size: entry.size, mtime: entry.mtime };
+  },
+);
 
 const html = computed(() => (kind.value === 'markdown' ? renderMarkdown(text.value) : null));
 
@@ -140,7 +148,8 @@ function cancelEdit() {
 async function save() {
   saving.value = true;
   try {
-    const saved = await writeWorkspaceFile(props.entry.path, draft.value, props.entry.mtime);
+    const saved = await writeWorkspaceFile(props.entry.path, draft.value, stats.value.mtime);
+    stats.value = { size: saved.size, mtime: saved.mtime };
     text.value = draft.value;
     editing.value = false;
     emit('saved', saved);

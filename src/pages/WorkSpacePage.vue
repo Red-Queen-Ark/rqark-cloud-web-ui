@@ -307,7 +307,10 @@ async function upload(files: File[]) {
   }
 }
 
-function handleSaved() {
+function handleSaved(entry: WorkspaceEntry) {
+  if (preview.value?.path === entry.path) {
+    preview.value = entry;
+  }
   void refresh();
 }
 
