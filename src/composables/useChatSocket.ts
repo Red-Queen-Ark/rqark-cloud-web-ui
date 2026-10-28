@@ -57,6 +57,16 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
   let hasConnected = false;
   let pendingTurn: PendingTurn | null = null;
   let tokenRejected = false;
+  // The highest replay seq applied. Replay and the live socket overlap by
+  // design — the replay is a snapshot taken while the socket keeps streaming —
+  // so every frame carries a per-room seq and anything at or below this is a
+  // frame already folded into the history.
+  let lastSeq = 0;
+  // Frames that arrive while a resync is reading. Applying them first would
+  // raise lastSeq past the replay's own frames and the replay would then be
+  // discarded as stale, losing the turn's opening.
+  let resyncInFlight: Promise<void> | null = null;
+  let buffered: string[] = [];
 
   function accessTokenNeedsRenewal(): boolean {
     if (!authStore.refreshToken) {
@@ -166,6 +176,9 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
   function replace(messages: ChatHistoryEntry[]) {
     stream = openChatStream(messages);
     history.value = stream.messages;
+    // The history endpoint is the baseline the replay is layered on, so the
+    // numbering it was built from no longer describes what is on screen.
+    lastSeq = 0;
   }
 
   async function fetchReplay(id: string): Promise<ChatEnvelope[]> {
@@ -211,8 +224,32 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
   }
 
   async function resync() {
-    await loadHistory();
-    await loadReplay();
+    // Single flight. Pressing stop and losing the socket in the same moment used
+    // to run two history+replay reads, and both of them folded the same events.
+    const inFlight = resyncInFlight;
+    if (inFlight) {
+      return inFlight;
+    }
+    const run = (async () => {
+      try {
+        await loadHistory();
+        await loadReplay();
+      } finally {
+        resyncInFlight = null;
+        flushBuffered();
+      }
+    })();
+    resyncInFlight = run;
+    return run;
+  }
+
+  function flushBuffered() {
+    // Replayed frames are already in; anything newer than lastSeq applies.
+    const frames = buffered;
+    buffered = [];
+    for (const frame of frames) {
+      receive(frame);
+    }
   }
 
   async function revert(messageId: string): Promise<boolean> {
@@ -239,6 +276,19 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
   }
 
   function apply(envelope: ChatEnvelope) {
+    // Already folded in: the same frame can reach here twice when a resync
+    // snapshot overlaps the live socket, or when a reconnect replays the tail.
+    if (typeof envelope.seq === 'number') {
+      if (envelope.seq === 1) {
+        // The room's counter restarted (a flushed or expired Redis key), so what
+        // is on screen is not numbered on the same scale any more.
+        lastSeq = 0;
+      }
+      if (envelope.seq <= lastSeq) {
+        return;
+      }
+      lastSeq = envelope.seq;
+    }
     // The plan is session state rather than a message: the engine pushes the
     // whole replaced plan as one array, which is kept beside the history instead
     // of inside it.
@@ -261,6 +311,10 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
   }
 
   function receive(data: string) {
+    if (resyncInFlight) {
+      buffered.push(data);
+      return;
+    }
     let envelope: ChatEnvelope;
     try {
       envelope = JSON.parse(data) as ChatEnvelope;
@@ -401,6 +455,11 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
   function endStreaming() {
     streamingFromSeq.value = undefined;
     streaming.value = false;
+    // The draft is keyed by agent id, which is the same key for every turn of a
+    // session: left in place, the next turn's chunks would be appended onto the
+    // stopped turn's text instead of starting a new entry.
+    stream = openChatStream(stream.messages);
+    history.value = stream.messages;
   }
 
   function send(content: string, agent: string, provider: string, onSent?: () => void) {
@@ -432,6 +491,9 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
     }
     const socket = ws.value;
     if (socket?.readyState !== WebSocket.OPEN) {
+      // Nothing to stop on the wire: the turn cannot be running anywhere this
+      // client can still see, so the UI must not stay in its streaming state.
+      endStreaming();
       return;
     }
     socket.send(JSON.stringify({ kind: 'stop' }));

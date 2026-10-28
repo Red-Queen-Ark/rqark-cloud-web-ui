@@ -829,4 +829,52 @@ describe('useChatSocket', () => {
     expect(result).toBe(false);
     expect(alert).toHaveBeenCalledTimes(1);
   });
+
+  it('folds a frame replayed over the live stream in once', async () => {
+    const chatSocket = openChat(ref('session-a'));
+    await chatSocket.load();
+    chatSocket.send('hello', 'researcher', 'openai');
+
+    const socket = FakeSocket.instances[0] as FakeSocket;
+    const chunk = JSON.stringify({ agent_id: 'researcher:session-a', path: [], seq: 7, payload: { type: 'content', content: 'hi' } });
+    socket.onmessage?.({ data: chunk });
+    // The same frame again, which is what an overlapping replay snapshot sends.
+    socket.onmessage?.({ data: chunk });
+
+    expect(chatSocket.history).toHaveLength(1);
+    expect(chatSocket.history[0]).toMatchObject({ role: 'assistant', data: { content: 'hi' } });
+  });
+
+  it('starts a fresh entry for the turn after a stop', async () => {
+    const chatSocket = openChat(ref('session-a'));
+    await chatSocket.load();
+    chatSocket.send('hello', 'researcher', 'openai');
+
+    const socket = FakeSocket.instances[0] as FakeSocket;
+    socket.onmessage?.({ data: JSON.stringify({ agent_id: 'researcher:session-a', path: [], seq: 1, payload: { type: 'content', content: 'stopped text' } }) });
+    // The read-back fails, so nothing replaces what is on screen and the draft
+    // the stop left behind is all the next turn has to build on.
+    (api.getSessionsByUuidMessages as Mock).mockResolvedValue({ error: { code: 'UNAVAILABLE' } });
+    socket.onmessage?.({ data: JSON.stringify({ agent_id: '', path: [], payload: { type: 'error', content: 'chat stopped' } }) });
+    await flushPromises();
+
+    chatSocket.send('again', 'researcher', 'openai');
+    socket.onmessage?.({ data: JSON.stringify({ agent_id: 'researcher:session-a', path: [], seq: 2, payload: { type: 'content', content: 'fresh answer' } }) });
+
+    const answers = chatSocket.history.filter((entry) => entry.role === 'assistant');
+    // The draft is keyed by agent id, which never changes: without the reset the
+    // new turn's chunks would be appended onto the stopped text and the two
+    // answers would render as one bubble holding both.
+    expect(answers.map((entry) => entry.data.content)).toEqual(['stopped text', 'fresh answer']);
+  });
+
+  it('runs one resync when two are asked for at once', async () => {
+    const chatSocket = openChat(ref('session-a'));
+    await chatSocket.load();
+    (fetch as Mock).mockClear();
+
+    await Promise.all([chatSocket.resync(), chatSocket.resync()]);
+
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
 });
