@@ -13,7 +13,6 @@
   --color-matrix-green: #00ff41;
   --color-matrix-dim: #00702a;
   --color-matrix-glow: #9dffbb;
-  --scanline: rgb(0 255 65 / 0.07);
   --font-eva: '裝甲明朝體', serif;
   --font-zen: 'ZenAntique', serif;
   --color-eva-gold: #f5c242;
@@ -363,7 +362,6 @@
   --border: 1px;
   --depth: 0;
   --noise: 1;
-  --scanline: rgb(0 90 34 / 0.06);
 }
 
 @plugin "daisyui/theme" {
@@ -399,18 +397,8 @@
   --border: 1px;
   --depth: 0;
   --noise: 1;
-  --scanline: rgb(0 255 65 / 0.08);
 }
 
 [data-theme^='matrix'] {
   --font-sans: var(--font-matrix);
-}
-
-[data-theme^='matrix'] body::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: 50;
-  pointer-events: none;
-  background: repeating-linear-gradient(to bottom, var(--scanline) 0 1px, transparent 1px 3px);
 }
