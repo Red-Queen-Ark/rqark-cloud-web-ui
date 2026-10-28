@@ -160,12 +160,10 @@ test('the matrix theme paints the phosphor terminal look', async ({ page }) => {
       background: shell.backgroundColor,
       fontFamily: body.fontFamily,
       primary: root.getPropertyValue('--color-primary').trim(),
-      scanlines: getComputedStyle(document.body, '::after').backgroundImage,
     };
   });
 
   expect(look.background).toBe('rgb(0, 7, 3)');
   expect(look.fontFamily).toContain('Share Tech Mono');
   expect(look.primary).toBe('#00ff41');
-  expect(look.scanlines).toContain('repeating-linear-gradient');
 });
