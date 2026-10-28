@@ -1,15 +1,39 @@
 import * as api from '@/api';
+import * as asr from '@/api-client/asr';
 import { i18n } from '@/i18n';
 import type { ChatStatus } from '@/config/chatStatus';
 import { resetSopList } from '@/composables/useSopList';
-import { mount } from '@vue/test-utils';
-import { beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
+import { flushPromises, mount } from '@vue/test-utils';
+import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import { nextTick } from 'vue';
 import ChatInputArea from './ChatInputArea.vue';
 
 vi.mock('@/api', () => ({
   getSops: vi.fn(),
 }));
+
+vi.mock('@/api-client/asr', async () => {
+  const actual = await vi.importActual<typeof import('@/api-client/asr')>('@/api-client/asr');
+  return { ...actual, transcribeAudio: vi.fn() };
+});
+
+class FakeMediaRecorder {
+  public static isTypeSupported = (type: string) => type === 'audio/webm;codecs=opus';
+  public state: 'inactive' | 'recording' = 'inactive';
+  public mimeType = 'audio/webm;codecs=opus';
+  public ondataavailable: ((event: { data: Blob }) => void) | null = null;
+  public onstop: (() => void) | null = null;
+
+  public start() {
+    this.state = 'recording';
+  }
+
+  public stop() {
+    this.state = 'inactive';
+    this.ondataavailable?.({ data: new Blob(['audio'], { type: this.mimeType }) });
+    this.onstop?.();
+  }
+}
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -316,5 +340,65 @@ describe('ChatInputArea slash panel', () => {
     await typeInto(wrapper, '/trip-itinerary 大阪');
 
     expect(wrapper.find('[data-testid="slash-panel"]').exists()).toBe(false);
+  });
+});
+
+describe('ChatInputArea voice input', () => {
+  beforeEach(() => {
+    vi.stubGlobal('MediaRecorder', FakeMediaRecorder);
+    Object.defineProperty(navigator, 'mediaDevices', {
+      value: { getUserMedia: vi.fn().mockResolvedValue({ getTracks: () => [{ stop: vi.fn() }] }) },
+      configurable: true,
+    });
+    (asr.transcribeAudio as Mock).mockResolvedValue({ text: '你好世界', duration_ms: 900, elapsed_ms: 300 });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    Reflect.deleteProperty(navigator, 'mediaDevices');
+  });
+
+  it('hides the mic where the browser cannot record', () => {
+    Reflect.deleteProperty(navigator, 'mediaDevices');
+
+    expect(mountArea().find('[data-testid="chat-mic"]').exists()).toBe(false);
+  });
+
+  it('drops the transcript into the editor and enables send', async () => {
+    const wrapper = mountArea();
+
+    await wrapper.get('[data-testid="chat-mic"]').trigger('click');
+    await flushPromises();
+    await wrapper.get('[data-testid="chat-mic"]').trigger('click');
+    await flushPromises();
+
+    expect(wrapper.get('[data-testid="chat-input"]').element.textContent).toBe('你好世界');
+    expect(wrapper.get('[data-testid="chat-send"]').attributes('disabled')).toBeUndefined();
+  });
+
+  it('appends the transcript after what the user already typed', async () => {
+    const wrapper = mountArea();
+    const input = wrapper.get('[data-testid="chat-input"]');
+    input.element.textContent = '幫我';
+    await input.trigger('input');
+
+    await wrapper.get('[data-testid="chat-mic"]').trigger('click');
+    await flushPromises();
+    await wrapper.get('[data-testid="chat-mic"]').trigger('click');
+    await flushPromises();
+
+    expect(input.element.textContent).toBe('幫我 你好世界');
+  });
+
+  it('shows why a transcription failed', async () => {
+    (asr.transcribeAudio as Mock).mockRejectedValue(new asr.AsrApiError(429, 'ASR_BUSY', 'busy'));
+    const wrapper = mountArea();
+
+    await wrapper.get('[data-testid="chat-mic"]').trigger('click');
+    await flushPromises();
+    await wrapper.get('[data-testid="chat-mic"]').trigger('click');
+    await flushPromises();
+
+    expect(wrapper.get('[data-testid="chat-mic-error"]').text()).toBe('The transcriber is busy, try again shortly');
   });
 });

@@ -43,7 +43,23 @@
             <option v-for="(a, i) in agents" :key="i" :value="a">{{ a }}</option>
           </select>
         </div>
-        <div class="ml-auto">
+        <div v-if="micErrorKey" data-testid="chat-mic-error" class="text-xs text-error truncate max-w-40" :title="t(micErrorKey)">{{ t(micErrorKey) }}</div>
+        <div class="ml-auto flex items-center gap-1.5">
+          <button
+            v-if="!streaming && micAvailable"
+            id="chat-input-mic-btn"
+            data-testid="chat-mic"
+            class="btn btn-sm btn-square"
+            :class="isRecording ? 'btn-error' : 'btn-ghost'"
+            :disabled="isTranscribing"
+            :title="micLabel"
+            :aria-label="micLabel"
+            :aria-pressed="isRecording"
+            @click="toggleRecording"
+          >
+            <span v-if="isTranscribing" class="loading loading-spinner loading-xs"></span>
+            <MicIcon v-else class="h-5 w-5" />
+          </button>
           <button v-if="streaming" id="chat-input-stop-btn" data-testid="chat-stop" class="btn btn-error btn-sm btn-square" :title="t('chat.stop')" :aria-label="t('chat.stop')" @click="emit('stop')">
             <StopIcon class="h-5 w-5" />
           </button>
@@ -64,8 +80,10 @@ import { CHAT_STATUS, type ChatStatus } from '@/config/chatStatus';
 import { providerDisplayName } from '@/config/providers';
 import { slashEntries as buildSlashEntries, type SlashEntry } from '@/config/slashCommands';
 import { useSopList } from '@/composables/useSopList';
+import { canRecord, useRecorder } from '@/composables/useRecorder';
 import SlashCommandPanel from '@/components/Chat/SlashCommandPanel.vue';
 import BoltIcon from '@/components/svg/BoltIcon.vue';
+import MicIcon from '@/components/svg/MicIcon.vue';
 import SendIcon from '@/components/svg/SendIcon.vue';
 import StopIcon from '@/components/svg/StopIcon.vue';
 import UserIcon from '@/components/svg/UserIcon.vue';
@@ -101,6 +119,10 @@ const agentChosen = ref(false);
 
 const { sops, load: loadSops } = useSopList();
 watch(sops, () => refreshSlash());
+
+const micAvailable = canRecord();
+const { errorKey: micErrorKey, isRecording, isTranscribing, toggle: toggleRecording } = useRecorder(insertTranscript);
+const micLabel = computed(() => t(isRecording.value ? 'chat.micStop' : isTranscribing.value ? 'chat.micTranscribing' : 'chat.micStart'));
 /** The panel's rows; empty while it is closed, which is what hides it. */
 const slashEntries = ref<SlashEntry[]>([]);
 const slashIndex = ref(0);
@@ -289,6 +311,24 @@ function handlePaste(e: ClipboardEvent) {
     range.collapse(false);
   });
   handleInput();
+}
+
+function insertTranscript(text: string) {
+  const el = inputRef.value;
+  if (!el) {
+    return;
+  }
+  const existing = readText(el);
+  el.textContent = existing ? `${existing} ${text}` : text;
+  const range = document.createRange();
+  range.selectNodeContents(el);
+  range.collapse(false);
+  const selection = window.getSelection();
+  selection?.removeAllRanges();
+  selection?.addRange(range);
+  hasContent.value = true;
+  refreshSlash();
+  el.focus();
 }
 
 function submit() {
