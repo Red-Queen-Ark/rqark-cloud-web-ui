@@ -141,3 +141,31 @@ test('the header switcher offers all three modes', async ({ page }) => {
   await expect.poll(() => page.evaluate(() => document.documentElement.dataset.theme)).toBe('base-dark');
   await expect(page.locator('#theme-mode-system')).toHaveClass(/active/);
 });
+
+test('the matrix theme paints the phosphor terminal look', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await mockBackend(page, { session: boss });
+  await seedSession(page);
+  await page.goto('/en/settings');
+  await waitForShellStyles(page);
+
+  await page.selectOption('#settings-theme', 'matrix');
+  await expect.poll(() => page.evaluate(() => document.documentElement.dataset.theme)).toBe('matrix-dark');
+
+  const look = await page.evaluate(() => {
+    const shell = getComputedStyle(document.querySelector('main') as HTMLElement);
+    const body = getComputedStyle(document.body);
+    const root = getComputedStyle(document.documentElement);
+    return {
+      background: shell.backgroundColor,
+      fontFamily: body.fontFamily,
+      primary: root.getPropertyValue('--color-primary').trim(),
+      scanlines: getComputedStyle(document.body, '::after').backgroundImage,
+    };
+  });
+
+  expect(look.background).toBe('rgb(0, 7, 3)');
+  expect(look.fontFamily).toContain('Share Tech Mono');
+  expect(look.primary).toBe('#00ff41');
+  expect(look.scanlines).toContain('repeating-linear-gradient');
+});

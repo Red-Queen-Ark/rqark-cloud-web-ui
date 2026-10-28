@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 
-export type ThemeFamily = 'base' | 'gqs' | 'redqueen' | 'eva';
+export type ThemeFamily = 'base' | 'gqs' | 'redqueen' | 'eva' | 'matrix';
 /** `system` is not a theme of its own: it defers to the OS `prefers-color-scheme`. */
 export type ThemeMode = 'light' | 'dark' | 'system';
 /** The two variants every family ships, i.e. what `system` resolves to. */
@@ -11,6 +11,7 @@ export const THEME_FAMILIES: { value: ThemeFamily; label: string }[] = [
   { value: 'gqs', label: 'GQS Navy' },
   { value: 'redqueen', label: 'Red Queen' },
   { value: 'eva', label: 'EVA' },
+  { value: 'matrix', label: 'Matrix' },
 ];
 
 /** The selectable modes, in the order they are offered. */
