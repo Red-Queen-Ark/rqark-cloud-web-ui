@@ -24,6 +24,8 @@
         </div>
       </div>
 
+      <div v-if="micErrorKey" data-testid="chat-mic-error" class="px-3 pb-1.5 text-xs text-error" role="status">{{ t(micErrorKey) }}</div>
+
       <div class="flex items-center gap-2 px-3 pb-2 pt-1.5 border-t border-base-300/50 bg-base-300/30 rounded-b-box">
         <div v-if="statusClass" data-testid="chat-status" :class="['status', statusClass]" :aria-label="statusLabel" :title="statusLabel"></div>
         <div class="flex items-center gap-1 text-xs text-base-content/70">
@@ -43,7 +45,6 @@
             <option v-for="(a, i) in agents" :key="i" :value="a">{{ a }}</option>
           </select>
         </div>
-        <div v-if="micErrorKey" data-testid="chat-mic-error" class="text-xs text-error truncate max-w-40" :title="t(micErrorKey)">{{ t(micErrorKey) }}</div>
         <div class="ml-auto flex items-center gap-1.5">
           <button
             v-if="!streaming && micAvailable"
