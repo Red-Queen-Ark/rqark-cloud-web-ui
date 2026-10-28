@@ -5,7 +5,7 @@ import tsParser from '@typescript-eslint/parser';
 
 export default [
   {
-    ignores: ['dist/', 'node_modules/', 'src/api/'],
+    ignores: ['dist/', 'node_modules/', 'public/', 'src/api/'],
   },
 
   // TypeScript strictest configs

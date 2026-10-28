@@ -1,5 +1,8 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
+import { fileURLToPath } from 'node:url';
 import { boss, mockBackend, seedSession } from './support/mock-backend';
+
+const tone = fileURLToPath(new URL('./fixtures/voice-tone.wav', import.meta.url));
 
 const session = {
   id: 'eeeeeeee-1111-4111-8111-eeeeeeeeeeee',
@@ -9,47 +12,39 @@ const session = {
 };
 
 const agent = { id: 'agent-1', name: 'researcher', description: '', created_at: '2026-01-01T00:00:00Z' };
-const provider = { id: 'provider-1', name: 'openai-with-a-long-model-name', model_name: 'gpt-5-mini-with-a-long-name', created_at: '2026-01-01T00:00:00Z' };
+const provider = { id: 'provider-1', name: 'openai', model_name: 'gpt-5-mini-with-a-long-name', created_at: '2026-01-01T00:00:00Z' };
 
-test.use({ viewport: { width: 320, height: 568 } });
+test.use({
+  viewport: { width: 320, height: 568 },
+  launchOptions: {
+    args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream', `--use-file-for-fake-audio-capture=${tone}`],
+  },
+});
 
-async function openChat(page: import('@playwright/test').Page) {
-  await page.addInitScript(() => {
-    Object.defineProperty(navigator, 'mediaDevices', {
-      value: { getUserMedia: () => Promise.resolve({ getTracks: () => [] }) },
-      configurable: true,
-    });
-    class StubRecorder {
-      public static isTypeSupported = () => true;
-      public state = 'inactive';
-      public mimeType = 'audio/webm';
-      public ondataavailable: ((event: { data: Blob }) => void) | null = null;
-      public onstop: (() => void) | null = null;
-      public start() {
-        this.state = 'recording';
-      }
-      public stop() {
-        this.state = 'inactive';
-        this.ondataavailable?.({ data: new Blob(['audio'], { type: 'audio/webm' }) });
-        this.onstop?.();
-      }
-    }
-    Object.defineProperty(window, 'MediaRecorder', { value: StubRecorder, configurable: true });
+type VoiceSocket = Parameters<Parameters<Page['routeWebSocket']>[1]>[0];
+
+async function openChat(page: Page, ready: Record<string, unknown> = {}): Promise<() => VoiceSocket | undefined> {
+  let socket: VoiceSocket | undefined;
+  await page.routeWebSocket(/\/agent-api\/voice\/ws/, (ws) => {
+    socket = ws;
+    ws.send(JSON.stringify({ type: 'ready', sample_rate: 16000, format: 'pcm_s16le', channels: 1, wake_word: true, vad: true, ...ready }));
   });
-
   await mockBackend(page, { session: boss, sessions: [session], agents: [agent], providers: [provider] });
   await seedSession(page);
   await page.goto(`/en/chat/${session.id}`);
   await expect(page.getByTestId('chat-page')).toBeAttached();
+  return () => socket;
 }
 
-test('keeps the mic button inside a narrow toolbar', async ({ page }) => {
+test('keeps both voice buttons inside a narrow toolbar', async ({ page }) => {
   await openChat(page);
 
   const fits = await page.evaluate(() => {
     const area = document.querySelector('#chat-input-area') as HTMLElement;
+    const voice = document.querySelector('[data-testid="chat-voice"]') as HTMLElement;
     const mic = document.querySelector('[data-testid="chat-mic"]') as HTMLElement;
     return {
+      voiceRight: voice.getBoundingClientRect().right,
       micRight: mic.getBoundingClientRect().right,
       areaRight: area.getBoundingClientRect().right,
       docScroll: document.documentElement.scrollWidth,
@@ -57,19 +52,19 @@ test('keeps the mic button inside a narrow toolbar', async ({ page }) => {
     };
   });
 
-  expect(await page.getByTestId('chat-mic').isVisible()).toBe(true);
+  expect(await page.getByTestId('chat-voice').isVisible()).toBe(true);
+  expect(fits.voiceRight).toBeLessThanOrEqual(fits.areaRight);
   expect(fits.micRight).toBeLessThanOrEqual(fits.areaRight);
   expect(fits.docScroll).toBeLessThanOrEqual(fits.winWidth);
 });
 
-test('reads a transcription error across the full width when the screen is narrow', async ({ page }) => {
-  await openChat(page);
-  await page.route('**/agent-api/asr', (route) => route.fulfill({ status: 429, contentType: 'application/json', body: JSON.stringify({ error: { code: 'ASR_BUSY', message: 'busy' } }) }));
+test('reads a server error across the full width when the screen is narrow', async ({ page }) => {
+  const socket = await openChat(page);
 
   const mic = page.getByTestId('chat-mic');
   await mic.click();
   await expect(mic).toHaveAttribute('aria-pressed', 'true');
-  await mic.click();
+  socket()?.send(JSON.stringify({ type: 'error', error: { code: 'ASR_BUSY', message: 'busy' } }));
 
   const error = page.getByTestId('chat-mic-error');
   await expect(error).toBeVisible();

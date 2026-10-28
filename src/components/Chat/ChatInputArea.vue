@@ -45,9 +45,23 @@
             <option v-for="(a, i) in agents" :key="i" :value="a">{{ a }}</option>
           </select>
         </div>
-        <div class="ml-auto flex items-center gap-1.5">
+        <div class="ml-auto flex items-center gap-1">
           <button
-            v-if="!streaming && micAvailable"
+            v-if="micAvailable"
+            id="chat-input-voice-btn"
+            data-testid="chat-voice"
+            class="btn btn-sm btn-square"
+            :class="voiceOn ? 'btn-secondary' : 'btn-ghost'"
+            :title="voiceLabel"
+            :aria-label="voiceLabel"
+            :aria-pressed="voiceOn"
+            @click="toggleVoice"
+          >
+            <span v-if="voiceConnecting" class="loading loading-spinner loading-xs"></span>
+            <WaveformIcon v-else class="h-5 w-5" :class="voiceListening ? 'animate-pulse' : ''" />
+          </button>
+          <button
+            v-if="!streaming && micAvailable && !voiceOn"
             id="chat-input-mic-btn"
             data-testid="chat-mic"
             class="btn btn-sm btn-square"
@@ -82,11 +96,13 @@ import { providerDisplayName } from '@/config/providers';
 import { slashEntries as buildSlashEntries, type SlashEntry } from '@/config/slashCommands';
 import { useSopList } from '@/composables/useSopList';
 import { canRecord, useRecorder } from '@/composables/useRecorder';
+import { canStream, useVoiceStream } from '@/composables/useVoiceStream';
 import SlashCommandPanel from '@/components/Chat/SlashCommandPanel.vue';
 import BoltIcon from '@/components/svg/BoltIcon.vue';
 import MicIcon from '@/components/svg/MicIcon.vue';
 import SendIcon from '@/components/svg/SendIcon.vue';
 import StopIcon from '@/components/svg/StopIcon.vue';
+import WaveformIcon from '@/components/svg/WaveformIcon.vue';
 import UserIcon from '@/components/svg/UserIcon.vue';
 
 const props = defineProps<{
@@ -121,9 +137,43 @@ const agentChosen = ref(false);
 const { sops, load: loadSops } = useSopList();
 watch(sops, () => refreshSlash());
 
-const micAvailable = canRecord();
-const { errorKey: micErrorKey, isRecording, isTranscribing, toggle: toggleRecording } = useRecorder(insertTranscript);
-const micLabel = computed(() => t(isRecording.value ? 'chat.micStop' : isTranscribing.value ? 'chat.micTranscribing' : 'chat.micStart'));
+// The streaming path lets the server frame the utterance with its own VAD and hands
+// back a transcript per utterance while the mic stays open. Browsers that cannot run an
+// audio worklet fall back to recording one clip and uploading it.
+const micStreams = canStream();
+const micAvailable = micStreams || canRecord();
+const voice = useVoiceStream((text, _truncated, mode) => (mode === 'wake' ? submitTranscript(text) : insertTranscript(text)));
+const recorder = useRecorder(insertTranscript);
+const micErrorKey = computed(() => (micStreams ? voice.errorKey.value : recorder.errorKey.value));
+const isRecording = computed(() => (micStreams ? voice.isListening.value : recorder.isRecording.value));
+const isTranscribing = computed(() => (micStreams ? voice.isBusy.value : recorder.isTranscribing.value));
+const micLabel = computed(() => {
+  if (isRecording.value) {
+    return t('chat.micStop');
+  }
+  if (isTranscribing.value) {
+    return t(micStreams && voice.state.value === 'stopping' ? 'chat.micTranscribing' : 'chat.micConnecting');
+  }
+  return t('chat.micStart');
+});
+
+const voiceOn = computed(() => voice.mode.value === 'wake' && voice.isOn.value);
+const voiceConnecting = computed(() => voiceOn.value && voice.state.value === 'connecting');
+const voiceListening = computed(() => voice.isListening.value);
+const voiceLabel = computed(() => {
+  if (!voiceOn.value) {
+    return t('chat.voiceStart');
+  }
+  return t(voiceListening.value ? 'chat.voiceListening' : 'chat.voiceArmed');
+});
+
+function toggleVoice() {
+  void voice.toggleWake();
+}
+
+function toggleRecording() {
+  void (micStreams ? voice.toggle() : recorder.toggle());
+}
 /** The panel's rows; empty while it is closed, which is what hides it. */
 const slashEntries = ref<SlashEntry[]>([]);
 const slashIndex = ref(0);
@@ -330,6 +380,17 @@ function insertTranscript(text: string) {
   hasContent.value = true;
   refreshSlash();
   el.focus();
+}
+
+function submitTranscript(text: string) {
+  if (!inputRef.value) {
+    return;
+  }
+  inputRef.value.textContent = text;
+  hasContent.value = true;
+  closeSlash();
+  submit();
+  clear();
 }
 
 function submit() {

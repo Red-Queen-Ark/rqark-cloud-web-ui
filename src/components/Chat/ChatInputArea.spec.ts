@@ -3,7 +3,9 @@ import * as asr from '@/api-client/asr';
 import { i18n } from '@/i18n';
 import type { ChatStatus } from '@/config/chatStatus';
 import { resetSopList } from '@/composables/useSopList';
+import { useAuthStore } from '@/stores/authStore';
 import { flushPromises, mount } from '@vue/test-utils';
+import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import { nextTick } from 'vue';
 import ChatInputArea from './ChatInputArea.vue';
@@ -400,5 +402,113 @@ describe('ChatInputArea voice input', () => {
     await flushPromises();
 
     expect(wrapper.get('[data-testid="chat-mic-error"]').text()).toBe('The transcriber is busy, try again shortly');
+  });
+});
+
+describe('ChatInputArea voice streaming', () => {
+  class Socket {
+    public static OPEN = 1;
+    public static instances: Socket[] = [];
+    public url: string;
+    public readyState = Socket.OPEN;
+    public sent: unknown[] = [];
+    public onmessage: ((event: { data: string }) => void) | null = null;
+    public onclose: ((event: { code: number }) => void) | null = null;
+    public onerror: (() => void) | null = null;
+
+    public constructor(url: string) {
+      this.url = url;
+      Socket.instances.push(this);
+    }
+
+    public send(data: unknown) {
+      this.sent.push(data);
+    }
+
+    public close() {
+      this.readyState = 3;
+    }
+  }
+
+  class Context {
+    public sampleRate = 48000;
+    public destination = {};
+    public audioWorklet = { addModule: vi.fn().mockResolvedValue(undefined) };
+    public createMediaStreamSource() {
+      return { connect: vi.fn(), disconnect: vi.fn() };
+    }
+    public createGain() {
+      return { gain: { value: 1 }, connect: vi.fn(), disconnect: vi.fn() };
+    }
+    public close() {
+      return Promise.resolve();
+    }
+  }
+
+  class WorkletNode {
+    public port: { onmessage: ((event: { data: Float32Array }) => void) | null } = { onmessage: null };
+    public connect() {
+      return undefined;
+    }
+    public disconnect() {
+      return undefined;
+    }
+  }
+
+  const track = { stop: vi.fn() };
+
+  beforeEach(() => {
+    Socket.instances = [];
+    vi.stubGlobal('WebSocket', Socket);
+    vi.stubGlobal('AudioContext', Context);
+    vi.stubGlobal('AudioWorkletNode', WorkletNode);
+    Object.defineProperty(navigator, 'mediaDevices', { value: { getUserMedia: vi.fn().mockResolvedValue({ getTracks: () => [track] }) }, configurable: true });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    Reflect.deleteProperty(navigator, 'mediaDevices');
+  });
+
+  function mountWithPinia() {
+    const pinia = createPinia();
+    setActivePinia(pinia);
+    useAuthStore().setTokens('access-token', 'refresh-token');
+    return mount(ChatInputArea, {
+      props: { agents: ['researcher'], providers: [{ name: 'openai', model_name: 'gpt-5' }] },
+      global: { plugins: [i18n, pinia] },
+    });
+  }
+
+  it('opens the voice socket on the first press', async () => {
+    const wrapper = mountWithPinia();
+
+    await wrapper.get('[data-testid="chat-mic"]').trigger('click');
+    await flushPromises();
+
+    expect(Socket.instances.map((socket) => new URL(socket.url).pathname)).toEqual(['/agent-api/voice/ws']);
+  });
+
+  it('marks the button as pressed once the stream is live', async () => {
+    const wrapper = mountWithPinia();
+
+    await wrapper.get('[data-testid="chat-mic"]').trigger('click');
+    await flushPromises();
+    Socket.instances[0].onmessage?.({ data: JSON.stringify({ type: 'ready' }) });
+    await flushPromises();
+
+    expect(wrapper.get('[data-testid="chat-mic"]').attributes('aria-pressed')).toBe('true');
+  });
+
+  it('asks the server to close the utterance on the second press', async () => {
+    const wrapper = mountWithPinia();
+
+    await wrapper.get('[data-testid="chat-mic"]').trigger('click');
+    await flushPromises();
+    Socket.instances[0].onmessage?.({ data: JSON.stringify({ type: 'ready' }) });
+    await flushPromises();
+    await wrapper.get('[data-testid="chat-mic"]').trigger('click');
+
+    expect(Socket.instances[0].sent).toEqual([JSON.stringify({ type: 'stop' })]);
   });
 });
