@@ -9,6 +9,11 @@
   --color-n3h-blue-2: #a9cfff;
   --color-n3h-blue-1: #d9eaff;
   --font-n3h: 'SairaStencilOne', serif;
+  --font-matrix: 'Share Tech Mono', 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --color-matrix-green: #00ff41;
+  --color-matrix-dim: #00702a;
+  --color-matrix-glow: #9dffbb;
+  --scanline: rgb(0 255 65 / 0.07);
   --font-eva: '裝甲明朝體', serif;
   --font-zen: 'ZenAntique', serif;
   --color-eva-gold: #f5c242;
@@ -320,4 +325,92 @@
   --border: 1px;
   --depth: 0;
   --noise: 0;
+}
+
+/* ========================
+   Matrix (Phosphor Green Terminal)
+   ======================== */
+@plugin "daisyui/theme" {
+  name: 'matrix-light';
+  default: false;
+  prefersdark: false;
+  color-scheme: light;
+  --color-base-100: #f1fff5;
+  --color-base-200: #e3fbec;
+  --color-base-300: #cdf3da;
+  --color-base-content: #00381a;
+  --color-primary: #007a31;
+  --color-primary-content: #f1fff5;
+  --color-secondary: #00a344;
+  --color-secondary-content: #f1fff5;
+  --color-accent: #00c853;
+  --color-accent-content: #00220f;
+  --color-neutral: #00301a;
+  --color-neutral-content: #b8ffd0;
+  --color-info: #06936b;
+  --color-info-content: #f1fff5;
+  --color-success: #007a31;
+  --color-success-content: #f1fff5;
+  --color-warning: #8a6a00;
+  --color-warning-content: #f1fff5;
+  --color-error: #b3261e;
+  --color-error-content: #f1fff5;
+  --radius-selector: 0;
+  --radius-field: 0;
+  --radius-box: 0;
+  --size-selector: 0.25rem;
+  --size-field: 0.21875rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 1;
+  --scanline: rgb(0 90 34 / 0.06);
+}
+
+@plugin "daisyui/theme" {
+  name: 'matrix-dark';
+  default: false;
+  prefersdark: true;
+  color-scheme: dark;
+  --color-base-100: #000703;
+  --color-base-200: #00120a;
+  --color-base-300: #00220f;
+  --color-base-content: #a6ffc4;
+  --color-primary: #00ff41;
+  --color-primary-content: #001a08;
+  --color-secondary: #00702a;
+  --color-secondary-content: #d6ffe4;
+  --color-accent: #3bff8f;
+  --color-accent-content: #001a08;
+  --color-neutral: #012412;
+  --color-neutral-content: #a6ffc4;
+  --color-info: #3ddc97;
+  --color-info-content: #001a08;
+  --color-success: #00ff41;
+  --color-success-content: #001a08;
+  --color-warning: #ffd23f;
+  --color-warning-content: #1a1400;
+  --color-error: #ff4d5e;
+  --color-error-content: #1a0004;
+  --radius-selector: 0;
+  --radius-field: 0;
+  --radius-box: 0;
+  --size-selector: 0.25rem;
+  --size-field: 0.21875rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 1;
+  --scanline: rgb(0 255 65 / 0.08);
+}
+
+[data-theme^='matrix'] {
+  --font-sans: var(--font-matrix);
+}
+
+[data-theme^='matrix'] body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+  background: repeating-linear-gradient(to bottom, var(--scanline) 0 1px, transparent 1px 3px);
 }
