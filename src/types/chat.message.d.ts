@@ -88,6 +88,8 @@ interface ChatEnvelope<T = ChatPayload> {
   agent_id: string;
   path: string[];
   payload: T;
+  /** Per-room monotonic stamp from the replay log; absent on frames that were never recorded. */
+  seq?: number;
 }
 
 type ChatServerMessage = ChatEnvelope;

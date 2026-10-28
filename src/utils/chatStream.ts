@@ -47,6 +47,10 @@ function applyChunk(stream: ChatStream, agentId: string, chunk: ChatChunk): Chat
       return withDraft(stream, agentId, (message) => ({ ...message, tool_calls: chunk.content }));
     case 'error':
       return stream;
+    default:
+      // A chunk type this build does not know yet must not wipe the stream: an
+      // undefined return would replace it and every later frame would throw.
+      return stream;
   }
 }
 
