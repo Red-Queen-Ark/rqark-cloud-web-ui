@@ -321,6 +321,16 @@ describe('useVoiceStream wake mode', () => {
     expect(voice.wakeScore.value).toBe(0.91);
   });
 
+  it('remembers which wake word fired', async () => {
+    const voice = await armed();
+    const socket = FakeSocket.instances.at(-1) as FakeSocket;
+
+    socket.deliver({ type: 'wake', score: 0.88, name: 'diana' });
+    await flushPromises();
+
+    expect(voice.wakeName.value).toBe('diana');
+  });
+
   it('returns to armed after the utterance is transcribed', async () => {
     const voice = await armed();
     const socket = FakeSocket.instances.at(-1) as FakeSocket;
@@ -355,6 +365,13 @@ describe('useVoiceStream wake mode', () => {
 
     expect(voice.errorKey.value).toBe('chat.voiceNoWakeWord');
     expect(voice.state.value).toBe('armed');
+  });
+
+  it('tells the server it wants the always-on mode before any audio', async () => {
+    await armed();
+    const socket = FakeSocket.instances.at(-1) as FakeSocket;
+
+    expect(socket.sent[0]).toBe(JSON.stringify({ type: 'mode', value: 'wake' }));
   });
 
   it('turns the always-on mode off when toggled again', async () => {

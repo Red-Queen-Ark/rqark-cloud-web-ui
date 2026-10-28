@@ -16,6 +16,7 @@ export interface VoiceReadyEvent {
   channels: number;
   max_seconds: number;
   wake_word: boolean;
+  wake_models?: string[];
   vad: boolean;
 }
 
@@ -30,6 +31,7 @@ export interface VoiceFinalEvent {
 export interface VoiceWakeEvent {
   type: 'wake';
   score: number;
+  name?: string;
 }
 
 export interface VoiceErrorEvent {
@@ -65,6 +67,8 @@ export function voiceErrorKey(code: string): string {
     case 'ASR_UNAVAILABLE':
     case 'VAD_UNAVAILABLE':
       return 'chat.micUnavailable';
+    case 'VOICE_WAKE_TIMEOUT':
+      return 'chat.voiceWakeTimeout';
     case 'AUDIO_EMPTY':
       return 'chat.micEmpty';
     default:

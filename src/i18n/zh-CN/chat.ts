@@ -55,5 +55,6 @@ export const chat = {
   voiceArmed: '等待唤醒词 — 点击关闭',
   voiceListening: '正在聆听 — 请说',
   voiceNoWakeWord: '未设置唤醒词，说完自动收句',
+  voiceWakeTimeout: '叫完没说话，再叫一次',
   micFailed: '无法转写录音',
 };

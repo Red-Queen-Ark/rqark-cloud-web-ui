@@ -55,5 +55,6 @@ export const chat = {
   voiceArmed: '等緊喚醒詞 — 撳一下關閉',
   voiceListening: '聽緊 — 請講',
   voiceNoWakeWord: '未設喚醒詞，講完自動收句',
+  voiceWakeTimeout: '叫完冇講嘢，再叫一次',
   micFailed: '轉唔到文字',
 };

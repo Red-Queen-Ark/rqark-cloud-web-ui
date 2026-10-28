@@ -55,5 +55,6 @@ export const chat = {
   voiceArmed: 'Listening for the wake word — click to stop',
   voiceListening: 'Listening — speak now',
   voiceNoWakeWord: 'No wake word configured, turns end when you stop speaking',
+  voiceWakeTimeout: 'Nothing followed the wake word, say it again',
   micFailed: 'Could not transcribe the recording',
 };

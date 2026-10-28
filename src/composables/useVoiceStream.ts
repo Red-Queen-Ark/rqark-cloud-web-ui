@@ -33,6 +33,7 @@ export function useVoiceStream(onTranscript: (text: string, truncated: boolean, 
   const mode = ref<VoiceStreamMode>('push');
   const wakeWord = ref<boolean | null>(null);
   const wakeScore = ref(0);
+  const wakeName = ref('');
   const woke = ref(false);
 
   const isListening = computed(() => state.value === 'listening');
@@ -120,6 +121,7 @@ export function useVoiceStream(onTranscript: (text: string, truncated: boolean, 
         return;
       }
       wakeScore.value = payload.score;
+      wakeName.value = payload.name ?? '';
       woke.value = true;
       errorKey.value = null;
       state.value = 'listening';
@@ -258,6 +260,10 @@ export function useVoiceStream(onTranscript: (text: string, truncated: boolean, 
       return;
     }
 
+    if (mode.value === 'wake') {
+      socket.send(JSON.stringify({ type: 'mode', value: 'wake' }));
+    }
+
     try {
       await attachMicrophone(socket);
     } catch (error) {
@@ -324,5 +330,5 @@ export function useVoiceStream(onTranscript: (text: string, truncated: boolean, 
 
   onScopeDispose(teardown);
 
-  return { state, errorKey, mode, wakeWord, wakeScore, woke, isListening, isArmed, isBusy, isOn, start, stop, cancel, toggle, toggleWake, clearError };
+  return { state, errorKey, mode, wakeWord, wakeScore, wakeName, woke, isListening, isArmed, isBusy, isOn, start, stop, cancel, toggle, toggleWake, clearError };
 }
