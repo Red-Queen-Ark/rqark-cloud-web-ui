@@ -612,3 +612,25 @@ test('retries a rejected agent-cloud call with a refreshed token', async ({ page
   await expect.poll(() => authorizations.length).toBe(2);
   expect(authorizations).toEqual(['Bearer access-token-1', 'Bearer access-token-2']);
 });
+
+test.describe('bubble corners', () => {
+  test('the user bubble follows the radius of the active theme', async ({ page }) => {
+    await page.emulateMedia({ colorScheme: 'light' });
+    await openSeededChat(page, copyMessages);
+
+    const radius = () =>
+      page
+        .getByTestId('user-message')
+        .first()
+        .evaluate((node) => getComputedStyle(node).borderTopLeftRadius);
+
+    await expect.poll(radius).toBe('8px');
+
+    await page.goto('/en/settings');
+    await page.selectOption('#settings-theme', 'matrix');
+    await page.goto(`/en/chat/${first.id}`);
+    await expect(page.getByTestId('user-message').first()).toBeVisible();
+
+    await expect.poll(radius).toBe('0px');
+  });
+});
