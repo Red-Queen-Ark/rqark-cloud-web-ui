@@ -33,6 +33,7 @@ export function useVoiceStream(onTranscript: (text: string, truncated: boolean, 
   const mode = ref<VoiceStreamMode>('push');
   const wakeWord = ref<boolean | null>(null);
   const wakeScore = ref(0);
+  const woke = ref(false);
 
   const isListening = computed(() => state.value === 'listening');
   const isArmed = computed(() => state.value === 'armed');
@@ -94,6 +95,7 @@ export function useVoiceStream(onTranscript: (text: string, truncated: boolean, 
     releaseAudio();
     releaseSocket();
     mode.value = 'push';
+    woke.value = false;
     state.value = 'idle';
   }
 
@@ -118,11 +120,15 @@ export function useVoiceStream(onTranscript: (text: string, truncated: boolean, 
         return;
       }
       wakeScore.value = payload.score;
+      woke.value = true;
       errorKey.value = null;
       state.value = 'listening';
       return;
     }
     if (payload.type === 'final') {
+      if (mode.value === 'wake' && !woke.value) {
+        return;
+      }
       const text = payload.text.trim();
       if (text) {
         onTranscript(text, payload.truncated, mode.value);
@@ -131,6 +137,7 @@ export function useVoiceStream(onTranscript: (text: string, truncated: boolean, 
         errorKey.value = 'chat.micEmpty';
       }
       if (mode.value === 'wake') {
+        woke.value = false;
         state.value = 'armed';
         return;
       }
@@ -142,6 +149,7 @@ export function useVoiceStream(onTranscript: (text: string, truncated: boolean, 
     if (payload.type === 'error') {
       if (mode.value === 'wake' && state.value !== 'connecting') {
         errorKey.value = voiceErrorKey(payload.error.code);
+        woke.value = false;
         state.value = 'armed';
         return;
       }
@@ -257,6 +265,7 @@ export function useVoiceStream(onTranscript: (text: string, truncated: boolean, 
       return;
     }
     if (mode.value === 'wake') {
+      woke.value = false;
       state.value = 'armed';
       if (wakeWord.value === false) {
         errorKey.value = 'chat.voiceNoWakeWord';
@@ -315,5 +324,5 @@ export function useVoiceStream(onTranscript: (text: string, truncated: boolean, 
 
   onScopeDispose(teardown);
 
-  return { state, errorKey, mode, wakeWord, wakeScore, isListening, isArmed, isBusy, isOn, start, stop, cancel, toggle, toggleWake, clearError };
+  return { state, errorKey, mode, wakeWord, wakeScore, woke, isListening, isArmed, isBusy, isOn, start, stop, cancel, toggle, toggleWake, clearError };
 }

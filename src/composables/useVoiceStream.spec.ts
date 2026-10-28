@@ -376,3 +376,61 @@ describe('useVoiceStream wake mode', () => {
     expect(voice.state.value).toBe('listening');
   });
 });
+
+describe('useVoiceStream wake hold', () => {
+  async function armed() {
+    const voice = openStream();
+    const pending = voice.toggleWake();
+    await flushPromises();
+    FakeSocket.instances.at(-1)?.deliver({ type: 'ready', sample_rate: 16000, wake_word: true, vad: true });
+    await pending;
+    await flushPromises();
+    return voice;
+  }
+
+  it('drops a transcript that arrives before the wake word', async () => {
+    const voice = await armed();
+    const socket = FakeSocket.instances.at(-1) as FakeSocket;
+
+    socket.deliver({ type: 'final', text: 'Hey Wednesday', duration_ms: 900, elapsed_ms: 200, truncated: false });
+    await flushPromises();
+
+    expect(onTranscript).not.toHaveBeenCalled();
+    expect(voice.state.value).toBe('armed');
+  });
+
+  it('flags the button as listening only after the wake word', async () => {
+    const voice = await armed();
+    const socket = FakeSocket.instances.at(-1) as FakeSocket;
+
+    expect(voice.woke.value).toBe(false);
+    socket.deliver({ type: 'wake', score: 0.81 });
+    await flushPromises();
+    expect(voice.woke.value).toBe(true);
+    expect(voice.state.value).toBe('listening');
+  });
+
+  it('forgets the wake once the turn is done', async () => {
+    const voice = await armed();
+    const socket = FakeSocket.instances.at(-1) as FakeSocket;
+
+    socket.deliver({ type: 'wake', score: 0.81 });
+    socket.deliver({ type: 'final', text: '開燈', duration_ms: 800, elapsed_ms: 300, truncated: false });
+    await flushPromises();
+
+    expect(voice.woke.value).toBe(false);
+    expect(onTranscript).toHaveBeenCalledTimes(1);
+  });
+
+  it('ignores a stray transcript after the turn', async () => {
+    await armed();
+    const socket = FakeSocket.instances.at(-1) as FakeSocket;
+
+    socket.deliver({ type: 'wake', score: 0.81 });
+    socket.deliver({ type: 'final', text: '開燈', duration_ms: 800, elapsed_ms: 300, truncated: false });
+    socket.deliver({ type: 'final', text: '再開一次', duration_ms: 800, elapsed_ms: 300, truncated: false });
+    await flushPromises();
+
+    expect(onTranscript).toHaveBeenCalledTimes(1);
+  });
+});

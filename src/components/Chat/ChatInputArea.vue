@@ -46,17 +46,7 @@
           </select>
         </div>
         <div class="ml-auto flex items-center gap-1">
-          <button
-            v-if="micAvailable"
-            id="chat-input-voice-btn"
-            data-testid="chat-voice"
-            class="btn btn-sm btn-square"
-            :class="voiceOn ? 'btn-secondary' : 'btn-ghost'"
-            :title="voiceLabel"
-            :aria-label="voiceLabel"
-            :aria-pressed="voiceOn"
-            @click="toggleVoice"
-          >
+          <button v-if="micAvailable" id="chat-input-voice-btn" data-testid="chat-voice" class="btn btn-sm btn-square" :class="voiceClass" :title="voiceLabel" :aria-label="voiceLabel" :aria-pressed="voiceOn" @click="toggleVoice">
             <span v-if="voiceConnecting" class="loading loading-spinner loading-xs"></span>
             <WaveformIcon v-else class="h-5 w-5" :class="voiceListening ? 'animate-pulse' : ''" />
           </button>
@@ -160,6 +150,12 @@ const micLabel = computed(() => {
 const voiceOn = computed(() => voice.mode.value === 'wake' && voice.isOn.value);
 const voiceConnecting = computed(() => voiceOn.value && voice.state.value === 'connecting');
 const voiceListening = computed(() => voice.isListening.value);
+const voiceClass = computed(() => {
+  if (voiceListening.value) {
+    return 'btn-error';
+  }
+  return voiceOn.value ? 'btn-secondary' : 'btn-ghost';
+});
 const voiceLabel = computed(() => {
   if (!voiceOn.value) {
     return t('chat.voiceStart');

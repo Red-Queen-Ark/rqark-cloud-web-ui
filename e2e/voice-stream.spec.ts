@@ -119,10 +119,16 @@ test('wakes into voice mode on the wake word and sends the transcript', async ({
   await page.getByTestId('chat-voice').click();
   await expect(page.getByTestId('chat-voice')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByTestId('chat-voice')).toHaveAttribute('title', 'Listening for the wake word — click to stop');
+  await expect(page.getByTestId('chat-voice')).toHaveClass(/btn-secondary/);
   await expect(page.getByTestId('chat-mic')).toHaveCount(0);
+
+  socket?.send(JSON.stringify({ type: 'final', text: 'Hey Wednesday', duration_ms: 900, elapsed_ms: 200, truncated: false }));
+  await expect(page.getByTestId('chat-input')).toHaveText('');
+  await expect(page.getByTestId('chat-voice')).toHaveAttribute('aria-pressed', 'true');
 
   socket?.send(JSON.stringify({ type: 'wake', score: 0.93 }));
   await expect(page.getByTestId('chat-voice')).toHaveAttribute('title', 'Listening — speak now');
+  await expect(page.getByTestId('chat-voice')).toHaveClass(/btn-error/);
 
   socket?.send(JSON.stringify({ type: 'final', text: '幫我開張發票', duration_ms: 1200, elapsed_ms: 300, truncated: false }));
 
