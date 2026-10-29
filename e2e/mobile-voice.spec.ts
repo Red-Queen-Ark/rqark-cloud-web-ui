@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { fileURLToPath } from 'node:url';
-import { boss, mockBackend, seedSession } from './support/mock-backend';
+import { boss, mockBackend, mockSpeech, seedSession } from './support/mock-backend';
 
 const tone = fileURLToPath(new URL('./fixtures/voice-tone.wav', import.meta.url));
 
@@ -29,6 +29,7 @@ async function openChat(page: Page, ready: Record<string, unknown> = {}): Promis
     socket = ws;
     ws.send(JSON.stringify({ type: 'ready', sample_rate: 16000, format: 'pcm_s16le', channels: 1, wake_word: true, vad: true, ...ready }));
   });
+  await mockSpeech(page);
   await mockBackend(page, { session: boss, sessions: [session], agents: [agent], providers: [provider] });
   await seedSession(page);
   await page.goto(`/en/chat/${session.id}`);

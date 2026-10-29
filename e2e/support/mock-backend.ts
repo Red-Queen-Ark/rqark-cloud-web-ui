@@ -224,6 +224,19 @@ function json(route: Route, status: number, body: unknown) {
 }
 
 /**
+ * Answers the speech probe the chat input fires before it offers the microphone.
+ *
+ * The real agent cloud mounts /asr only when SPEECH_ENABLED is on, so an unmocked probe
+ * would hide the microphone in every run of a deployment that keeps it off.
+ */
+export async function mockSpeech(page_: Page, enabled = true): Promise<void> {
+  await page_.route(
+    (url) => url.pathname === '/agent-api/asr/health',
+    (route) => json(route, enabled ? 200 : 404, enabled ? { loaded: true } : { error: { code: 'NOT_FOUND' } }),
+  );
+}
+
+/**
  * Mocks the auth, user, group, agent, provider, API key and session endpoints in
  * memory. Routes are matched by pathname only: a glob like `**&#47;api&#47;**` would also
  * swallow Vite's own module URLs and break the page load.

@@ -83,6 +83,7 @@ import { CHAT_STATUS, type ChatStatus } from '@/config/chatStatus';
 import { providerDisplayName } from '@/config/providers';
 import { slashEntries as buildSlashEntries, type SlashEntry } from '@/config/slashCommands';
 import { useSopList } from '@/composables/useSopList';
+import { useSpeechAvailability } from '@/composables/useSpeechAvailability';
 import { canRecord, useRecorder } from '@/composables/useRecorder';
 import { canStream, useVoiceStream } from '@/composables/useVoiceStream';
 import { useAlertStore } from '@/stores/alertStore';
@@ -129,9 +130,12 @@ watch(sops, () => refreshSlash());
 
 // The streaming path lets the server frame the utterance with its own VAD and hands
 // back a transcript per utterance while the mic stays open. Browsers that cannot run an
-// audio worklet fall back to recording one clip and uploading it.
+// audio worklet fall back to recording one clip and uploading it. A server with the
+// speech routes switched off offers neither.
+const speech = useSpeechAvailability();
+void speech.load();
 const micStreams = canStream();
-const micAvailable = micStreams || canRecord();
+const micAvailable = computed(() => speech.available.value && (micStreams || canRecord()));
 const voice = useVoiceStream((text, _truncated, mode) => (mode === 'wake' ? submitTranscript(text) : insertTranscript(text)));
 const recorder = useRecorder(insertTranscript);
 const micErrorKey = computed(() => (micStreams ? voice.errorKey.value : recorder.errorKey.value));

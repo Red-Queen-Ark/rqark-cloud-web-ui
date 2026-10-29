@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { fileURLToPath } from 'node:url';
-import { boss, mockBackend, seedSession } from './support/mock-backend';
+import { boss, mockBackend, mockSpeech, seedSession } from './support/mock-backend';
 
 const session = {
   id: 'ffffffff-1111-4111-8111-ffffffffffff',
@@ -23,6 +23,7 @@ test.use({
 });
 
 test('streams microphone audio to the voice socket at the wire rate', async ({ page }) => {
+  await mockSpeech(page);
   await mockBackend(page, { session: boss, sessions: [session], agents: [agent], providers: [provider] });
   await seedSession(page);
 
@@ -54,6 +55,7 @@ test('streams microphone audio to the voice socket at the wire rate', async ({ p
 });
 
 test('drops the finished transcript into the editor', async ({ page }) => {
+  await mockSpeech(page);
   await mockBackend(page, { session: boss, sessions: [session], agents: [agent], providers: [provider] });
   await seedSession(page);
 
@@ -75,6 +77,7 @@ test('drops the finished transcript into the editor', async ({ page }) => {
 });
 
 test('shows the server error and drops the stream', async ({ page }) => {
+  await mockSpeech(page);
   await mockBackend(page, { session: boss, sessions: [session], agents: [agent], providers: [provider] });
   await seedSession(page);
 
@@ -96,6 +99,7 @@ test('shows the server error and drops the stream', async ({ page }) => {
 });
 
 test('wakes into voice mode on the wake word and sends the transcript', async ({ page }) => {
+  await mockSpeech(page);
   await mockBackend(page, { session: boss, sessions: [session], agents: [agent], providers: [provider] });
   await seedSession(page);
 
@@ -139,6 +143,7 @@ test('wakes into voice mode on the wake word and sends the transcript', async ({
 });
 
 test('shuts the wake mode off when the toggle is pressed again', async ({ page }) => {
+  await mockSpeech(page);
   await mockBackend(page, { session: boss, sessions: [session], agents: [agent], providers: [provider] });
   await seedSession(page);
 

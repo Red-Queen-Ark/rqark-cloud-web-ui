@@ -3,6 +3,7 @@ import * as asr from '@/api-client/asr';
 import { i18n } from '@/i18n';
 import type { ChatStatus } from '@/config/chatStatus';
 import { resetSopList } from '@/composables/useSopList';
+import { resetSpeechAvailability } from '@/composables/useSpeechAvailability';
 import { resetVoiceStream } from '@/composables/useVoiceStream';
 import { useAlertStore } from '@/stores/alertStore';
 import { useAuthStore } from '@/stores/authStore';
@@ -42,6 +43,8 @@ class FakeMediaRecorder {
 beforeEach(() => {
   vi.clearAllMocks();
   resetSopList();
+  resetSpeechAvailability();
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, status: 200 }));
   setActivePinia(createPinia());
   (api.getSops as Mock).mockResolvedValue({ data: { items: [{ slug: 'trip-itinerary', title: 'Trip itinerary' }] } });
 });
@@ -58,6 +61,13 @@ function mountArea(overrides: { agents?: string[]; initialAgent?: string; defaul
     },
     global: { plugins: [i18n] },
   });
+}
+
+/** A mounted input whose speech probe has already answered, as the network would. */
+async function mountReadyArea(overrides: Parameters<typeof mountArea>[0] = {}) {
+  const wrapper = mountArea(overrides);
+  await flushPromises();
+  return wrapper;
 }
 
 describe('ChatInputArea', () => {
@@ -363,14 +373,34 @@ describe('ChatInputArea voice input', () => {
     Reflect.deleteProperty(navigator, 'mediaDevices');
   });
 
-  it('hides the mic where the browser cannot record', () => {
+  it('hides the mic where the browser cannot record', async () => {
     Reflect.deleteProperty(navigator, 'mediaDevices');
 
-    expect(mountArea().find('[data-testid="chat-mic"]').exists()).toBe(false);
+    const wrapper = await mountReadyArea();
+
+    expect(wrapper.find('[data-testid="chat-mic"]').exists()).toBe(false);
+  });
+
+  it('hides both voice controls when the server switches speech off', async () => {
+    resetSpeechAvailability();
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 404 }));
+    const wrapper = await mountReadyArea();
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="chat-voice"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="chat-mic"]').exists()).toBe(false);
+  });
+
+  it('offers the voice controls once the server confirms speech is mounted', async () => {
+    const wrapper = await mountReadyArea();
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="chat-voice"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="chat-mic"]').exists()).toBe(true);
   });
 
   it('drops the transcript into the editor and enables send', async () => {
-    const wrapper = mountArea();
+    const wrapper = await mountReadyArea();
 
     await wrapper.get('[data-testid="chat-mic"]').trigger('click');
     await flushPromises();
@@ -382,7 +412,7 @@ describe('ChatInputArea voice input', () => {
   });
 
   it('appends the transcript after what the user already typed', async () => {
-    const wrapper = mountArea();
+    const wrapper = await mountReadyArea();
     const input = wrapper.get('[data-testid="chat-input"]');
     input.element.textContent = '幫我';
     await input.trigger('input');
@@ -397,7 +427,7 @@ describe('ChatInputArea voice input', () => {
 
   it('reports a transcription failure through the alert stack', async () => {
     (asr.transcribeAudio as Mock).mockRejectedValue(new asr.AsrApiError(429, 'ASR_BUSY', 'busy'));
-    const wrapper = mountArea();
+    const wrapper = await mountReadyArea();
 
     await wrapper.get('[data-testid="chat-mic"]').trigger('click');
     await flushPromises();
@@ -478,18 +508,20 @@ describe('ChatInputArea voice streaming', () => {
     Reflect.deleteProperty(navigator, 'mediaDevices');
   });
 
-  function mountWithPinia() {
+  async function mountWithPinia() {
     const pinia = createPinia();
     setActivePinia(pinia);
     useAuthStore().setTokens('access-token', 'refresh-token');
-    return mount(ChatInputArea, {
+    const wrapper = mount(ChatInputArea, {
       props: { agents: ['researcher'], providers: [{ name: 'openai', model_name: 'gpt-5' }] },
       global: { plugins: [i18n, pinia] },
     });
+    await flushPromises();
+    return wrapper;
   }
 
   it('opens the voice socket on the first press', async () => {
-    const wrapper = mountWithPinia();
+    const wrapper = await mountWithPinia();
 
     await wrapper.get('[data-testid="chat-mic"]').trigger('click');
     await flushPromises();
@@ -498,7 +530,7 @@ describe('ChatInputArea voice streaming', () => {
   });
 
   it('marks the button as pressed once the stream is live', async () => {
-    const wrapper = mountWithPinia();
+    const wrapper = await mountWithPinia();
 
     await wrapper.get('[data-testid="chat-mic"]').trigger('click');
     await flushPromises();
@@ -509,7 +541,7 @@ describe('ChatInputArea voice streaming', () => {
   });
 
   it('asks the server to close the utterance on the second press', async () => {
-    const wrapper = mountWithPinia();
+    const wrapper = await mountWithPinia();
 
     await wrapper.get('[data-testid="chat-mic"]').trigger('click');
     await flushPromises();
