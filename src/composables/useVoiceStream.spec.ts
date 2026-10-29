@@ -4,7 +4,7 @@ import { flushPromises } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import { effectScope, type EffectScope } from 'vue';
-import { useVoiceStream } from './useVoiceStream';
+import { resetVoiceStream, useVoiceStream } from './useVoiceStream';
 
 vi.mock('@/api-client/runtime', () => ({ refreshSession: vi.fn().mockResolvedValue(true) }));
 
@@ -127,6 +127,7 @@ async function started() {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  resetVoiceStream();
   stops.length = 0;
   stops.push(vi.fn());
   FakeSocket.instances = [];
@@ -142,6 +143,7 @@ beforeEach(() => {
 
 afterEach(() => {
   scope?.stop();
+  resetVoiceStream();
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
   Reflect.deleteProperty(navigator, 'mediaDevices');
@@ -273,10 +275,18 @@ describe('useVoiceStream', () => {
     expect(socket.readyState).toBe(FakeSocket.CLOSED);
   });
 
-  it('releases the microphone when the scope goes away', async () => {
+  it('keeps the microphone when the component goes away', async () => {
     await started();
 
     scope.stop();
+
+    expect(stops[0]).not.toHaveBeenCalled();
+  });
+
+  it('releases the microphone when the page goes away', async () => {
+    await started();
+
+    window.dispatchEvent(new Event('pagehide'));
 
     expect(stops[0]).toHaveBeenCalled();
   });
@@ -449,5 +459,71 @@ describe('useVoiceStream wake hold', () => {
     await flushPromises();
 
     expect(onTranscript).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('useVoiceStream persistence', () => {
+  it('hands the running session to the next component', async () => {
+    const { voice: first } = await started();
+    scope.stop();
+
+    const second = openStream();
+
+    expect(second.state.value).toBe('listening');
+    expect(second.isOn.value).toBe(true);
+    expect(first.state.value).toBe('listening');
+    expect(FakeSocket.instances).toHaveLength(1);
+  });
+
+  it('keeps the latest caller as the transcript handler', async () => {
+    const { socket } = await started();
+    const later = vi.fn();
+    scope.stop();
+    let rebound!: ReturnType<typeof useVoiceStream>;
+    scope = effectScope();
+    scope.run(() => {
+      rebound = useVoiceStream(later);
+    });
+
+    socket.deliver({ type: 'final', text: '你好', duration_ms: 900, elapsed_ms: 200, truncated: false });
+    await flushPromises();
+
+    expect(later).toHaveBeenCalledWith('你好', false, 'push');
+    expect(rebound.state.value).toBe('listening');
+  });
+});
+
+describe('useVoiceStream wake recovery', () => {
+  async function armed() {
+    const voice = openStream();
+    const pending = voice.toggleWake();
+    await flushPromises();
+    FakeSocket.instances.at(-1)?.deliver({ type: 'ready', sample_rate: 16000, wake_word: true, vad: true });
+    await pending;
+    await flushPromises();
+    return voice;
+  }
+
+  it('stays on when the server reports an error while armed', async () => {
+    const voice = await armed();
+    const socket = FakeSocket.instances.at(-1) as FakeSocket;
+
+    socket.deliver({ type: 'error', error: { code: 'VOICE_WAKE_TIMEOUT', message: 'nothing followed' } });
+    await flushPromises();
+
+    expect(voice.state.value).toBe('armed');
+    expect(voice.isOn.value).toBe(true);
+    expect(voice.errorKey.value).toBe('chat.voiceWakeTimeout');
+  });
+
+  it('reconnects instead of switching off when the socket drops', async () => {
+    const voice = await armed();
+    const socket = FakeSocket.instances.at(-1) as FakeSocket;
+
+    socket.serverClose(1009);
+    await flushPromises();
+
+    expect(voice.isOn.value).toBe(true);
+    expect(voice.state.value).toBe('connecting');
   });
 });

@@ -3,6 +3,8 @@ import * as asr from '@/api-client/asr';
 import { i18n } from '@/i18n';
 import type { ChatStatus } from '@/config/chatStatus';
 import { resetSopList } from '@/composables/useSopList';
+import { resetVoiceStream } from '@/composables/useVoiceStream';
+import { useAlertStore } from '@/stores/alertStore';
 import { useAuthStore } from '@/stores/authStore';
 import { flushPromises, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
@@ -40,6 +42,7 @@ class FakeMediaRecorder {
 beforeEach(() => {
   vi.clearAllMocks();
   resetSopList();
+  setActivePinia(createPinia());
   (api.getSops as Mock).mockResolvedValue({ data: { items: [{ slug: 'trip-itinerary', title: 'Trip itinerary' }] } });
 });
 
@@ -392,7 +395,7 @@ describe('ChatInputArea voice input', () => {
     expect(input.element.textContent).toBe('幫我 你好世界');
   });
 
-  it('shows why a transcription failed', async () => {
+  it('reports a transcription failure through the alert stack', async () => {
     (asr.transcribeAudio as Mock).mockRejectedValue(new asr.AsrApiError(429, 'ASR_BUSY', 'busy'));
     const wrapper = mountArea();
 
@@ -401,7 +404,10 @@ describe('ChatInputArea voice input', () => {
     await wrapper.get('[data-testid="chat-mic"]').trigger('click');
     await flushPromises();
 
-    expect(wrapper.get('[data-testid="chat-mic-error"]').text()).toBe('The transcriber is busy, try again shortly');
+    const alerts = useAlertStore().alertList;
+    expect(alerts).toHaveLength(1);
+    expect(alerts[0]).toMatchObject({ level: 'error', message: 'The transcriber is busy, try again shortly' });
+    expect(wrapper.find('[data-testid="chat-mic-error"]').exists()).toBe(false);
   });
 });
 
@@ -458,6 +464,7 @@ describe('ChatInputArea voice streaming', () => {
   const track = { stop: vi.fn() };
 
   beforeEach(() => {
+    resetVoiceStream();
     Socket.instances = [];
     vi.stubGlobal('WebSocket', Socket);
     vi.stubGlobal('AudioContext', Context);
@@ -466,6 +473,7 @@ describe('ChatInputArea voice streaming', () => {
   });
 
   afterEach(() => {
+    resetVoiceStream();
     vi.unstubAllGlobals();
     Reflect.deleteProperty(navigator, 'mediaDevices');
   });

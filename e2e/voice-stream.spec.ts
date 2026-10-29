@@ -91,7 +91,7 @@ test('shows the server error and drops the stream', async ({ page }) => {
   await expect(page.getByTestId('chat-mic')).toHaveAttribute('aria-pressed', 'true');
   socket?.send(JSON.stringify({ type: 'error', error: { code: 'ASR_BUSY', message: 'busy' } }));
 
-  await expect(page.getByTestId('chat-mic-error')).toHaveText('The transcriber is busy, try again shortly');
+  await expect(page.getByRole('alert').filter({ hasText: 'The transcriber is busy, try again shortly' })).toBeVisible();
   await expect(page.getByTestId('chat-mic')).not.toHaveAttribute('aria-pressed', 'true');
 });
 

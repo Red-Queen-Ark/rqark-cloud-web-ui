@@ -58,7 +58,7 @@ test('keeps both voice buttons inside a narrow toolbar', async ({ page }) => {
   expect(fits.docScroll).toBeLessThanOrEqual(fits.winWidth);
 });
 
-test('reads a server error across the full width when the screen is narrow', async ({ page }) => {
+test('reports a server error without pushing the layout sideways', async ({ page }) => {
   const socket = await openChat(page);
 
   const mic = page.getByTestId('chat-mic');
@@ -66,14 +66,9 @@ test('reads a server error across the full width when the screen is narrow', asy
   await expect(mic).toHaveAttribute('aria-pressed', 'true');
   socket()?.send(JSON.stringify({ type: 'error', error: { code: 'ASR_BUSY', message: 'busy' } }));
 
-  const error = page.getByTestId('chat-mic-error');
-  await expect(error).toBeVisible();
+  await expect(page.getByRole('alert').filter({ hasText: 'The transcriber is busy, try again shortly' })).toBeVisible();
 
-  const widths = await page.evaluate(() => {
-    const area = document.querySelector('#chat-input-area') as HTMLElement;
-    const box = document.querySelector('[data-testid="chat-mic-error"]') as HTMLElement;
-    return { box: box.getBoundingClientRect().width, area: area.getBoundingClientRect().width };
-  });
+  const fits = await page.evaluate(() => ({ docScroll: document.documentElement.scrollWidth, winWidth: window.innerWidth }));
 
-  expect(widths.box).toBeGreaterThan(widths.area * 0.8);
+  expect(fits.docScroll).toBeLessThanOrEqual(fits.winWidth);
 });
