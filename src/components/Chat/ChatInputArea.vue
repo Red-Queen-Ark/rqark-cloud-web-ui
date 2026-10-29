@@ -24,8 +24,6 @@
         </div>
       </div>
 
-      <div v-if="micErrorKey" data-testid="chat-mic-error" class="px-3 pb-1.5 text-xs text-error" role="status">{{ t(micErrorKey) }}</div>
-
       <div class="flex items-center gap-2 px-3 pb-2 pt-1.5 border-t border-base-300/50 bg-base-300/30 rounded-b-box">
         <div v-if="statusClass" data-testid="chat-status" :class="['status', statusClass]" :aria-label="statusLabel" :title="statusLabel"></div>
         <div class="flex items-center gap-1 text-xs text-base-content/70">
@@ -87,6 +85,7 @@ import { slashEntries as buildSlashEntries, type SlashEntry } from '@/config/sla
 import { useSopList } from '@/composables/useSopList';
 import { canRecord, useRecorder } from '@/composables/useRecorder';
 import { canStream, useVoiceStream } from '@/composables/useVoiceStream';
+import { useAlertStore } from '@/stores/alertStore';
 import SlashCommandPanel from '@/components/Chat/SlashCommandPanel.vue';
 import BoltIcon from '@/components/svg/BoltIcon.vue';
 import MicIcon from '@/components/svg/MicIcon.vue';
@@ -112,6 +111,7 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
+const alertStore = useAlertStore();
 
 const statusSpec = computed(() => CHAT_STATUS[props.status ?? 'idle']);
 const statusClass = computed(() => statusSpec.value.dot);
@@ -137,6 +137,29 @@ const recorder = useRecorder(insertTranscript);
 const micErrorKey = computed(() => (micStreams ? voice.errorKey.value : recorder.errorKey.value));
 const isRecording = computed(() => (micStreams ? voice.isListening.value : recorder.isRecording.value));
 const isTranscribing = computed(() => (micStreams ? voice.isBusy.value : recorder.isTranscribing.value));
+
+/**
+ * Microphone trouble is reported where every other failure is reported: the alert stack
+ * in the app shell. The key is cleared once it has been shown so the same message can be
+ * raised again on a later attempt.
+ */
+const WARNING_MIC_KEYS = new Set(['chat.micEmpty', 'chat.voiceNoWakeWord', 'chat.voiceWakeTimeout']);
+watch(
+  micErrorKey,
+  (key) => {
+    if (!key) {
+      return;
+    }
+    const level = WARNING_MIC_KEYS.has(key) ? 'warning' : 'error';
+    alertStore.addItem({ level, message: t(key) });
+    if (micStreams) {
+      voice.clearError();
+    } else {
+      recorder.clearError();
+    }
+  },
+  { flush: 'post' },
+);
 const micLabel = computed(() => {
   if (isRecording.value) {
     return t('chat.micStop');

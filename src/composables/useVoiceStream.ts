@@ -8,8 +8,12 @@ export type VoiceStreamState = 'idle' | 'connecting' | 'armed' | 'listening' | '
 
 export type VoiceStreamMode = 'push' | 'wake';
 
+type TranscriptHandler = (text: string, truncated: boolean, mode: VoiceStreamMode) => void;
+
 const BLOCK_SIZE = 512;
 const WORKLET_PATH = 'voice-pcm.worklet.js';
+const RECONNECT_DELAY_MS = 800;
+const RECONNECT_LIMIT = 3;
 
 export function canStream(): boolean {
   return typeof window !== 'undefined' && typeof AudioContext !== 'undefined' && typeof AudioWorkletNode !== 'undefined' && Boolean(navigator.mediaDevices?.getUserMedia) && typeof WebSocket !== 'undefined';
@@ -27,308 +31,394 @@ function microphoneErrorKey(error: unknown): string {
   return 'chat.micFailed';
 }
 
-export function useVoiceStream(onTranscript: (text: string, truncated: boolean, mode: VoiceStreamMode) => void) {
-  const state = ref<VoiceStreamState>('idle');
-  const errorKey = ref<string | null>(null);
-  const mode = ref<VoiceStreamMode>('push');
-  const wakeWord = ref<boolean | null>(null);
-  const wakeScore = ref(0);
-  const wakeName = ref('');
-  const woke = ref(false);
-
-  const isListening = computed(() => state.value === 'listening');
-  const isArmed = computed(() => state.value === 'armed');
-  const isBusy = computed(() => state.value === 'connecting' || state.value === 'stopping');
-  const isOn = computed(() => state.value !== 'idle');
-
-  let socket: WebSocket | null = null;
-  let context: AudioContext | null = null;
-  let node: AudioWorkletNode | null = null;
-  let source: MediaStreamAudioSourceNode | null = null;
-  let stream: MediaStream | null = null;
-  let resampler: StreamResampler | null = null;
-  let readyTimer: ReturnType<typeof setTimeout> | undefined;
-  let finalTimer: ReturnType<typeof setTimeout> | undefined;
-
-  function clearTimers() {
-    if (readyTimer !== undefined) {
-      clearTimeout(readyTimer);
-      readyTimer = undefined;
-    }
-    if (finalTimer !== undefined) {
-      clearTimeout(finalTimer);
-      finalTimer = undefined;
-    }
+function closeErrorKey(code: number): string {
+  if (code === VOICE_CLOSE.busy) {
+    return 'chat.micBusy';
   }
-
-  function releaseAudio() {
-    if (node) {
-      node.port.onmessage = null;
-      node.disconnect();
-      node = null;
-    }
-    if (source) {
-      source.disconnect();
-      source = null;
-    }
-    stream?.getTracks().forEach((track) => track.stop());
-    stream = null;
-    if (context) {
-      void context.close().catch(() => undefined);
-      context = null;
-    }
-    resampler = null;
+  if (code === VOICE_CLOSE.unauthorized) {
+    return 'chat.micAuth';
   }
-
-  function releaseSocket() {
-    const active = socket;
-    socket = null;
-    if (active && active.readyState <= WebSocket.OPEN) {
-      active.onmessage = null;
-      active.onclose = null;
-      active.onerror = null;
-      active.close();
-    }
+  if (code === VOICE_CLOSE.idle) {
+    return 'chat.micIdle';
   }
+  return 'chat.micNetwork';
+}
 
-  function teardown() {
-    clearTimers();
-    releaseAudio();
-    releaseSocket();
-    mode.value = 'push';
-    woke.value = false;
-    state.value = 'idle';
+/*
+ * One voice session per page, not per component.
+ *
+ * The session outlives ChatInputArea: switching sessions, or any remount of the input,
+ * must not close the microphone or drop the wake word toggle. It ends when the user turns
+ * it off, when the page goes away, or when it cannot be recovered.
+ */
+const state = ref<VoiceStreamState>('idle');
+const errorKey = ref<string | null>(null);
+const mode = ref<VoiceStreamMode>('push');
+const wakeWord = ref<boolean | null>(null);
+const wakeScore = ref(0);
+const wakeName = ref('');
+const woke = ref(false);
+
+const isListening = computed(() => state.value === 'listening');
+const isArmed = computed(() => state.value === 'armed');
+const isBusy = computed(() => state.value === 'connecting' || state.value === 'stopping');
+const isOn = computed(() => state.value !== 'idle');
+
+let handler: TranscriptHandler | null = null;
+let socket: WebSocket | null = null;
+let context: AudioContext | null = null;
+let node: AudioWorkletNode | null = null;
+let source: MediaStreamAudioSourceNode | null = null;
+let stream: MediaStream | null = null;
+let resampler: StreamResampler | null = null;
+let readyTimer: ReturnType<typeof setTimeout> | undefined;
+let finalTimer: ReturnType<typeof setTimeout> | undefined;
+let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
+let attempts = 0;
+let guardInstalled = false;
+
+function clearTimers() {
+  if (readyTimer !== undefined) {
+    clearTimeout(readyTimer);
+    readyTimer = undefined;
   }
-
-  function fail(key: string) {
-    errorKey.value = key;
-    teardown();
+  if (finalTimer !== undefined) {
+    clearTimeout(finalTimer);
+    finalTimer = undefined;
   }
+  if (reconnectTimer !== undefined) {
+    clearTimeout(reconnectTimer);
+    reconnectTimer = undefined;
+  }
+}
 
-  function handleMessage(event: MessageEvent) {
-    let payload: VoiceEvent;
-    try {
-      payload = JSON.parse(String(event.data)) as VoiceEvent;
-    } catch {
+function releaseAudio() {
+  if (node) {
+    node.port.onmessage = null;
+    node.disconnect();
+    node = null;
+  }
+  if (source) {
+    source.disconnect();
+    source = null;
+  }
+  stream?.getTracks().forEach((track) => track.stop());
+  stream = null;
+  if (context) {
+    void context.close().catch(() => undefined);
+    context = null;
+  }
+  resampler = null;
+}
+
+function releaseSocket() {
+  const active = socket;
+  socket = null;
+  if (active && active.readyState <= WebSocket.OPEN) {
+    active.onmessage = null;
+    active.onclose = null;
+    active.onerror = null;
+    active.close();
+  }
+}
+
+function teardown() {
+  clearTimers();
+  releaseAudio();
+  releaseSocket();
+  mode.value = 'push';
+  woke.value = false;
+  attempts = 0;
+  state.value = 'idle';
+}
+
+function fail(key: string) {
+  errorKey.value = key;
+  teardown();
+}
+
+function deliver(text: string, truncated: boolean, current: VoiceStreamMode) {
+  handler?.(text, truncated, current);
+}
+
+function handleMessage(event: MessageEvent) {
+  let payload: VoiceEvent;
+  try {
+    payload = JSON.parse(String(event.data)) as VoiceEvent;
+  } catch {
+    return;
+  }
+  if (payload.type === 'ready') {
+    wakeWord.value = payload.wake_word;
+    return;
+  }
+  if (payload.type === 'wake') {
+    if (mode.value !== 'wake') {
       return;
     }
-    if (payload.type === 'ready') {
-      wakeWord.value = payload.wake_word;
-      return;
-    }
-    if (payload.type === 'wake') {
-      if (mode.value !== 'wake') {
-        return;
-      }
-      wakeScore.value = payload.score;
-      wakeName.value = payload.name ?? '';
-      woke.value = true;
-      errorKey.value = null;
-      state.value = 'listening';
-      return;
-    }
-    if (payload.type === 'final') {
-      if (mode.value === 'wake' && !woke.value) {
-        return;
-      }
-      const text = payload.text.trim();
-      if (text) {
-        onTranscript(text, payload.truncated, mode.value);
-        errorKey.value = null;
-      } else if (state.value !== 'armed') {
-        errorKey.value = 'chat.micEmpty';
-      }
-      if (mode.value === 'wake') {
-        woke.value = false;
-        state.value = 'armed';
-        return;
-      }
-      if (state.value === 'stopping') {
-        teardown();
-      }
-      return;
-    }
-    if (payload.type === 'error') {
-      if (mode.value === 'wake' && state.value !== 'connecting') {
-        errorKey.value = voiceErrorKey(payload.error.code);
-        woke.value = false;
-        state.value = 'armed';
-        return;
-      }
-      fail(voiceErrorKey(payload.error.code));
-    }
-  }
-
-  function openSocket(token: string): Promise<WebSocket> {
-    return new Promise((resolve, reject) => {
-      const opened = new WebSocket(voiceSocketUrl(token));
-      opened.binaryType = 'arraybuffer';
-      readyTimer = setTimeout(() => reject(new Error('VOICE_READY_TIMEOUT')), VOICE_READY_TIMEOUT_MS);
-      opened.onerror = () => reject(new Error('VOICE_SOCKET_ERROR'));
-      opened.onclose = (event) => reject(new Error(`VOICE_CLOSED_${event.code}`));
-      opened.onmessage = (event) => {
-        let payload: VoiceEvent;
-        try {
-          payload = JSON.parse(String(event.data)) as VoiceEvent;
-        } catch {
-          return;
-        }
-        if (payload.type !== 'ready') {
-          return;
-        }
-        if (readyTimer !== undefined) {
-          clearTimeout(readyTimer);
-          readyTimer = undefined;
-        }
-        wakeWord.value = payload.wake_word;
-        opened.onerror = null;
-        opened.onclose = null;
-        opened.onmessage = handleMessage;
-        resolve(opened);
-      };
-    });
-  }
-
-  async function connect(token: string): Promise<WebSocket> {
-    try {
-      return await openSocket(token);
-    } catch (error) {
-      if (error instanceof Error && error.message === 'VOICE_CLOSED_4401' && (await refreshSession())) {
-        return await openSocket(useAuthStore().accessToken ?? '');
-      }
-      throw error;
-    }
-  }
-
-  function attachMicrophone(active: WebSocket) {
-    const audio = new AudioContext();
-    context = audio;
-    const workletUrl = new URL(`${import.meta.env.BASE_URL}${WORKLET_PATH}`, window.location.origin).toString();
-    return audio.audioWorklet
-      .addModule(workletUrl)
-      .then(() => navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true } }))
-      .then((captured) => {
-        stream = captured;
-        source = audio.createMediaStreamSource(captured);
-        node = new AudioWorkletNode(audio, 'pcm-block', { numberOfOutputs: 1, processorOptions: { blockSize: BLOCK_SIZE } });
-        resampler = new StreamResampler(audio.sampleRate, PCM_TARGET_RATE);
-        const mute = audio.createGain();
-        mute.gain.value = 0;
-        source.connect(node);
-        node.connect(mute);
-        mute.connect(audio.destination);
-        node.port.onmessage = (message: MessageEvent<Float32Array>) => {
-          if (!resampler || active.readyState !== WebSocket.OPEN) {
-            return;
-          }
-          const pcm = resampler.push(message.data);
-          if (pcm.length > 0) {
-            active.send(pcm);
-          }
-        };
-      });
-  }
-
-  async function start(next: VoiceStreamMode = 'push') {
+    wakeScore.value = payload.score;
+    wakeName.value = payload.name ?? '';
+    woke.value = true;
+    attempts = 0;
     errorKey.value = null;
-    if (!canStream()) {
-      errorKey.value = 'chat.micUnsupported';
+    state.value = 'listening';
+    return;
+  }
+  if (payload.type === 'final') {
+    if (mode.value === 'wake' && !woke.value) {
       return;
     }
-    const token = useAuthStore().accessToken;
-    if (!token) {
-      errorKey.value = 'chat.micAuth';
-      return;
-    }
-
-    mode.value = next;
-    state.value = 'connecting';
-    try {
-      socket = await connect(token);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : '';
-      const closed = message.startsWith('VOICE_CLOSED_');
-      if (closed && message.endsWith(String(VOICE_CLOSE.busy))) {
-        fail('chat.micBusy');
-      } else if (closed && message.endsWith(String(VOICE_CLOSE.unauthorized))) {
-        fail('chat.micAuth');
-      } else if (message === 'VOICE_READY_TIMEOUT') {
-        fail('chat.micTimeout');
-      } else {
-        fail('chat.micNetwork');
-      }
-      return;
-    }
-
-    if (mode.value === 'wake') {
-      socket.send(JSON.stringify({ type: 'mode', value: 'wake' }));
-    }
-
-    try {
-      await attachMicrophone(socket);
-    } catch (error) {
-      fail(microphoneErrorKey(error));
-      return;
+    const text = payload.text.trim();
+    if (text) {
+      deliver(text, payload.truncated, mode.value);
+      errorKey.value = null;
+    } else if (state.value !== 'armed') {
+      errorKey.value = 'chat.micEmpty';
     }
     if (mode.value === 'wake') {
       woke.value = false;
       state.value = 'armed';
-      if (wakeWord.value === false) {
-        errorKey.value = 'chat.voiceNoWakeWord';
-      }
       return;
     }
-    state.value = 'listening';
+    if (state.value === 'stopping') {
+      teardown();
+    }
+    return;
   }
-
-  function stop() {
+  if (payload.type === 'error') {
+    errorKey.value = voiceErrorKey(payload.error.code);
     if (mode.value === 'wake') {
-      teardown();
+      woke.value = false;
+      state.value = 'armed';
       return;
     }
-    if (state.value !== 'listening' || !socket) {
-      return;
-    }
-    socket.send(JSON.stringify({ type: 'stop' }));
-    state.value = 'stopping';
-    finalTimer = setTimeout(teardown, VOICE_FINAL_TIMEOUT_MS);
+    fail(voiceErrorKey(payload.error.code));
   }
+}
 
-  function cancel() {
-    if (state.value === 'idle') {
-      return;
+function onUnexpectedClose(opened: WebSocket, code: number) {
+  if (socket !== opened) {
+    return;
+  }
+  if (mode.value !== 'wake') {
+    fail(closeErrorKey(code));
+    return;
+  }
+  releaseAudio();
+  releaseSocket();
+  if (attempts >= RECONNECT_LIMIT) {
+    fail(closeErrorKey(code));
+    return;
+  }
+  attempts += 1;
+  state.value = 'connecting';
+  reconnectTimer = setTimeout(() => {
+    reconnectTimer = undefined;
+    void start('wake');
+  }, RECONNECT_DELAY_MS * attempts);
+}
+
+function openSocket(token: string): Promise<WebSocket> {
+  return new Promise((resolve, reject) => {
+    const opened = new WebSocket(voiceSocketUrl(token));
+    opened.binaryType = 'arraybuffer';
+    readyTimer = setTimeout(() => reject(new Error('VOICE_READY_TIMEOUT')), VOICE_READY_TIMEOUT_MS);
+    opened.onerror = () => reject(new Error('VOICE_SOCKET_ERROR'));
+    opened.onclose = (event) => reject(new Error(`VOICE_CLOSED_${event.code}`));
+    opened.onmessage = (event) => {
+      let payload: VoiceEvent;
+      try {
+        payload = JSON.parse(String(event.data)) as VoiceEvent;
+      } catch {
+        return;
+      }
+      if (payload.type !== 'ready') {
+        return;
+      }
+      if (readyTimer !== undefined) {
+        clearTimeout(readyTimer);
+        readyTimer = undefined;
+      }
+      wakeWord.value = payload.wake_word;
+      opened.onerror = null;
+      opened.onmessage = handleMessage;
+      opened.onclose = (close) => onUnexpectedClose(opened, close.code);
+      resolve(opened);
+    };
+  });
+}
+
+async function connect(token: string): Promise<WebSocket> {
+  try {
+    return await openSocket(token);
+  } catch (error) {
+    if (error instanceof Error && error.message === 'VOICE_CLOSED_4401' && (await refreshSession())) {
+      return await openSocket(useAuthStore().accessToken ?? '');
     }
-    if (state.value === 'listening' && socket) {
-      socket.send(JSON.stringify({ type: 'cancel' }));
-    }
+    throw error;
+  }
+}
+
+function attachMicrophone(active: WebSocket) {
+  const audio = new AudioContext();
+  context = audio;
+  const workletUrl = new URL(`${import.meta.env.BASE_URL}${WORKLET_PATH}`, window.location.origin).toString();
+  return audio.audioWorklet
+    .addModule(workletUrl)
+    .then(() => navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true } }))
+    .then((captured) => {
+      stream = captured;
+      source = audio.createMediaStreamSource(captured);
+      node = new AudioWorkletNode(audio, 'pcm-block', { numberOfOutputs: 1, processorOptions: { blockSize: BLOCK_SIZE } });
+      resampler = new StreamResampler(audio.sampleRate, PCM_TARGET_RATE);
+      const mute = audio.createGain();
+      mute.gain.value = 0;
+      source.connect(node);
+      node.connect(mute);
+      mute.connect(audio.destination);
+      node.port.onmessage = (message: MessageEvent<Float32Array>) => {
+        if (!resampler || active.readyState !== WebSocket.OPEN) {
+          return;
+        }
+        const pcm = resampler.push(message.data);
+        if (pcm.length > 0) {
+          active.send(pcm);
+        }
+      };
+    });
+}
+
+function installUnloadGuard() {
+  if (guardInstalled || typeof window === 'undefined') {
+    return;
+  }
+  guardInstalled = true;
+  window.addEventListener('pagehide', () => {
     teardown();
+  });
+}
+
+function startFailure(error: unknown) {
+  const message = error instanceof Error ? error.message : '';
+  const closed = message.startsWith('VOICE_CLOSED_');
+  if (closed && message.endsWith(String(VOICE_CLOSE.busy))) {
+    fail('chat.micBusy');
+  } else if (closed && message.endsWith(String(VOICE_CLOSE.unauthorized))) {
+    fail('chat.micAuth');
+  } else if (message === 'VOICE_READY_TIMEOUT') {
+    fail('chat.micTimeout');
+  } else {
+    fail('chat.micNetwork');
+  }
+}
+
+async function start(next: VoiceStreamMode = 'push') {
+  clearTimers();
+  releaseAudio();
+  releaseSocket();
+  errorKey.value = null;
+  if (!canStream()) {
+    errorKey.value = 'chat.micUnsupported';
+    return;
+  }
+  const token = useAuthStore().accessToken;
+  if (!token) {
+    errorKey.value = 'chat.micAuth';
+    return;
   }
 
-  async function toggle() {
-    if (state.value === 'listening') {
-      stop();
-      return;
-    }
-    if (state.value === 'idle') {
-      await start('push');
-    }
+  installUnloadGuard();
+  mode.value = next;
+  state.value = 'connecting';
+  try {
+    socket = await connect(token);
+  } catch (error) {
+    startFailure(error);
+    return;
   }
 
-  async function toggleWake() {
-    if (mode.value === 'wake' && state.value !== 'idle') {
-      teardown();
-      return;
-    }
-    if (state.value === 'idle') {
-      await start('wake');
-    }
+  if (mode.value === 'wake') {
+    socket.send(JSON.stringify({ type: 'mode', value: 'wake' }));
   }
 
-  function clearError() {
-    errorKey.value = null;
+  try {
+    await attachMicrophone(socket);
+  } catch (error) {
+    fail(microphoneErrorKey(error));
+    return;
   }
+  if (mode.value === 'wake') {
+    woke.value = false;
+    attempts = 0;
+    state.value = 'armed';
+    if (wakeWord.value === false) {
+      errorKey.value = 'chat.voiceNoWakeWord';
+    }
+    return;
+  }
+  state.value = 'listening';
+}
 
-  onScopeDispose(teardown);
+function stop() {
+  if (mode.value === 'wake') {
+    teardown();
+    return;
+  }
+  if (state.value !== 'listening' || !socket) {
+    return;
+  }
+  socket.send(JSON.stringify({ type: 'stop' }));
+  state.value = 'stopping';
+  finalTimer = setTimeout(teardown, VOICE_FINAL_TIMEOUT_MS);
+}
 
-  return { state, errorKey, mode, wakeWord, wakeScore, wakeName, woke, isListening, isArmed, isBusy, isOn, start, stop, cancel, toggle, toggleWake, clearError };
+function cancel() {
+  if (state.value === 'idle') {
+    return;
+  }
+  if (state.value === 'listening' && socket) {
+    socket.send(JSON.stringify({ type: 'cancel' }));
+  }
+  teardown();
+}
+
+async function toggle() {
+  if (state.value === 'listening') {
+    stop();
+    return;
+  }
+  if (state.value === 'idle') {
+    await start('push');
+  }
+}
+
+async function toggleWake() {
+  if (mode.value === 'wake' && state.value !== 'idle') {
+    teardown();
+    return;
+  }
+  if (state.value === 'idle') {
+    await start('wake');
+  }
+}
+
+function clearError() {
+  errorKey.value = null;
+}
+
+const api = { state, errorKey, mode, wakeWord, wakeScore, wakeName, woke, isListening, isArmed, isBusy, isOn, start, stop, cancel, toggle, toggleWake, clearError };
+
+export function useVoiceStream(onTranscript: TranscriptHandler) {
+  handler = onTranscript;
+  onScopeDispose(() => {
+    if (handler === onTranscript) {
+      handler = null;
+    }
+  });
+  return api;
+}
+
+export function resetVoiceStream() {
+  teardown();
+  handler = null;
 }
