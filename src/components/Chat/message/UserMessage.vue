@@ -5,7 +5,22 @@
         <MessageBody :html="renderMarkdown(info.text)" :raw="info.text" />
       </template>
       <div v-if="imageParts.length > 0" data-testid="user-message-images" class="flex flex-wrap gap-2 mt-1">
-        <img v-for="(info, index) in imageParts" :key="`user-image-${index}`" data-testid="user-message-image" :src="info.image_url.url" alt="" class="rounded-box h-16 w-16 p-1 object-cover bg-base-200/40 border border-base-300" loading="lazy" />
+        <div v-for="(info, index) in imageParts" :key="`user-image-${index}`" class="relative">
+          <img
+            v-if="!failedImages.has(index)"
+            data-testid="user-message-image"
+            :src="info.image_url.url"
+            alt=""
+            class="rounded-box h-16 w-16 p-1 object-cover bg-base-200/40 border border-base-300"
+            :class="{ 'skeleton text-transparent': !loadedImages.has(index) }"
+            loading="lazy"
+            @load="loadedImages.add(index)"
+            @error="failedImages.add(index)"
+          />
+          <div v-else data-testid="user-message-image-error" :title="t('chat.imageLoadError')" :aria-label="t('chat.imageLoadError')" class="rounded-box h-16 w-16 p-1 flex items-center justify-center bg-base-200/40 border border-error/40">
+            <ImageIcon class="h-6 w-6 opacity-40" />
+          </div>
+        </div>
       </div>
     </div>
     <div class="flex justify-end items-center gap-1.5">
@@ -31,11 +46,12 @@
 import FormModal from '@/components/FormModal.vue';
 import MessageBody from '@/components/Session/MessageBody.vue';
 import CopyIcon from '@/components/svg/CopyIcon.vue';
+import ImageIcon from '@/components/svg/ImageIcon.vue';
 import RevertIcon from '@/components/svg/RevertIcon.vue';
 import { formatDateTime } from '@/utils/datetime';
 import { renderMarkdown } from '@/utils/markdown';
 import { useAlertStore } from '@/stores/alertStore';
-import { computed, ref } from 'vue';
+import { computed, reactive, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 const props = defineProps<{
@@ -53,6 +69,9 @@ const confirming = ref(false);
 const text = computed(() => props.message.content.flatMap((part) => (part.type === 'text' ? [part.text] : [])).join('\n\n'));
 const textParts = computed(() => props.message.content.flatMap((part) => (part.type === 'text' ? [part] : [])));
 const imageParts = computed(() => props.message.content.flatMap((part) => (part.type === 'image_url' ? [part] : [])));
+/** Images that have painted, and those the browser gave up on, keyed by position. */
+const loadedImages = reactive(new Set<number>());
+const failedImages = reactive(new Set<number>());
 
 async function copy() {
   try {

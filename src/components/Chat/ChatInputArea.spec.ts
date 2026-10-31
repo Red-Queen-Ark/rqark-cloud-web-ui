@@ -152,12 +152,13 @@ describe('ChatInputArea', () => {
     expect(payload.images).toHaveLength(1);
   });
 
-  it('refuses an image over the size limit', async () => {
+  it('keeps an over-sized photo as a failed tile that can be retried', async () => {
     const wrapper = mountArea();
     const alertStore = useAlertStore();
     await attach(wrapper, [imageFile('big.png', 'image/png', 5 * 1024 * 1024 + 1)]);
 
-    expect(wrapper.find('[data-testid="chat-image-remove"]').exists()).toBe(false);
+    expect(wrapper.findAll('[data-testid="chat-image"]')).toHaveLength(1);
+    expect(wrapper.find('[data-testid="chat-image-retry"]').exists()).toBe(true);
     expect(alertStore.alertList.map((item) => item.level)).toEqual(['error']);
   });
 
@@ -187,7 +188,7 @@ describe('ChatInputArea', () => {
 
     await attach(wrapper, [file]);
 
-    expect(wrapper.find('[data-testid="chat-image-remove"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="chat-image-retry"]').exists()).toBe(true);
     expect(alertStore.alertList.map((item) => item.level)).toEqual(['error']);
   });
 

@@ -1,10 +1,42 @@
 <template>
-  <div id="chat-input-area" class="py-2 px-3 bg-base-100 shrink-0 relative">
+  <div
+    id="chat-input-area"
+    class="py-2 px-3 bg-base-100 shrink-0 relative"
+    @dragenter.prevent="onDragOver"
+    @dragover.prevent="onDragOver"
+    @dragleave="onDragLeave"
+    @drop.prevent="onDrop"
+  >
     <SlashCommandPanel :entries="slashEntries" :active-index="slashIndex" :label="t('chat.slashPanelLabel')" @select="completeSlash" @hover="slashIndex = $event" />
+    <div v-if="dragging" data-testid="chat-drop-overlay" class="absolute inset-0 z-10 m-2 rounded-box border-2 border-dashed border-primary bg-base-100/85 flex items-center justify-center gap-1.5 text-sm text-primary pointer-events-none">
+      <UploadIcon class="h-5 w-5" />
+      {{ t('chat.dropImage') }}
+    </div>
     <div class="bg-base-200 rounded-box border border-base-300">
       <div v-if="images.length > 0" data-testid="chat-images" class="flex flex-wrap gap-2 px-3 pt-2">
-        <div v-for="(image, index) in images" :key="`${image.name}-${index}`" class="relative">
-          <img :src="image.dataUri" :alt="image.name" class="rounded-box h-16 w-16 p-1 object-cover bg-base-200/40 border border-base-300" />
+        <div v-for="(image, index) in images" :key="image.id" data-testid="chat-image" class="relative">
+          <img
+            v-if="image.dataUri"
+            :src="image.dataUri"
+            :alt="image.name"
+            class="rounded-box h-16 w-16 p-1 object-cover bg-base-200/40 border"
+            :class="image.status === 'error' ? 'border-error opacity-50' : 'border-base-300'"
+          />
+          <div v-else class="rounded-box h-16 w-16 p-1 flex items-center justify-center bg-base-200/40 border border-base-300">
+            <span v-if="image.status === 'reading'" data-testid="chat-image-reading" class="loading loading-spinner loading-xs" :title="t('chat.imageReading')"></span>
+            <ImageIcon v-else class="h-6 w-6 opacity-40" />
+          </div>
+          <button
+            v-if="image.status === 'error'"
+            type="button"
+            data-testid="chat-image-retry"
+            class="btn btn-circle btn-xs btn-warning absolute -bottom-1.5 -left-1.5"
+            :title="t('chat.imageRetry')"
+            :aria-label="t('chat.imageRetry')"
+            @click="retryImage(index)"
+          >
+            <RefreshIcon class="h-3 w-3" />
+          </button>
           <button type="button" data-testid="chat-image-remove" class="btn btn-circle btn-xs absolute -top-1.5 -right-1.5" :title="t('chat.removeImage')" :aria-label="t('chat.removeImage')" @click="removeImage(index)">
             <CloseIcon class="h-3 w-3" />
           </button>
@@ -54,7 +86,7 @@
         <div class="ml-auto flex items-center gap-1">
           <input ref="imageInputRef" data-testid="chat-image-input" type="file" accept="image/*" multiple class="hidden" @change="pickImages" />
           <input ref="cameraInputRef" data-testid="chat-camera-input" type="file" accept="image/*" capture="environment" class="hidden" @change="pickImages" />
-          <button v-if="!streaming" id="chat-input-image-btn" data-testid="chat-image" class="btn btn-ghost btn-sm btn-square" :title="t('chat.attachImage')" :aria-label="t('chat.attachImage')" @click="imageInputRef?.click()">
+          <button v-if="!streaming" id="chat-input-image-btn" data-testid="chat-image-attach" class="btn btn-ghost btn-sm btn-square" :title="t('chat.attachImage')" :aria-label="t('chat.attachImage')" @click="imageInputRef?.click()">
             <ImageIcon class="h-5 w-5" />
           </button>
           <button v-if="!streaming" id="chat-input-camera-btn" data-testid="chat-camera" class="btn btn-ghost btn-sm btn-square" :title="t('chat.takePhoto')" :aria-label="t('chat.takePhoto')" @click="cameraInputRef?.click()">
@@ -98,6 +130,7 @@ import type { ApiProviderSummaryDto } from '@/api';
 import { CHAT_STATUS, type ChatStatus } from '@/config/chatStatus';
 import { providerDisplayName } from '@/config/providers';
 import { slashEntries as buildSlashEntries, type SlashEntry } from '@/config/slashCommands';
+import { IMAGE_MAX_BYTES, IMAGE_MAX_PER_MESSAGE, IMAGE_TYPES, clipboardImages, dataUriBytes, droppedImages, shrinkImage } from '@/components/Chat/imageAttachment';
 import { useSopList } from '@/composables/useSopList';
 import { useSpeechAvailability } from '@/composables/useSpeechAvailability';
 import { canRecord, useRecorder } from '@/composables/useRecorder';
@@ -109,8 +142,10 @@ import CameraIcon from '@/components/svg/CameraIcon.vue';
 import CloseIcon from '@/components/svg/CloseIcon.vue';
 import ImageIcon from '@/components/svg/ImageIcon.vue';
 import MicIcon from '@/components/svg/MicIcon.vue';
+import RefreshIcon from '@/components/svg/RefreshIcon.vue';
 import SendIcon from '@/components/svg/SendIcon.vue';
 import StopIcon from '@/components/svg/StopIcon.vue';
+import UploadIcon from '@/components/svg/UploadIcon.vue';
 import WaveformIcon from '@/components/svg/WaveformIcon.vue';
 import UserIcon from '@/components/svg/UserIcon.vue';
 
@@ -141,8 +176,13 @@ const inputRef = ref<HTMLDivElement | null>(null);
 const imageInputRef = ref<HTMLInputElement | null>(null);
 const cameraInputRef = ref<HTMLInputElement | null>(null);
 const hasContent = ref(false);
-const images = ref<{ name: string; dataUri: string }[]>([]);
-const canSend = computed(() => hasContent.value || images.value.length > 0);
+/** An attachment keeps its tile from the moment it is picked, so a slow read shows progress. */
+interface Attachment { id: number; name: string; dataUri: string; status: 'reading' | 'ready' | 'error'; file: File }
+let nextAttachmentId = 0;
+const images = ref<Attachment[]>([]);
+const dragging = ref(false);
+const readyImages = computed(() => images.value.filter((image) => image.status === 'ready'));
+const canSend = computed(() => hasContent.value || readyImages.value.length > 0);
 const selectedAgent = ref('');
 const selectedProvider = ref('');
 /** Set once the user picks an agent by hand; see the agents watcher below. */
@@ -385,6 +425,12 @@ function handleKeydown(e: KeyboardEvent) {
 }
 
 function handlePaste(e: ClipboardEvent) {
+  const pasted = clipboardImages(e.clipboardData ?? null);
+  if (pasted.length > 0) {
+    e.preventDefault();
+    void addFiles(pasted);
+    return;
+  }
   e.preventDefault();
   const text = e.clipboardData?.getData('text/plain');
   if (!text || !inputRef.value) {
@@ -441,68 +487,115 @@ function submitTranscript(text: string) {
 
 // The wire format is the same base64 data URI the terminal client sends, so the
 // server only has to check the declared type and the size before forwarding it.
-const IMAGE_MAX_BYTES = 5 * 1024 * 1024;
-const IMAGE_MAX_PER_MESSAGE = 4;
-const IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+// The limits themselves live beside the helpers that enforce them.
 
-function readWithFileReader(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () => reject(reader.error ?? new Error('read failed'));
-    reader.readAsDataURL(file);
-  });
+/**
+ * Takes files into the strip. Each one gets a tile straight away, so a photo
+ * that is still decoding shows a spinner where it will appear. The in-flight
+ * loads are returned so a caller can wait for them.
+ */
+function addFiles(files: File[]): Promise<void>[] {
+  const loads: Promise<void>[] = [];
+  for (const file of files) {
+    if (images.value.length >= IMAGE_MAX_PER_MESSAGE) {
+      break;
+    }
+    if (!IMAGE_TYPES.has(file.type)) {
+      alertStore.addItem({ level: 'error', message: t('chat.imageUnsupported') });
+      continue;
+    }
+    const attachment: Attachment = { id: (nextAttachmentId += 1), name: file.name || 'image', dataUri: '', status: 'reading', file };
+    images.value.push(attachment);
+    loads.push(loadAttachment(attachment.id));
+  }
+  return loads;
+}
+
+/** The live proxy behind a tile: writing to the object we pushed would not notify the view. */
+function tileOf(id: number): Attachment | undefined {
+  return images.value.find((image) => image.id === id);
 }
 
 /**
- * A second way in, for the files FileReader refuses. `NotReadableError` is what
- * a browser raises when the platform will not hand over the bytes — a photo
- * that is still in iCloud, a file Drive has not synced, one another app holds
- * open. The byte read sometimes succeeds where the reader gave up.
+ * Shrinks the photo, then fills in its tile. A failure leaves the tile in place
+ * behind a retry button: re-reading the same file is what a user would do next,
+ * and the file is still held.
  */
-async function readWithArrayBuffer(file: File): Promise<string> {
-  const bytes = new Uint8Array(await file.arrayBuffer());
-  let binary = '';
-  for (let index = 0; index < bytes.length; index += 0x8000) {
-    binary += String.fromCharCode(...bytes.subarray(index, index + 0x8000));
+async function loadAttachment(id: number) {
+  const tile = tileOf(id);
+  if (!tile) {
+    return;
   }
-  return `data:${file.type};base64,${btoa(binary)}`;
+  tile.status = 'reading';
+  tile.dataUri = '';
+  try {
+    const dataUri = await shrinkImage(tile.file);
+    const current = tileOf(id);
+    if (!current) {
+      return;
+    }
+    if (dataUriBytes(dataUri) > IMAGE_MAX_BYTES) {
+      current.status = 'error';
+      alertStore.addItem({ level: 'error', message: t('chat.imageTooLarge') });
+      return;
+    }
+    current.dataUri = dataUri;
+    current.status = 'ready';
+  } catch (error) {
+    const current = tileOf(id);
+    if (!current) {
+      return;
+    }
+    current.status = 'error';
+    const name = (error as { name?: string } | null)?.name;
+    alertStore.addItem({ level: 'error', message: t(name === 'NotReadableError' ? 'chat.imageUnreadable' : 'chat.imageReadError') });
+  }
 }
 
-/** Reads that start in the caller's own task, so no await can invalidate the file first. */
-function readImage(file: File): Promise<string> {
-  return readWithFileReader(file).catch(() => readWithArrayBuffer(file));
+function retryImage(index: number) {
+  const attachment = images.value[index];
+  if (attachment) {
+    void loadAttachment(attachment.id);
+  }
 }
 
 async function pickImages(event: Event) {
   const input = event.target as HTMLInputElement;
   // Every read is kicked off here, synchronously: iOS revokes a File reference
   // as soon as the change handler yields, so waiting between two of them fails.
-  const reads = Array.from(input.files ?? []).map((file) => ({ file, read: readImage(file) }));
+  const loads = addFiles(Array.from(input.files ?? []));
   try {
-    for (const { file, read } of reads) {
-      if (!IMAGE_TYPES.has(file.type)) {
-        alertStore.addItem({ level: 'error', message: t('chat.imageUnsupported') });
-        continue;
-      }
-      if (file.size > IMAGE_MAX_BYTES) {
-        alertStore.addItem({ level: 'error', message: t('chat.imageTooLarge') });
-        continue;
-      }
-      if (images.value.length >= IMAGE_MAX_PER_MESSAGE) {
-        break;
-      }
-      try {
-        images.value.push({ name: file.name, dataUri: await read });
-      } catch (error) {
-        const name = (error as { name?: string } | null)?.name;
-        alertStore.addItem({ level: 'error', message: t(name === 'NotReadableError' ? 'chat.imageUnreadable' : 'chat.imageReadError') });
-      }
-    }
+    await Promise.allSettled(loads);
   } finally {
     // Only now: clearing the input releases the File objects, and Safari revokes
     // them on the spot, so doing it up front makes every read fail.
     input.value = '';
+  }
+}
+
+function onDragOver(event: DragEvent) {
+  if (!event.dataTransfer) {
+    return;
+  }
+  event.dataTransfer.dropEffect = 'copy';
+  dragging.value = true;
+}
+
+function onDragLeave(event: DragEvent) {
+  // dragleave also fires when the pointer crosses onto a child, so only a
+  // pointer that has left the whole area counts.
+  const container = event.currentTarget as HTMLElement | null;
+  if (container && event.relatedTarget instanceof Node && container.contains(event.relatedTarget)) {
+    return;
+  }
+  dragging.value = false;
+}
+
+function onDrop(event: DragEvent) {
+  dragging.value = false;
+  const files = droppedImages(event.dataTransfer);
+  if (files.length > 0) {
+    void addFiles(files);
   }
 }
 
@@ -512,10 +605,10 @@ function removeImage(index: number) {
 
 function submit() {
   const content = readText(inputRef.value);
-  if (!content && images.value.length === 0) {
+  if (!content && readyImages.value.length === 0) {
     return;
   }
-  emit('submit', { content, agent: selectedAgent.value, provider: selectedProvider.value, images: images.value.map((image) => image.dataUri) });
+  emit('submit', { content, agent: selectedAgent.value, provider: selectedProvider.value, images: readyImages.value.map((image) => image.dataUri) });
 }
 
 function clear() {
