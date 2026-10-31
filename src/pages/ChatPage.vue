@@ -63,7 +63,7 @@ let planObserver: ResizeObserver | undefined;
 
 watch(sessionId, () => scrollToBottom());
 
-function handleSubmit(payload: { content: string; agent: string; provider: string }) {
+function handleSubmit(payload: { content: string; agent: string; provider: string; images?: string[] }) {
   // `/stop` is answered here rather than sent: it ends the turn already running,
   // so a message carrying it would only queue behind the one it means to stop.
   if (payload.content === STOP_COMMAND) {
@@ -71,7 +71,7 @@ function handleSubmit(payload: { content: string; agent: string; provider: strin
     inputArea.value?.clear();
     return;
   }
-  chatSocket.send(payload.content, payload.agent, payload.provider, () => inputArea.value?.clear());
+  chatSocket.send(payload.content, payload.agent, payload.provider, () => inputArea.value?.clear(), payload.images ?? []);
   // Kept beside the session so the picker comes back to this agent rather than
   // the first one in the listing, both after the pending turn is flushed and
   // when the chat is reopened later in the same page load.
@@ -108,7 +108,7 @@ onMounted(async () => {
     // the turn clears the store's only copy, so it is recorded as the session's
     // agent before it is sent.
     chatStore.setSessionAgent(pending.sessionId, pending.agent);
-    chatSocket.send(pending.content, pending.agent, pending.provider);
+    chatSocket.send(pending.content, pending.agent, pending.provider, undefined, pending.images ?? []);
   }
 });
 

@@ -2,6 +2,14 @@
   <div id="chat-input-area" class="py-2 px-3 bg-base-100 shrink-0 relative">
     <SlashCommandPanel :entries="slashEntries" :active-index="slashIndex" :label="t('chat.slashPanelLabel')" @select="completeSlash" @hover="slashIndex = $event" />
     <div class="bg-base-200 rounded-box border border-base-300">
+      <div v-if="images.length > 0" data-testid="chat-images" class="flex flex-wrap gap-2 px-3 pt-2">
+        <div v-for="(image, index) in images" :key="`${image.name}-${index}`" class="relative">
+          <img :src="image.dataUri" :alt="image.name" class="rounded-box h-16 w-16 p-1 object-cover bg-base-200/40 border border-base-300" />
+          <button type="button" data-testid="chat-image-remove" class="btn btn-circle btn-xs absolute -top-1.5 -right-1.5" :title="t('chat.removeImage')" :aria-label="t('chat.removeImage')" @click="removeImage(index)">
+            <CloseIcon class="h-3 w-3" />
+          </button>
+        </div>
+      </div>
       <div class="py-2 px-3">
         <div class="min-h-9 max-h-32 overflow-y-auto scrollbar-thin">
           <div
@@ -44,6 +52,14 @@
           </select>
         </div>
         <div class="ml-auto flex items-center gap-1">
+          <input ref="imageInputRef" data-testid="chat-image-input" type="file" accept="image/*" multiple class="hidden" @change="pickImages" />
+          <input ref="cameraInputRef" data-testid="chat-camera-input" type="file" accept="image/*" capture="environment" class="hidden" @change="pickImages" />
+          <button v-if="!streaming" id="chat-input-image-btn" data-testid="chat-image" class="btn btn-ghost btn-sm btn-square" :title="t('chat.attachImage')" :aria-label="t('chat.attachImage')" @click="imageInputRef?.click()">
+            <ImageIcon class="h-5 w-5" />
+          </button>
+          <button v-if="!streaming" id="chat-input-camera-btn" data-testid="chat-camera" class="btn btn-ghost btn-sm btn-square" :title="t('chat.takePhoto')" :aria-label="t('chat.takePhoto')" @click="cameraInputRef?.click()">
+            <CameraIcon class="h-5 w-5" />
+          </button>
           <button v-if="micAvailable" id="chat-input-voice-btn" data-testid="chat-voice" class="btn btn-sm btn-square" :class="voiceClass" :title="voiceLabel" :aria-label="voiceLabel" :aria-pressed="voiceOn" @click="toggleVoice">
             <span v-if="voiceConnecting" class="loading loading-spinner loading-xs"></span>
             <WaveformIcon v-else class="h-5 w-5" :class="voiceListening ? 'animate-pulse' : ''" />
@@ -66,7 +82,7 @@
           <button v-if="streaming" id="chat-input-stop-btn" data-testid="chat-stop" class="btn btn-error btn-sm btn-square" :title="t('chat.stop')" :aria-label="t('chat.stop')" @click="emit('stop')">
             <StopIcon class="h-5 w-5" />
           </button>
-          <button v-else id="chat-input-send-btn" data-testid="chat-send" class="btn btn-primary btn-sm btn-square" :disabled="!hasContent" :title="t('chat.send')" :aria-label="t('chat.send')" @click="submit">
+          <button v-else id="chat-input-send-btn" data-testid="chat-send" class="btn btn-primary btn-sm btn-square" :disabled="!canSend" :title="t('chat.send')" :aria-label="t('chat.send')" @click="submit">
             <SendIcon class="h-5 w-5" />
           </button>
         </div>
@@ -89,6 +105,9 @@ import { canStream, useVoiceStream } from '@/composables/useVoiceStream';
 import { useAlertStore } from '@/stores/alertStore';
 import SlashCommandPanel from '@/components/Chat/SlashCommandPanel.vue';
 import BoltIcon from '@/components/svg/BoltIcon.vue';
+import CameraIcon from '@/components/svg/CameraIcon.vue';
+import CloseIcon from '@/components/svg/CloseIcon.vue';
+import ImageIcon from '@/components/svg/ImageIcon.vue';
 import MicIcon from '@/components/svg/MicIcon.vue';
 import SendIcon from '@/components/svg/SendIcon.vue';
 import StopIcon from '@/components/svg/StopIcon.vue';
@@ -107,7 +126,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'submit', payload: { content: string; agent: string; provider: string }): void;
+  (e: 'submit', payload: { content: string; agent: string; provider: string; images: string[] }): void;
   (e: 'stop'): void;
 }>();
 
@@ -119,7 +138,11 @@ const statusClass = computed(() => statusSpec.value.dot);
 const statusLabel = computed(() => (statusSpec.value.label ? t(statusSpec.value.label) : ''));
 
 const inputRef = ref<HTMLDivElement | null>(null);
+const imageInputRef = ref<HTMLInputElement | null>(null);
+const cameraInputRef = ref<HTMLInputElement | null>(null);
 const hasContent = ref(false);
+const images = ref<{ name: string; dataUri: string }[]>([]);
+const canSend = computed(() => hasContent.value || images.value.length > 0);
 const selectedAgent = ref('');
 const selectedProvider = ref('');
 /** Set once the user picks an agent by hand; see the agents watcher below. */
@@ -416,12 +439,83 @@ function submitTranscript(text: string) {
   clear();
 }
 
+// The wire format is the same base64 data URI the terminal client sends, so the
+// server only has to check the declared type and the size before forwarding it.
+const IMAGE_MAX_BYTES = 5 * 1024 * 1024;
+const IMAGE_MAX_PER_MESSAGE = 4;
+const IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+
+function readWithFileReader(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(reader.error ?? new Error('read failed'));
+    reader.readAsDataURL(file);
+  });
+}
+
+/**
+ * A second way in, for the files FileReader refuses. `NotReadableError` is what
+ * a browser raises when the platform will not hand over the bytes — a photo
+ * that is still in iCloud, a file Drive has not synced, one another app holds
+ * open. The byte read sometimes succeeds where the reader gave up.
+ */
+async function readWithArrayBuffer(file: File): Promise<string> {
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  let binary = '';
+  for (let index = 0; index < bytes.length; index += 0x8000) {
+    binary += String.fromCharCode(...bytes.subarray(index, index + 0x8000));
+  }
+  return `data:${file.type};base64,${btoa(binary)}`;
+}
+
+/** Reads that start in the caller's own task, so no await can invalidate the file first. */
+function readImage(file: File): Promise<string> {
+  return readWithFileReader(file).catch(() => readWithArrayBuffer(file));
+}
+
+async function pickImages(event: Event) {
+  const input = event.target as HTMLInputElement;
+  // Every read is kicked off here, synchronously: iOS revokes a File reference
+  // as soon as the change handler yields, so waiting between two of them fails.
+  const reads = Array.from(input.files ?? []).map((file) => ({ file, read: readImage(file) }));
+  try {
+    for (const { file, read } of reads) {
+      if (!IMAGE_TYPES.has(file.type)) {
+        alertStore.addItem({ level: 'error', message: t('chat.imageUnsupported') });
+        continue;
+      }
+      if (file.size > IMAGE_MAX_BYTES) {
+        alertStore.addItem({ level: 'error', message: t('chat.imageTooLarge') });
+        continue;
+      }
+      if (images.value.length >= IMAGE_MAX_PER_MESSAGE) {
+        break;
+      }
+      try {
+        images.value.push({ name: file.name, dataUri: await read });
+      } catch (error) {
+        const name = (error as { name?: string } | null)?.name;
+        alertStore.addItem({ level: 'error', message: t(name === 'NotReadableError' ? 'chat.imageUnreadable' : 'chat.imageReadError') });
+      }
+    }
+  } finally {
+    // Only now: clearing the input releases the File objects, and Safari revokes
+    // them on the spot, so doing it up front makes every read fail.
+    input.value = '';
+  }
+}
+
+function removeImage(index: number) {
+  images.value.splice(index, 1);
+}
+
 function submit() {
   const content = readText(inputRef.value);
-  if (!content) {
+  if (!content && images.value.length === 0) {
     return;
   }
-  emit('submit', { content, agent: selectedAgent.value, provider: selectedProvider.value });
+  emit('submit', { content, agent: selectedAgent.value, provider: selectedProvider.value, images: images.value.map((image) => image.dataUri) });
 }
 
 function clear() {
@@ -429,6 +523,7 @@ function clear() {
     inputRef.value.innerHTML = '';
   }
   hasContent.value = false;
+  images.value = [];
   closeSlash();
 }
 

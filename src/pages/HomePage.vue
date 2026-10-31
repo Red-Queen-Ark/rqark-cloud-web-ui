@@ -42,7 +42,7 @@ useVisualViewportInsets();
 const inputArea = ref<InstanceType<typeof ChatInputArea> | null>(null);
 const starting = ref(false);
 
-async function handleSubmit(payload: { content: string; agent: string; provider: string }) {
+async function handleSubmit(payload: { content: string; agent: string; provider: string; images?: string[] }) {
   if (starting.value) {
     return;
   }

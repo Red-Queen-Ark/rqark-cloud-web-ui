@@ -1,12 +1,12 @@
 <template>
   <div>
-    <div data-testid="user-message" class="rounded-box bg-base-300 w-fit min-w-[min(24rem,90%)] max-w-[90%] ms-auto px-4 py-2">
-      <template v-for="(info, index) in props.message.content" :key="`user-${info.type}-${index}`">
-        <MessageBody v-if="info.type === 'text'" :html="renderMarkdown(info.text)" :raw="info.text" />
-        <div v-else-if="info.type === 'image_url'">
-          <!-- info.image_url -->
-        </div>
+    <div data-testid="user-message" class="rounded-box bg-base-300 w-fit max-w-[90%] ms-auto" :class="text ? 'min-w-[min(24rem,90%)] px-4 py-2' : 'p-2'">
+      <template v-for="(info, index) in textParts" :key="`user-text-${index}`">
+        <MessageBody :html="renderMarkdown(info.text)" :raw="info.text" />
       </template>
+      <div v-if="imageParts.length > 0" data-testid="user-message-images" class="flex flex-wrap gap-2 mt-1">
+        <img v-for="(info, index) in imageParts" :key="`user-image-${index}`" data-testid="user-message-image" :src="info.image_url.url" alt="" class="rounded-box h-16 w-16 p-1 object-cover bg-base-200/40 border border-base-300" loading="lazy" />
+      </div>
     </div>
     <div class="flex justify-end items-center gap-1.5">
       <p v-if="props.message.created_at" data-testid="user-message-time" class="text-base-content/40 mt-1 text-end text-xs pr-1">{{ formatDateTime(props.message.created_at) }}</p>
@@ -51,6 +51,8 @@ const alertStore = useAlertStore();
 const confirming = ref(false);
 
 const text = computed(() => props.message.content.flatMap((part) => (part.type === 'text' ? [part.text] : [])).join('\n\n'));
+const textParts = computed(() => props.message.content.flatMap((part) => (part.type === 'text' ? [part] : [])));
+const imageParts = computed(() => props.message.content.flatMap((part) => (part.type === 'image_url' ? [part] : [])));
 
 async function copy() {
   try {

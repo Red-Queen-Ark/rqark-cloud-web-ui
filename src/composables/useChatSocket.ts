@@ -21,6 +21,7 @@ interface PendingTurn {
   content: string;
   agent: string;
   provider: string;
+  images: string[];
   onSent?: () => void;
 }
 
@@ -353,7 +354,7 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
     if (turn.sessionId !== toValue(sessionId)) {
       return;
     }
-    socket.send(JSON.stringify({ content: turn.content, provider: turn.provider, agent: turn.agent }));
+    socket.send(turnFrame(turn.content, turn.agent, turn.provider, turn.images));
     streamingFromSeq.value = null;
     streaming.value = true;
     turn.onSent?.();
@@ -462,20 +463,26 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
     history.value = stream.messages;
   }
 
-  function send(content: string, agent: string, provider: string, onSent?: () => void) {
+  // An empty list stays off the wire, so a text-only turn sends the same frame
+  // it always has.
+  function turnFrame(content: string, agent: string, provider: string, images: string[]): string {
+    return JSON.stringify(images.length > 0 ? { content, provider, agent, images } : { content, provider, agent });
+  }
+
+  function send(content: string, agent: string, provider: string, onSent?: () => void, images: string[] = []) {
     const id = toValue(sessionId);
     if (!id) {
       return;
     }
     const socket = ws.value;
     if (socket?.readyState === WebSocket.OPEN && !accessTokenNeedsRenewal()) {
-      socket.send(JSON.stringify({ content, provider, agent }));
+      socket.send(turnFrame(content, agent, provider, images));
       streamingFromSeq.value = null;
       streaming.value = true;
       onSent?.();
       return;
     }
-    pendingTurn = { sessionId: id, content, agent, provider, onSent };
+    pendingTurn = { sessionId: id, content, agent, provider, images, onSent };
     if (socket?.readyState !== WebSocket.CONNECTING) {
       void connect();
     }

@@ -42,6 +42,7 @@ class FakeMediaRecorder {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.unstubAllGlobals();
   resetSopList();
   resetSpeechAvailability();
   vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, status: 200 }));
@@ -107,7 +108,157 @@ describe('ChatInputArea', () => {
     await input.trigger('input');
     await wrapper.get('[data-testid="chat-send"]').trigger('click');
 
-    expect(wrapper.emitted('submit')?.[0]).toEqual([{ content: 'hello', agent: 'researcher', provider: 'openai' }]);
+    expect(wrapper.emitted('submit')?.[0]).toEqual([{ content: 'hello', agent: 'researcher', provider: 'openai', images: [] }]);
+  });
+
+  async function attach(wrapper: ReturnType<typeof mountArea>, files: File[]) {
+    const input = wrapper.get('[data-testid="chat-image-input"]');
+    Object.defineProperty(input.element, 'files', { value: files, configurable: true });
+    await input.trigger('change');
+    await flushPromises();
+    // FileReader resolves off the microtask queue, so give it a macrotask.
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  }
+
+  function imageFile(name = 'a.png', type = 'image/png', bytes = 4) {
+    return new File([new Uint8Array(bytes)], name, { type });
+  }
+
+  it('offers a camera input for a phone to open straight into the camera', () => {
+    expect(mountArea().get('[data-testid="chat-camera-input"]').attributes('capture')).toBe('environment');
+  });
+
+  it('attaches a picked image and sends it with the turn', async () => {
+    const wrapper = mountArea();
+    await attach(wrapper, [imageFile()]);
+
+    expect(wrapper.findAll('[data-testid="chat-image-remove"]')).toHaveLength(1);
+    await wrapper.get('[data-testid="chat-send"]').trigger('click');
+
+    const payload = wrapper.emitted('submit')?.[0]?.[0] as { content: string; images: string[] };
+    expect(payload.images).toHaveLength(1);
+    expect(payload.images[0]).toMatch(/^data:image\/png;base64,/);
+  });
+
+  it('sends an image on its own without any text', async () => {
+    const wrapper = mountArea();
+    await attach(wrapper, [imageFile()]);
+
+    expect(wrapper.get('[data-testid="chat-send"]').attributes('disabled')).toBeUndefined();
+    await wrapper.get('[data-testid="chat-send"]').trigger('click');
+
+    const payload = wrapper.emitted('submit')?.[0]?.[0] as { content: string; images: string[] };
+    expect(payload.content).toBe('');
+    expect(payload.images).toHaveLength(1);
+  });
+
+  it('refuses an image over the size limit', async () => {
+    const wrapper = mountArea();
+    const alertStore = useAlertStore();
+    await attach(wrapper, [imageFile('big.png', 'image/png', 5 * 1024 * 1024 + 1)]);
+
+    expect(wrapper.find('[data-testid="chat-image-remove"]').exists()).toBe(false);
+    expect(alertStore.alertList.map((item) => item.level)).toEqual(['error']);
+  });
+
+  it('refuses an unsupported image type', async () => {
+    const wrapper = mountArea();
+    const alertStore = useAlertStore();
+    await attach(wrapper, [imageFile('a.svg', 'image/svg+xml')]);
+
+    expect(wrapper.find('[data-testid="chat-image-remove"]').exists()).toBe(false);
+    expect(alertStore.alertList.map((item) => item.level)).toEqual(['error']);
+  });
+
+  it('reports a file the browser refuses to read instead of throwing', async () => {
+    const wrapper = mountArea();
+    const alertStore = useAlertStore();
+    class FailingReader {
+      public onload: (() => void) | null = null;
+      public onerror: (() => void) | null = null;
+      public result: string | null = null;
+      public readAsDataURL() {
+        queueMicrotask(() => this.onerror?.());
+      }
+    }
+    vi.stubGlobal('FileReader', FailingReader);
+    const file = imageFile();
+    Object.defineProperty(file, 'arrayBuffer', { value: () => Promise.reject(new Error('unreadable')) });
+
+    await attach(wrapper, [file]);
+
+    expect(wrapper.find('[data-testid="chat-image-remove"]').exists()).toBe(false);
+    expect(alertStore.alertList.map((item) => item.level)).toEqual(['error']);
+  });
+
+  it('falls back to reading the bytes when the file reader refuses', async () => {
+    const wrapper = mountArea();
+    class RefusingReader {
+      public onload: (() => void) | null = null;
+      public onerror: (() => void) | null = null;
+      public result: string | null = null;
+      public readAsDataURL() {
+        queueMicrotask(() => this.onerror?.());
+      }
+    }
+    vi.stubGlobal('FileReader', RefusingReader);
+    const file = imageFile();
+    // jsdom has no working Blob.arrayBuffer, so the bytes are supplied here.
+    Object.defineProperty(file, 'arrayBuffer', { value: () => Promise.resolve(new Uint8Array([1, 2, 3, 4]).buffer) });
+
+    await attach(wrapper, [file]);
+
+    expect(wrapper.findAll('[data-testid="chat-image-remove"]')).toHaveLength(1);
+  });
+
+  it('names an unreadable file as such rather than a generic failure', async () => {
+    const wrapper = mountArea();
+    const alertStore = useAlertStore();
+    class UnreadableReader {
+      public onload: (() => void) | null = null;
+      public onerror: (() => void) | null = null;
+      public result: string | null = null;
+      public error = Object.assign(new Error('nope'), { name: 'NotReadableError' });
+      public readAsDataURL() {
+        queueMicrotask(() => this.onerror?.());
+      }
+    }
+    vi.stubGlobal('FileReader', UnreadableReader);
+    const file = imageFile();
+    Object.defineProperty(file, 'arrayBuffer', { value: () => Promise.reject(Object.assign(new Error('nope'), { name: 'NotReadableError' })) });
+
+    await attach(wrapper, [file]);
+
+    expect(alertStore.alertList.at(-1)?.message).toBe('Could not read this image. Download it from the cloud to this device first');
+  });
+
+  it('releases the picked file only after it has been read', async () => {
+    const wrapper = mountArea();
+    const seen: string[] = [];
+    const input = wrapper.get('[data-testid="chat-image-input"]');
+    Object.defineProperty(input.element, 'value', {
+      get: () => '',
+      set: (value: string) => seen.push(`clear:${value}`),
+      configurable: true,
+    });
+
+    await attach(wrapper, [imageFile()]);
+
+    // The read has already resolved by the time the input is reset, so Safari
+    // still has a live reference while it decodes the file.
+    expect(wrapper.findAll('[data-testid="chat-image-remove"]')).toHaveLength(1);
+    expect(seen).toEqual(['clear:']);
+  });
+
+  it('drops an attached image once the turn has been sent', async () => {
+    const wrapper = mountArea();
+    await attach(wrapper, [imageFile()]);
+    await wrapper.get('[data-testid="chat-send"]').trigger('click');
+
+    wrapper.vm.clear();
+    await nextTick();
+
+    expect(wrapper.find('[data-testid="chat-image-remove"]').exists()).toBe(false);
   });
 
   it('falls back to the model name for a provider without a name', async () => {
@@ -118,7 +269,7 @@ describe('ChatInputArea', () => {
     await input.trigger('input');
     await wrapper.get('[data-testid="chat-send"]').trigger('click');
 
-    expect(wrapper.emitted('submit')?.[0]).toEqual([{ content: 'hello', agent: 'researcher', provider: 'gpt-5' }]);
+    expect(wrapper.emitted('submit')?.[0]).toEqual([{ content: 'hello', agent: 'researcher', provider: 'gpt-5', images: [] }]);
   });
 
   async function submitWith(wrapper: ReturnType<typeof mountArea>): Promise<unknown> {
@@ -138,7 +289,7 @@ describe('ChatInputArea', () => {
     const wrapper = mountArea({ agents: ['researcher', 'writer'], defaultAgent: 'writer' });
 
     expect((agentSelect(wrapper).element as HTMLSelectElement).value).toBe('writer');
-    expect(await submitWith(wrapper)).toEqual([{ content: 'hello', agent: 'writer', provider: 'openai' }]);
+    expect(await submitWith(wrapper)).toEqual([{ content: 'hello', agent: 'writer', provider: 'openai', images: [] }]);
   });
 
   it('falls back to the first agent when the stored default is not on offer', async () => {

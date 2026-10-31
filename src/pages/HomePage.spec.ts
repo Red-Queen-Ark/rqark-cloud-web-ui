@@ -97,7 +97,7 @@ describe('HomePage', () => {
     // The sidebar lists only sessions filed under this source, so a session
     // created without it is invisible to the very UI that started it.
     expect(api.postSessions).toHaveBeenCalledWith({ body: { source: SESSION_SOURCE } });
-    expect(useChatStore().pendingTurn).toEqual({ sessionId: 'session-new', content: 'hello there', agent: 'researcher', provider: 'openai' });
+    expect(useChatStore().pendingTurn).toEqual({ sessionId: 'session-new', content: 'hello there', agent: 'researcher', provider: 'openai', images: [] });
     expect(router.currentRoute.value.fullPath).toBe('/en/chat/session-new');
   });
 

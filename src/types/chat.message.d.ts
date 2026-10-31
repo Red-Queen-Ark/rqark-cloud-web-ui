@@ -98,6 +98,8 @@ interface ChatTurnMessage {
   content: string;
   provider: string;
   agent: string;
+  /** Base64 data URIs, at most four, each under 5MB; the server re-checks them. */
+  images?: string[];
 }
 
 interface ChatStopMessage {

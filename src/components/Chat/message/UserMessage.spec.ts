@@ -67,6 +67,36 @@ describe('UserMessage', () => {
     expect(wrapper.find(COPY).exists()).toBe(false);
   });
 
+  it('renders an attached image', () => {
+    const wrapper = mount(UserMessage, {
+      props: { message: { role: 'user', content: [{ type: 'image_url', image_url: { url: 'data:image/png;base64,AAAA' } }], created_at } },
+      global: { plugins: [i18n] },
+    });
+
+    expect(wrapper.get('[data-testid="user-message-image"]').attributes('src')).toBe('data:image/png;base64,AAAA');
+  });
+
+  it('sizes a thumbnail like the one the input shows', () => {
+    const wrapper = mount(UserMessage, {
+      props: {
+        message: {
+          role: 'user',
+          content: [
+            { type: 'text', text: 'hi' },
+            { type: 'image_url', image_url: { url: 'a.png' } },
+            { type: 'image_url', image_url: { url: 'b.png' } },
+          ],
+          created_at,
+        },
+      },
+      global: { plugins: [i18n] },
+    });
+
+    const images = wrapper.findAll('[data-testid="user-message-image"]');
+    expect(images.map((image) => image.attributes('src'))).toEqual(['a.png', 'b.png']);
+    expect(images[0].classes()).toEqual(expect.arrayContaining(['h-16', 'w-16', 'object-cover']));
+  });
+
   it('hides the revert button unless the message can be reverted', () => {
     expect(mountMessage({ revertible: false, id: 'm1' }).find(REVERT).exists()).toBe(false);
   });

@@ -129,6 +129,35 @@ test('sends what was typed as the turn the agent cloud resolves', async ({ page 
   await expect(input).toBeEmpty();
 });
 
+test('sends an attached image with the turn', async ({ page }) => {
+  await mockBackend(page, { session: boss, sessions: [first], agents: [agent], providers: [provider] });
+  await seedSession(page);
+
+  const sent: string[] = [];
+  await page.routeWebSocket(/\/agent-api\/chat\/ws\//, (ws) => {
+    ws.onMessage((message) => sent.push(String(message)));
+  });
+
+  await page.goto(`/en/chat/${first.id}`);
+  await expect(page.getByTestId('chat-input')).toBeEnabled();
+
+  // A one-pixel PNG is enough: the browser turns it into the same data URI the
+  // terminal client sends, and the frame only has to carry it through.
+  await page.getByTestId('chat-image-input').setInputFiles({
+    name: 'pixel.png',
+    mimeType: 'image/png',
+    buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64'),
+  });
+
+  await expect(page.getByTestId('chat-image-remove')).toHaveCount(1);
+  await page.getByTestId('chat-send').click();
+
+  await expect.poll(() => sent.length).toBe(1);
+  const frame = JSON.parse(sent[0]) as { images: string[] };
+  expect(frame.images).toHaveLength(1);
+  expect(frame.images[0]).toMatch(/^data:image\/png;base64,/);
+});
+
 test('sends a turn typed after the socket dropped, once it is back', async ({ page }) => {
   await mockBackend(page, { session: boss, sessions: [first], agents: [agent], providers: [provider] });
   await seedSession(page);

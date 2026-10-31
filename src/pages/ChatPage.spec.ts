@@ -108,7 +108,7 @@ describe('ChatPage', () => {
     await input.trigger('input');
     await wrapper.get('[data-testid="chat-send"]').trigger('click');
 
-    expect(socket.send).toHaveBeenCalledWith('hello there', 'researcher', 'openai', expect.any(Function));
+    expect(socket.send).toHaveBeenCalledWith('hello there', 'researcher', 'openai', expect.any(Function), []);
     expect(input.element.textContent).toBe('');
   });
 
@@ -129,7 +129,7 @@ describe('ChatPage', () => {
 
     await mountChat('/en/chat/session-a');
 
-    expect(socket.send).toHaveBeenCalledWith('hello there', 'researcher', 'openai');
+    expect(socket.send).toHaveBeenCalledWith('hello there', 'researcher', 'openai', undefined, []);
   });
 
   it('answers /stop by stopping the turn instead of sending it', async () => {
@@ -153,7 +153,7 @@ describe('ChatPage', () => {
     await input.trigger('input');
     await wrapper.get('[data-testid="chat-send"]').trigger('click');
 
-    expect(socket.send).toHaveBeenCalledWith('/compact', 'researcher', 'openai', expect.any(Function));
+    expect(socket.send).toHaveBeenCalledWith('/compact', 'researcher', 'openai', expect.any(Function), []);
     expect(socket.stop).not.toHaveBeenCalled();
   });
 
@@ -179,6 +179,16 @@ describe('ChatPage', () => {
     expect((agentSelect(wrapper).element as HTMLSelectElement).value).toBe('writer');
   });
 
+  it('sends the images a turn from the home page was carrying', async () => {
+    const uri = 'data:image/png;base64,AAAA';
+    useChatStore().setPendingTurn({ sessionId: 'session-a', content: 'hello there', agent: 'researcher', provider: 'openai', images: [uri] });
+
+    await mountChat('/en/chat/session-a');
+    await flushPromises();
+
+    expect(socket.send).toHaveBeenCalledWith('hello there', 'researcher', 'openai', undefined, [uri]);
+  });
+
   it('remembers the agent a session was sent to', async () => {
     socket.agentsValue = [
       { id: 'agent-1', name: 'researcher' },
@@ -192,7 +202,7 @@ describe('ChatPage', () => {
     await input.trigger('input');
     await wrapper.get('[data-testid="chat-send"]').trigger('click');
 
-    expect(socket.send).toHaveBeenCalledWith('hello there', 'writer', 'openai', expect.any(Function));
+    expect(socket.send).toHaveBeenCalledWith('hello there', 'writer', 'openai', expect.any(Function), []);
     expect(useChatStore().agentFor('session-a')).toBe('writer');
   });
 });

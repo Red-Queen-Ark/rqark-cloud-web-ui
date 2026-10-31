@@ -6,6 +6,7 @@ export interface PendingTurn {
   content: string;
   agent: string;
   provider: string;
+  images?: string[];
 }
 
 export const useChatStore = defineStore('chatStore', {
