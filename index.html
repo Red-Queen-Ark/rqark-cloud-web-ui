@@ -103,8 +103,40 @@
     <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport" />
     <meta name="description" content="%VITE_APP_DESCRIPTION%" />
     <title>%VITE_APP_NAME%</title>
+    <style>
+      /* The launch artwork's own background, so the swap is invisible. */
+      #boot-splash {
+        position: fixed;
+        inset: 0;
+        z-index: 2147483647;
+        display: grid;
+        place-items: center;
+        background: #141414;
+      }
+      /*
+       * The mark fills 57% of the logo.svg square, and the launch artwork draws
+       * that mark across ~35% of the screen's shorter edge, so this size lands
+       * the two on top of each other and the swap cannot be seen. Sized by the
+       * shorter edge, it keeps its shape in any window.
+       */
+      #boot-splash img {
+        display: block;
+        width: 62vmin;
+        height: auto;
+      }
+    </style>
   </head>
   <body class="h-dvh w-full overflow-hidden">
+    <!--
+      iOS paints its own launch image before any of this can run, and it
+      stretches that image whenever none of the media queries above matches the
+      device exactly - which is always the case in a resized window (Stage
+      Manager, Split View, Slide Over) and has been seen on iPads whose reported
+      device size differs from the artwork's. So the first frame the app can
+      control repeats the same artwork at its true aspect ratio, and it takes
+      itself away as soon as the shell has mounted.
+    -->
+    <div id="boot-splash" aria-hidden="true"><img src="/logo.svg" alt="" width="512" height="512" /></div>
     <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>
