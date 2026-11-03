@@ -45,8 +45,9 @@ app.mount('#app');
 // so it covers the boot instead of flashing an empty shell. It never waits more
 // than a few seconds: a session that cannot be restored offline must still end
 // up on the login page rather than on a permanent splash.
+const bootedAt = performance.now();
 void Promise.race([router.isReady(), new Promise((resolve) => setTimeout(resolve, 4000))]).then(() => {
-  requestAnimationFrame(() => dismissBootSplash());
+  requestAnimationFrame(() => dismissBootSplash({ shownAt: bootedAt }));
 });
 
 useThemeStore().init();
