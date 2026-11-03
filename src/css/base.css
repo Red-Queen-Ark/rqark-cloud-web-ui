@@ -12,6 +12,17 @@
   transition: bottom 120ms ease-out;
 }
 
+/*
+ * The chat column, capped so a landscape iPad does not stretch a sentence
+ * across the whole screen. Both the transcript and the composer use it, and the
+ * composer repeats the shell's own page padding so the two edges line up.
+ */
+.chat-measure {
+  width: 100%;
+  max-width: 48rem;
+  margin-inline: auto;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .chat-input-dock {
     transition: none;
