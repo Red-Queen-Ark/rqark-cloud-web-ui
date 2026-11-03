@@ -592,7 +592,7 @@ test('renews the token before sending a turn the session aged out of', async ({ 
   await page.clock.install();
   const seeded = jwtExpiringIn(3600);
   await page.addInitScript((token: string) => {
-    localStorage.setItem('authStore', JSON.stringify({ accessToken: token, refreshToken: 'refresh-token' }));
+    localStorage.setItem('rqark.auth.tokens', JSON.stringify({ accessToken: token, refreshToken: 'refresh-token' }));
   }, seeded);
 
   const tokens: (string | null)[] = [];

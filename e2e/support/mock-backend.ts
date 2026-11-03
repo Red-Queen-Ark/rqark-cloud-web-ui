@@ -800,7 +800,7 @@ export async function mockBackend(page_: Page, options: MockBackendOptions = {})
 export async function seedSession(page_: Page): Promise<void> {
   const accessToken = jwtExpiringIn(-60);
   await page_.addInitScript((token: string) => {
-    localStorage.setItem('authStore', JSON.stringify({ accessToken: token, refreshToken: 'refresh-token' }));
+    localStorage.setItem('rqark.auth.tokens', JSON.stringify({ accessToken: token, refreshToken: 'refresh-token' }));
   }, accessToken);
 }
 
