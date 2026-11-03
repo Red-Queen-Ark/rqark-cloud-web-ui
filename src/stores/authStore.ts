@@ -2,6 +2,7 @@ import type { ApiLoginRequest, ApiRegisterRequest, ApiUserDto } from '@/api';
 import { getUsersMe, patchUsersMe, postAuthLogin, postAuthRegister, putUsersMePassword } from '@/api';
 import type { ApiChangePasswordRequest, ApiUpdateMeRequest } from '@/api';
 import { defineStore } from 'pinia';
+import { clearTokenPair, readTokenPair, writeTokenPair } from '@/utils/authSession';
 
 /** The outcome of an action that can be rejected by the backend. */
 export interface AuthResult {
@@ -13,11 +14,15 @@ export interface AuthResult {
 export const useAuthStore = defineStore('authStore', {
   state: () =>
     ({
-      accessToken: undefined,
-      refreshToken: undefined,
+      // The pair lives in a dedicated key shared by every tab, so it survives
+      // reloads and lets other tabs adopt a rotation instead of replaying a
+      // spent refresh token.
+      accessToken: readTokenPair()?.accessToken,
+      refreshToken: readTokenPair()?.refreshToken,
       user: undefined,
       initialized: false,
     }) as TAuth,
+
   getters: {
     isAuthenticated: (state): boolean => Boolean(state.accessToken),
     displayName: (state): string => state.user?.display_name || state.user?.username || '',
@@ -26,11 +31,18 @@ export const useAuthStore = defineStore('authStore', {
     setTokens(accessToken: string, refreshToken: string): void {
       this.accessToken = accessToken;
       this.refreshToken = refreshToken;
+      writeTokenPair({ accessToken, refreshToken });
+    },
+    /** Adopts a pair another tab already rotated (already persisted there). */
+    adoptTokens(pair: { accessToken: string; refreshToken: string }): void {
+      this.accessToken = pair.accessToken;
+      this.refreshToken = pair.refreshToken;
     },
     clearSession(): void {
       this.accessToken = undefined;
       this.refreshToken = undefined;
       this.user = undefined;
+      clearTokenPair();
     },
     /** Loads the account behind the access token into the store. */
     async fetchMe(): Promise<ApiUserDto | undefined> {
@@ -98,6 +110,6 @@ export const useAuthStore = defineStore('authStore', {
   },
   persist: {
     key: 'authStore',
-    pick: ['accessToken', 'refreshToken', 'user'],
+    pick: ['user'],
   },
 });

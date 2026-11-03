@@ -13,6 +13,7 @@ vi.mock('@/api', () => ({
 
 describe('authStore', () => {
   beforeEach(() => {
+    localStorage.clear();
     setActivePinia(createPinia());
     vi.clearAllMocks();
   });
