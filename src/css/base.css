@@ -7,6 +7,17 @@
   top: var(--vv-offset-top, 0px);
 }
 
+/*
+ * iOS/iPadOS paints a system blur scrim over the status bar of Home Screen web
+ * apps and the page cannot opt out of it. With `viewport-fit=cover` the shell
+ * therefore starts underneath that scrim and the topbar's title and buttons get
+ * washed out. Reserve the inset band so the scrim only covers the shell's own
+ * surface colour instead of live chrome.
+ */
+.app-shell {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
 .chat-input-dock {
   bottom: calc(var(--keyboard-inset, 0px) + var(--spacing, 0.25rem) * 2);
   transition: bottom 120ms ease-out;

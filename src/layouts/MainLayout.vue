@@ -1,5 +1,5 @@
 <template>
-  <main class="bg-base-100 relative flex h-full flex-col">
+  <main class="app-shell bg-base-100 relative flex h-full flex-col">
     <Alert />
     <Sidebar button-label="main" :items="siderItems" class="flex-1">
       <Topbar />
