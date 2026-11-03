@@ -12,7 +12,7 @@
       <UploadIcon class="h-5 w-5" />
       {{ t('chat.dropImage') }}
     </div>
-    <div class="bg-base-200 rounded-box border border-base-300">
+    <div class="bg-base-200 rounded-box border border-base-300 overflow-hidden">
       <div v-if="images.length > 0" data-testid="chat-images" class="flex flex-wrap gap-2 px-3 pt-2">
         <div v-for="(image, index) in images" :key="image.id" data-testid="chat-image" class="relative">
           <img
@@ -66,24 +66,24 @@
 
       <div class="flex items-center gap-2 px-3 pb-2 pt-1.5 border-t border-base-300/50 bg-base-300/30 rounded-b-box">
         <div v-if="statusClass" data-testid="chat-status" :class="['status', statusClass]" :aria-label="statusLabel" :title="statusLabel"></div>
-        <div class="flex items-center gap-1 text-xs text-base-content/70">
+        <div class="flex min-w-0 flex-1 basis-0 items-center gap-1 text-xs text-base-content/70">
           <BoltIcon class="h-3.5 w-3.5 shrink-0 opacity-60" />
-          <select class="select select-bordered select-xs bg-base-100 max-w-36" :value="selectedProvider" :disabled="providers.length === 0" @change="selectedProvider = ($event.target as HTMLSelectElement).value">
+          <select class="select select-bordered select-xs bg-base-100 w-full min-w-0 max-w-36" :value="selectedProvider" :disabled="providers.length === 0" @change="selectedProvider = ($event.target as HTMLSelectElement).value">
             <option v-if="providers.length === 0" value="" disabled>{{ t('chat.noProviders') }}</option>
             <option v-for="(p, i) in providers" :key="providerDisplayName(p) || i" :value="providerDisplayName(p)">{{ providerDisplayName(p) }}</option>
           </select>
         </div>
-        <span class="text-base-content/20">|</span>
-        <div class="flex items-center gap-1 text-xs text-base-content/70">
+        <span class="shrink-0 text-base-content/20">|</span>
+        <div class="flex min-w-0 flex-1 basis-0 items-center gap-1 text-xs text-base-content/70">
           <UserIcon class="h-3.5 w-3.5 shrink-0 opacity-60" />
-          <select class="select select-bordered select-xs bg-base-100 max-w-36" :value="selectedAgent" :disabled="agents.length === 0" @change="chooseAgent">
+          <select class="select select-bordered select-xs bg-base-100 w-full min-w-0 max-w-36" :value="selectedAgent" :disabled="agents.length === 0" @change="chooseAgent">
             <option v-if="agents.length === 0" value="" disabled>{{ t('chat.noAgents') }}</option>
             <!-- Keyed by position: two names may repeat, and the wire only carries
             the name, so the two entries are the same choice either way. -->
             <option v-for="(a, i) in agents" :key="i" :value="a">{{ a }}</option>
           </select>
         </div>
-        <div class="ml-auto flex items-center gap-1">
+        <div class="ml-auto flex shrink-0 items-center gap-1">
           <input ref="imageInputRef" data-testid="chat-image-input" type="file" accept="image/*" multiple class="hidden" @change="pickImages" />
           <input ref="cameraInputRef" data-testid="chat-camera-input" type="file" accept="image/*" capture="environment" class="hidden" @change="pickImages" />
           <button v-if="!streaming" id="chat-input-image-btn" data-testid="chat-image-attach" class="btn btn-ghost btn-sm btn-square" :title="t('chat.attachImage')" :aria-label="t('chat.attachImage')" @click="imageInputRef?.click()">
