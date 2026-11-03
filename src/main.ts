@@ -9,6 +9,7 @@ import { useThemeStore } from './stores/themeStore';
 import { useAuthStore } from './stores/authStore';
 import { setupApiClient } from './api-client/runtime';
 import { onAuthSessionChange } from './utils/authSession';
+import { applyIOSStandaloneClass } from './utils/iosStandalone';
 
 const app = createApp(App);
 app.use(i18n);
@@ -34,6 +35,8 @@ onAuthSessionChange((event) => {
   const lang = (router.currentRoute.value.params.lang as string) || 'en';
   void router.replace({ name: 'login', params: { lang } });
 });
+
+applyIOSStandaloneClass();
 
 app.mount('#app');
 

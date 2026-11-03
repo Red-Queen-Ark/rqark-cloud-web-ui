@@ -8,14 +8,23 @@
 }
 
 /*
- * iOS/iPadOS paints a system blur scrim over the status bar of Home Screen web
- * apps and the page cannot opt out of it. With `viewport-fit=cover` the shell
- * therefore starts underneath that scrim and the topbar's title and buttons get
- * washed out. Reserve the inset band so the scrim only covers the shell's own
- * surface colour instead of live chrome.
+ * iOS/iPadOS paints a blur scrim over the top of a Home Screen web app and the
+ * page cannot opt out of it. Reserve a band under it so the scrim only covers
+ * the shell's own surface colour instead of live chrome (the topbar and the
+ * sidebar's own header).
+ *
+ * `env(safe-area-inset-top)` is the honest answer on a notched iPhone, but it
+ * is always 0 on an iPad even though the scrim is still drawn there, so the
+ * standalone-on-iOS class enforces a floor. Tune `--pwa-top-clearance` if a
+ * platform reports a taller bar. A desktop app window has no scrim and is
+ * never given the class.
  */
 .app-shell {
   padding-top: env(safe-area-inset-top, 0px);
+}
+
+.ios-standalone .app-shell {
+  padding-top: max(env(safe-area-inset-top, 0px), var(--pwa-top-clearance, 3.75rem));
 }
 
 .chat-input-dock {
