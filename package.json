@@ -5,7 +5,7 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "generate-assets": "mkdir -p public/apple-splash/v2/landscape public/apple-splash/v2/portrait && bunx pwa-assets-generator --config pwa-assets.config.js && node scripts/ios-splash-links.mjs",
+    "generate-assets": "mkdir -p public/apple-splash/v3/landscape public/apple-splash/v3/portrait && bunx pwa-assets-generator --config pwa-assets.config.js && node scripts/ios-splash-links.mjs && node scripts/flatten-ios-splash.mjs",
     "format": "bunx prettier . --write",
     "lint": "bunx eslint .",
     "lint:fix": "bunx eslint . --fix",

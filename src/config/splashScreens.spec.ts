@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import sharp from 'sharp';
 import { describe, expect, it } from 'vitest';
 
 /**
@@ -89,6 +90,28 @@ describe('iOS launch images', () => {
     // iPad Pro 13"/Air 13" (M4) (1032x1376), iPad mini (744x1133).
     for (const size of ['820x1180', '834x1210', '1032x1376', '744x1133']) {
       expect(declared, size).toContain(size);
+    }
+  });
+
+  it('ships flat launch images, which cannot show as stretched', async () => {
+    // iOS stretches whichever launch image it holds when no media query matches
+    // the device, which is every resized window. Artwork inside one of these
+    // would arrive distorted, so they carry only the app background and the app
+    // paints the mark itself (see index.html's #boot-splash).
+    for (const link of links) {
+      const file = resolve(ROOT, 'public', link.href.replace(/^\//, ''));
+      const { data, info } = await sharp(file).raw().toBuffer({ resolveWithObject: true });
+      const first = data.subarray(0, info.channels);
+      let uniform = true;
+      for (let i = info.channels; i < data.length && uniform; i += info.channels) {
+        for (let channel = 0; channel < info.channels; channel += 1) {
+          if (data[i + channel] !== first[channel]) {
+            uniform = false;
+            break;
+          }
+        }
+      }
+      expect(uniform, link.href).toBe(true);
     }
   });
 });
