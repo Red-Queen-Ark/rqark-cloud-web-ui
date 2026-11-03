@@ -98,7 +98,7 @@ test('keeps the agent picked on the start page after the chat opens', async ({ p
   });
   await seedSession(page);
 
-  await page.routeWebSocket(/\/agent-api\/chat\/ws\//, () => {});
+  await page.routeWebSocket(/\/agent-api\/chat\/ws\//, () => undefined);
 
   await page.goto('/en');
 
