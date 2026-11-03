@@ -1,5 +1,5 @@
 <template>
-  <li ref="rootEl" class="min-w-0">
+  <li ref="rootEl" class="session-group min-w-0">
     <span class="menu-title">{{ t('chat.title') }}</span>
     <ul data-testid="sidebar-chat-sessions" class="min-w-0">
       <li>
@@ -181,3 +181,25 @@ onUnmounted(() => {
   }
 });
 </script>
+
+<style scoped>
+/* daisyUI's .menu turns every li into a wrapping flex column and the nested
+   list into `white-space: nowrap`. Both size a row by the longest title's
+   max-content, so one long name pushes the whole menu wider than the sidebar
+   and the text runs off the edge instead of ellipsizing. Plain block rows,
+   sized by the panel, keep the titles inside it. */
+.session-group,
+.session-group :deep(li) {
+  display: block;
+  max-width: 100%;
+  min-width: 0;
+  white-space: normal;
+}
+
+.session-group :deep(li > a) {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+</style>
