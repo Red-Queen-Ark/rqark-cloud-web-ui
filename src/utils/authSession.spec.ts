@@ -21,6 +21,18 @@ describe('authSession', () => {
     expect(readTokenPair()).toBeNull();
   });
 
+  it('adopts a pair left in the old persisted blob and strips it', () => {
+    localStorage.setItem('authStore', JSON.stringify({ accessToken: 'legacy-access', refreshToken: 'legacy-refresh', user: { id: '1' } }));
+
+    expect(readTokenPair()).toEqual({ accessToken: 'legacy-access', refreshToken: 'legacy-refresh' });
+
+    const legacy = JSON.parse(localStorage.getItem('authStore') ?? '{}') as Record<string, unknown>;
+    expect(legacy.accessToken).toBeUndefined();
+    expect(legacy.refreshToken).toBeUndefined();
+    expect(legacy.user).toEqual({ id: '1' });
+    expect(JSON.parse(localStorage.getItem(TOKENS_KEY) ?? '{}')).toEqual({ accessToken: 'legacy-access', refreshToken: 'legacy-refresh' });
+  });
+
   it('ignores a corrupted entry', () => {
     localStorage.setItem(TOKENS_KEY, '{"accessToken":1}');
     expect(readTokenPair()).toBeNull();

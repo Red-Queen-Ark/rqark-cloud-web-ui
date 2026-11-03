@@ -22,6 +22,8 @@ export interface TokenPair {
 export type AuthSessionEvent = { type: 'tokens'; pair: TokenPair } | { type: 'logout' };
 
 const TOKENS_KEY = 'rqark.auth.tokens';
+/** Where pinia-persistedstate used to keep the pair, read once to migrate. */
+const LEGACY_KEY = 'authStore';
 const LEASE_KEY = 'rqark.auth.refresh-lock';
 const LOCK_NAME = 'rqark-auth-refresh';
 const LEASE_MS = 20_000;
@@ -42,6 +44,10 @@ function storage(): Storage | null {
 }
 
 export function readTokenPair(): TokenPair | null {
+  return readSharedPair() ?? migrateLegacyPair();
+}
+
+function readSharedPair(): TokenPair | null {
   const raw = storage()?.getItem(TOKENS_KEY);
   if (!raw) {
     return null;
@@ -52,6 +58,32 @@ export function readTokenPair(): TokenPair | null {
       return null;
     }
     return { accessToken: parsed.accessToken, refreshToken: parsed.refreshToken };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Sessions written before the pair moved out of the pinia blob would otherwise
+ * log every existing user out once on upgrade, so the old entry is adopted and
+ * then stripped of its tokens.
+ */
+function migrateLegacyPair(): TokenPair | null {
+  try {
+    const raw = storage()?.getItem(LEGACY_KEY);
+    if (!raw) {
+      return null;
+    }
+    const parsed = JSON.parse(raw) as { accessToken?: unknown; refreshToken?: unknown } | null;
+    if (typeof parsed?.accessToken !== 'string' || typeof parsed.refreshToken !== 'string') {
+      return null;
+    }
+    const pair = { accessToken: parsed.accessToken, refreshToken: parsed.refreshToken };
+    writeTokenPair(pair);
+    delete parsed.accessToken;
+    delete parsed.refreshToken;
+    storage()?.setItem(LEGACY_KEY, JSON.stringify(parsed));
+    return pair;
   } catch {
     return null;
   }
