@@ -14,8 +14,10 @@
         </div>
 
         <!-- daisyUI 5 gives .menu `width: fit-content`, which collapses the row
-             highlight to the label width inside a stretched flex column. -->
-        <ul class="menu menu-md w-full scrollbar-thin flex-1 gap-1 overflow-y-auto p-2">
+             highlight to the label width inside a stretched flex column, and
+             `flex-flow: column wrap` turns a tall list into extra columns that
+             scroll sideways. Keep width full and wrapping off. -->
+        <ul class="menu menu-md w-full flex-nowrap scrollbar-thin flex-1 gap-1 overflow-x-hidden overflow-y-auto p-2">
           <li>
             <RouterLink :to="{ name: 'workspace', params: { lang: route.params.lang as string } }" :class="{ 'menu-active': route.name === 'workspace' }" data-testid="sidebar-workspace-link">
               <FolderIcon class="h-4 w-4" />
