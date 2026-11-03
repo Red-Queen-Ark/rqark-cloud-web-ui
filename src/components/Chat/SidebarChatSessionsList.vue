@@ -1,16 +1,16 @@
 <template>
-  <li ref="rootEl">
+  <li ref="rootEl" class="min-w-0">
     <span class="menu-title">{{ t('chat.title') }}</span>
-    <ul data-testid="sidebar-chat-sessions">
+    <ul data-testid="sidebar-chat-sessions" class="min-w-0">
       <li>
         <RouterLink :to="{ name: 'home', params: { lang } }" :class="{ 'menu-active': isHome }">
           <PlusIcon class="h-4 w-4" />
           {{ t('chat.newSession') }}
         </RouterLink>
       </li>
-      <li v-for="session in sessions" :key="session.id" class="group relative">
+      <li v-for="session in sessions" :key="session.id" class="group relative min-w-0">
         <template v-if="session.id">
-          <RouterLink :to="{ name: 'chat', params: { lang, uuid: session.id } }" :class="{ 'menu-active': isActive(session), invisible: editingId === session.id }" class="min-w-0 pr-8">
+          <RouterLink :to="{ name: 'chat', params: { lang, uuid: session.id } }" :class="{ 'menu-active': isActive(session), invisible: editingId === session.id }" class="flex min-w-0 items-center gap-2 pr-8">
             <span class="min-w-0 truncate">{{ session.title || t('sessions.untitled') }}</span>
           </RouterLink>
 
