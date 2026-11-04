@@ -26,6 +26,14 @@ interface SplashLink {
 const ROOT = resolve(__dirname, '../..');
 const LINK = /<link rel="apple-touch-startup-image" media="([^"]+)" href="([^"]+)" \/>/g;
 
+/** The mark's box is this fraction of the launch image's shorter edge. */
+const SPLASH_MARK_RATIO = 0.62;
+/** The same fraction index.html uses: `#boot-splash svg { width: 62vmin }`. */
+const BOOT_SPLASH_RATIO = Number(/#boot-splash svg \{[\s\S]*?width: ([\d.]+)vmin/.exec(readFileSync(resolve(ROOT, 'index.html'), 'utf8'))?.[1]) / 100;
+/** The artwork's ink fills this much of its own square box. */
+const INK_RATIO = 0.775;
+const RATIO_TOLERANCE = 0.04;
+
 function splashLinks(): SplashLink[] {
   const html = readFileSync(resolve(ROOT, 'index.html'), 'utf8');
   return [...html.matchAll(LINK)].map((match) => {
@@ -93,25 +101,61 @@ describe('iOS launch images', () => {
     }
   });
 
-  it('ships flat launch images, which cannot show as stretched', async () => {
-    // iOS stretches whichever launch image it holds when no media query matches
-    // the device, which is every resized window. Artwork inside one of these
-    // would arrive distorted, so they carry only the app background and the app
-    // paints the mark itself (see index.html's #boot-splash).
-    for (const link of links) {
+  it('draws the mark, so the launch has no iconless first frame', async () => {
+    // An installed app shows this image before any of the app can run. With only
+    // a background in it the launch starts blank and the mark shows up later -
+    // the flash this guards against.
+    for (const link of links.slice(0, 6)) {
       const file = resolve(ROOT, 'public', link.href.replace(/^\//, ''));
       const { data, info } = await sharp(file).raw().toBuffer({ resolveWithObject: true });
       const first = data.subarray(0, info.channels);
-      let uniform = true;
-      for (let i = info.channels; i < data.length && uniform; i += info.channels) {
+      let drawn = false;
+      for (let i = info.channels; i < data.length && !drawn; i += info.channels) {
         for (let channel = 0; channel < info.channels; channel += 1) {
           if (data[i + channel] !== first[channel]) {
-            uniform = false;
+            drawn = true;
             break;
           }
         }
       }
-      expect(uniform, link.href).toBe(true);
+      expect(drawn, `${link.href} is a flat background`).toBe(true);
+    }
+  });
+
+  it('draws the mark where the splash draws it, so the hand-off does not jump', async () => {
+    // index.html's #boot-splash continues the launch image. If the two draw the
+    // mark at different sizes or places, the swap reads as a flash.
+    expect(BOOT_SPLASH_RATIO, '#boot-splash svg width in index.html').toBeCloseTo(SPLASH_MARK_RATIO, 2);
+    const expectedInk = INK_RATIO * SPLASH_MARK_RATIO;
+
+    for (const link of links.slice(0, 4)) {
+      const file = resolve(ROOT, 'public', link.href.replace(/^\//, ''));
+      const { data, info } = await sharp(file).raw().toBuffer({ resolveWithObject: true });
+      const background = [...data.subarray(0, info.channels)];
+      const differs = (offset: number) => data.subarray(offset, offset + info.channels).some((value, channel) => Math.abs(value - background[channel]) > 12);
+
+      let left = info.width;
+      let right = -1;
+      let top = info.height;
+      let bottom = -1;
+      for (let y = 0; y < info.height; y += 1) {
+        for (let x = 0; x < info.width; x += 1) {
+          if (!differs((y * info.width + x) * info.channels)) {
+            continue;
+          }
+          if (x < left) {left = x;}
+          if (x > right) {right = x;}
+          if (y < top) {top = y;}
+          if (y > bottom) {bottom = y;}
+        }
+      }
+
+      const ink = Math.max(right - left + 1, bottom - top + 1) / Math.min(info.width, info.height);
+      expect(ink, `${link.href} mark size`).toBeGreaterThan(expectedInk - RATIO_TOLERANCE);
+      expect(ink, `${link.href} mark size`).toBeLessThan(expectedInk + RATIO_TOLERANCE);
+      // Centred, like the splash: an offset mark would jump on the hand-off.
+      expect(Math.abs((left + right) / 2 - info.width / 2), `${link.href} mark horizontal centre`).toBeLessThan(info.width * 0.02);
+      expect(Math.abs((top + bottom) / 2 - info.height / 2), `${link.href} mark vertical centre`).toBeLessThan(info.height * 0.02);
     }
   });
 });

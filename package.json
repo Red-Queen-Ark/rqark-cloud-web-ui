@@ -5,7 +5,7 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "generate-assets": "mkdir -p public/apple-splash/v3/landscape public/apple-splash/v3/portrait && bunx pwa-assets-generator --config pwa-assets.config.js && node scripts/ios-splash-links.mjs && node scripts/flatten-ios-splash.mjs",
+    "generate-assets": "mkdir -p public/apple-splash/v4/landscape public/apple-splash/v4/portrait && bunx pwa-assets-generator --config pwa-assets.config.js && node scripts/ios-splash-links.mjs",
     "format": "bunx prettier . --write",
     "lint": "bunx eslint .",
     "lint:fix": "bunx eslint . --fix",
@@ -39,6 +39,7 @@
     "eslint": "^9.39.1",
     "eslint-plugin-vue": "^10.9.0",
     "jsdom": "^26.1.0",
+    "sharp": "^0.35.5",
     "tailwindcss": "^4.3.1",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.50.0",

@@ -30,7 +30,7 @@ export default defineConfig({
       resizeOptions: { background: '#141414' },
       png: { compressionLevel: 9, quality: 80 },
       name: (landscape, size) => {
-        const dir = landscape ? 'apple-splash/v3/landscape' : 'apple-splash/v3/portrait';
+        const dir = landscape ? 'apple-splash/v4/landscape' : 'apple-splash/v4/portrait';
         return `${dir}/${size.width}x${size.height}.png`;
       },
     },
