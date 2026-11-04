@@ -3,8 +3,9 @@
     <button
       ref="trigger"
       type="button"
-      data-testid="row-actions-button"
+      :data-testid="triggerTestId"
       class="btn btn-ghost btn-square btn-xs"
+      :class="triggerClass"
       :aria-label="label ?? t('common.moreActions')"
       :title="label ?? t('common.moreActions')"
       aria-haspopup="menu"
@@ -25,7 +26,7 @@
       <ul
         v-if="open"
         ref="menu"
-        data-testid="row-actions-menu"
+        :data-testid="menuTestId"
         class="menu bg-base-200 rounded-box fixed z-50 w-44 p-1 shadow-md"
         :style="{ top: `${box.top}px`, left: `${box.left}px`, visibility: box.ready ? 'visible' : 'hidden' }"
         @click="close"
@@ -41,10 +42,20 @@ import EllipsisVerticalIcon from '@/components/svg/EllipsisVerticalIcon.vue';
 import { nextTick, onBeforeUnmount, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
-defineProps<{
+withDefaults(defineProps<{
   /** The trigger's accessible name; the shared "more actions" label by default. */
   label?: string;
-}>();
+  /** Extra classes for the trigger, for a row that paints its own button. */
+  triggerClass?: string;
+  /** Test hooks for callers whose menu is not a table row's. */
+  triggerTestId?: string;
+  menuTestId?: string;
+}>(), {
+  label: undefined,
+  triggerClass: undefined,
+  triggerTestId: 'row-actions-button',
+  menuTestId: 'row-actions-menu',
+});
 
 const { t } = useI18n();
 

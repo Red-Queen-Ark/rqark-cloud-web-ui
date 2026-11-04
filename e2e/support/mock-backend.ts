@@ -249,7 +249,9 @@ export async function mockBackend(page_: Page, options: MockBackendOptions = {})
     agents: options.agents ?? [],
     providers: options.providers ?? [],
     apiKeys: options.apiKeys ?? [],
-    sessions: options.sessions ?? [],
+    // Copied, because the PUT handler renames the row in place and the specs
+    // share their session fixtures across tests.
+    sessions: (options.sessions ?? []).map((item) => ({ ...item })),
     tasks: options.tasks ?? [],
     taskRuns: options.taskRuns ?? [],
     todos: options.todos ?? [],
