@@ -187,16 +187,20 @@ onUnmounted(() => {
    list into `white-space: nowrap`. Both size a row by the longest title's
    max-content, so one long name pushes the whole menu wider than the sidebar
    and the text runs off the edge instead of ellipsizing. Plain block rows,
-   sized by the panel, keep the titles inside it. */
+   sized by the panel, keep the titles inside it.
+
+   Scoped to the session rows themselves: the kebab dropdown is nested inside
+   one of those rows, and it needs daisyUI's own grid item to stretch each
+   action to the menu's width. */
 .session-group,
-.session-group :deep(li) {
+.session-group > ul > li {
   display: block;
   max-width: 100%;
   min-width: 0;
   white-space: normal;
 }
 
-.session-group :deep(li > a) {
+.session-group :deep(ul > li > a) {
   display: flex;
   align-items: center;
   gap: 0.5rem;

@@ -139,7 +139,8 @@ test('renames a session from its row menu', async ({ page }) => {
   const row = sessions.locator('li').filter({ hasText: 'Older chat' });
 
   await row.getByTestId('sidebar-chat-session-menu-button').click();
-  await row.getByTestId('sidebar-chat-session-edit').click();
+  // The menu is teleported to the body, so its items are page-level, not row-level.
+  await page.getByTestId('sidebar-chat-session-menu').getByTestId('sidebar-chat-session-edit').click();
   await row.locator('input[type="text"]').fill('Renamed chat');
   await row.getByTestId('sidebar-chat-rename-save').click();
 
@@ -157,7 +158,8 @@ test('renames the session the header is naming', async ({ page }) => {
 
   const row = page.getByTestId('sidebar-chat-sessions').locator('li').filter({ hasText: 'Older chat' });
   await row.getByTestId('sidebar-chat-session-menu-button').click();
-  await row.getByTestId('sidebar-chat-session-edit').click();
+  // The menu is teleported to the body, so its items are page-level, not row-level.
+  await page.getByTestId('sidebar-chat-session-menu').getByTestId('sidebar-chat-session-edit').click();
   await row.locator('input[type="text"]').fill('Renamed chat');
   await row.getByTestId('sidebar-chat-rename-save').click();
 

@@ -16,11 +16,19 @@ const CONFIRM = '[data-testid="form-modal-box"] .btn-error';
 
 let pinia: Pinia;
 
-// The dialog is teleported to the body, so it is outside the wrapper's own tree.
+// The menu and the dialog are teleported to the body, so they sit outside the wrapper's own tree.
 const dialog = () => document.querySelector('[data-testid="form-modal-box"]');
+const editItem = () => document.querySelector<HTMLElement>(EDIT);
+const deleteItem = () => document.querySelector<HTMLElement>(DELETE);
 
 function mountMenu(active = false) {
-  return mount(SidebarChatSessionMenu, { props: { sessionId: ID, active }, global: { plugins: [i18n, pinia] } });
+  return mount(SidebarChatSessionMenu, { props: { sessionId: ID, active }, attachTo: document.body, global: { plugins: [i18n, pinia] } });
+}
+
+/** Opens the menu the way a user does; its items only exist while it is open. */
+async function openMenu(wrapper: ReturnType<typeof mountMenu>) {
+  await wrapper.get(BUTTON).trigger('click');
+  await flushPromises();
 }
 
 describe('SidebarChatSessionMenu', () => {
@@ -43,8 +51,10 @@ describe('SidebarChatSessionMenu', () => {
 
   it('asks the row to start renaming without touching the api', async () => {
     const wrapper = mountMenu();
+    await openMenu(wrapper);
 
-    await wrapper.get(EDIT).trigger('click');
+    editItem()?.click();
+    await flushPromises();
 
     expect(wrapper.emitted('edit')).toHaveLength(1);
     expect(dialog()).toBeNull();
@@ -55,7 +65,9 @@ describe('SidebarChatSessionMenu', () => {
     (api.deleteSessionsByUuid as Mock).mockResolvedValue({ data: undefined });
 
     const wrapper = mountMenu();
-    await wrapper.get(DELETE).trigger('click');
+    await openMenu(wrapper);
+    deleteItem()?.click();
+    await flushPromises();
     expect(dialog()).not.toBeNull();
     expect(api.deleteSessionsByUuid).not.toHaveBeenCalled();
 
@@ -74,7 +86,9 @@ describe('SidebarChatSessionMenu', () => {
     const addItem = vi.spyOn(alerts, 'addItem');
 
     const wrapper = mountMenu();
-    await wrapper.get(DELETE).trigger('click');
+    await openMenu(wrapper);
+    deleteItem()?.click();
+    await flushPromises();
     (document.querySelector(CONFIRM) as HTMLButtonElement).click();
     await flushPromises();
 
