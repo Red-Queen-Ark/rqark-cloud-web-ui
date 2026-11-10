@@ -8,8 +8,8 @@ describe('renderMarkdown', () => {
     expect(renderMarkdown('`code`')).toBe('<p><code>code</code></p>\n');
   });
 
-  it('keeps a single newline inside one paragraph', () => {
-    expect(renderMarkdown('first\nsecond')).toBe('<p>first\nsecond</p>\n');
+  it('renders a single newline as a line break', () => {
+    expect(renderMarkdown('first\nsecond')).toBe('<p>first<br>second</p>\n');
   });
 
   it('renders GFM tables', () => {
