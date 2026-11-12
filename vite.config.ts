@@ -41,10 +41,10 @@ function manifestDevPlugin(appName: string, appDescription: string) {
   };
 }
 
-// The desktop build is loaded from the app's own custom protocol, where a
-// service worker cannot be registered. The Tauri CLI sets this for the build
-// it drives, so the PWA plugin steps out of the way.
-const isDesktopBuild = process.env.TAURI_ENV_PLATFORM !== undefined;
+// The desktop build is loaded from the app's own asset protocol, where a
+// service worker cannot be registered. The Wails build task sets this for the
+// build it drives, so the PWA plugin steps out of the way.
+const isDesktopBuild = process.env.DESKTOP_BUILD === 'true';
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
