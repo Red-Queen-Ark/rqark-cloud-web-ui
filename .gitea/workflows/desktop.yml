@@ -31,7 +31,7 @@ jobs:
           path: bin/rqark-agent-cloud.exe
 
   macos:
-    runs-on: macos
+    runs-on: carhyme-gitea-runner
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
@@ -45,8 +45,8 @@ jobs:
       - name: Archive app bundle
         run: |
           mkdir -p bin
-          ditto -c -k --keepParent "bin/RqArk Agent Cloud.app" bin/rqark-agent-cloud-macos.zip
+          tar -C bin -czf bin/rqark-agent-cloud-macos-arm64.tar.gz "RqArk Agent Cloud.app"
       - uses: actions/upload-artifact@v3
         with:
-          name: rqark-agent-cloud-macos
-          path: bin/rqark-agent-cloud-macos.zip
+          name: rqark-agent-cloud-macos-arm64
+          path: bin/rqark-agent-cloud-macos-arm64.tar.gz
