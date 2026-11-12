@@ -7,11 +7,33 @@ on:
   workflow_dispatch:
 
 env:
-  APP_NAME: RqArk Agent Cloud
   BIN_NAME: rqark-agent-cloud
 
 jobs:
+  # The tag is fixed once, so both builds attach to the same release.
+  prepare:
+    runs-on: carhyme-gitea-runner
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+    steps:
+      - name: Create the pre-release
+        id: tag
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITEA: ${{ github.server_url }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -eu
+          TAG="desktop-$(date -u +%Y%m%d%H%M)-$(echo "$SHA" | cut -c1-7)"
+          curl -sSf -X POST "$GITEA/api/v1/repos/$REPO/releases" \
+            -H "Authorization: token $TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{\"tag_name\":\"$TAG\",\"name\":\"Desktop $TAG\",\"body\":\"Desktop build of $SHA.\",\"prerelease\":true}" >/dev/null
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
   windows:
+    needs: prepare
     runs-on: carhyme-gitea-runner
     steps:
       - uses: actions/checkout@v4
@@ -19,22 +41,27 @@ jobs:
         with:
           go-version: '1.26'
       - uses: oven-sh/setup-bun@v2
-      - name: Install frontend dependencies
-        run: bun install --frozen-lockfile
-      - name: Build frontend
-        run: DESKTOP_BUILD=true bun run build
-      - name: Build executable
+      - run: bun install --frozen-lockfile
+      - run: DESKTOP_BUILD=true bun run build
+      - name: Build the executable
         run: |
           mkdir -p bin
           CGO_ENABLED=0 GOOS=windows GOARCH=amd64 \
             go build -trimpath -ldflags "-s -w -H windowsgui" \
             -o "bin/$BIN_NAME.exe" .
-      - uses: actions/upload-artifact@v3
-        with:
-          name: windows-amd64
-          path: bin/rqark-agent-cloud.exe
+      - name: Attach it to the release
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITEA: ${{ github.server_url }}
+          REPO: ${{ github.repository }}
+          TAG: ${{ needs.prepare.outputs.tag }}
+        run: |
+          curl -sSf -X POST "$GITEA/api/v1/repos/$REPO/releases/$TAG/assets?name=$BIN_NAME.exe" \
+            -H "Authorization: token $TOKEN" \
+            -F "attachment=@bin/$BIN_NAME.exe" >/dev/null
 
   macos:
+    needs: prepare
     runs-on: carhyme-gitea-runner
     steps:
       - uses: actions/checkout@v4
@@ -42,44 +69,18 @@ jobs:
         with:
           go-version: '1.26'
       - uses: oven-sh/setup-bun@v2
-      - name: Install frontend dependencies
-        run: bun install --frozen-lockfile
+      - run: bun install --frozen-lockfile
       - name: Build the app bundle
         run: ./scripts/package-app.sh
-      - name: Archive the app bundle
-        run: |
-          tar -C bin -czf bin/rqark-agent-cloud-macos-arm64.tar.gz "$APP_NAME.app"
-      - uses: actions/upload-artifact@v3
-        with:
-          name: macos-arm64
-          path: bin/rqark-agent-cloud-macos-arm64.tar.gz
-
-  publish:
-    needs: [windows, macos]
-    runs-on: carhyme-gitea-runner
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v3
-        with:
-          path: dist
-      - name: Publish the pre-release
+      - name: Archive it
+        run: tar -C bin -czf bin/$BIN_NAME-macos-arm64.tar.gz "RqArk Agent Cloud.app"
+      - name: Attach it to the release
         env:
           TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITEA: ${{ github.server_url }}
           REPO: ${{ github.repository }}
+          TAG: ${{ needs.prepare.outputs.tag }}
         run: |
-          set -eu
-          TAG="desktop-$(date -u +%Y%m%d)-${GITHUB_SHA:0:7}"
-          files=$(find dist -type f)
-          args=""
-          for f in $files; do
-            args="$args -F attachment=@$f"
-          done
-          # shellcheck disable=SC2086
-          curl -sS -X POST "$GITEA/api/v1/repos/$REPO/releases" \
+          curl -sSf -X POST "$GITEA/api/v1/repos/$REPO/releases/$TAG/assets?name=$BIN_NAME-macos-arm64.tar.gz" \
             -H "Authorization: token $TOKEN" \
-            -F "tag_name=$TAG" \
-            -F "name=$APP_NAME $TAG" \
-            -F "body=Desktop build of $GITHUB_SHA." \
-            -F "prerelease=true" \
-            $args
+            -F "attachment=@bin/$BIN_NAME-macos-arm64.tar.gz" >/dev/null
