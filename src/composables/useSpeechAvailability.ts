@@ -1,5 +1,6 @@
 import { ref } from 'vue';
 import { agentApiUrl } from '@/config/agentApi';
+import { apiFetch } from '@/config/runtime';
 
 const PROBE_TIMEOUT_MS = 3000;
 
@@ -23,7 +24,7 @@ async function load(): Promise<void> {
 
   inFlight = (async () => {
     try {
-      const response = await fetch(agentApiUrl('/asr/health'), { signal: AbortSignal.timeout(PROBE_TIMEOUT_MS) });
+      const response = await apiFetch(agentApiUrl('/asr/health'), { signal: AbortSignal.timeout(PROBE_TIMEOUT_MS) });
       available.value = response.ok;
     } catch {
       available.value = false;

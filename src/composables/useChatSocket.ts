@@ -6,6 +6,7 @@ import { agentNameById } from '@/config/agentDefaults';
 import { toAgentEntries, type AgentEntry } from '@/config/agentList';
 import { agentApiUrl } from '@/config/agentApi';
 import type { ChatStatus } from '@/config/chatStatus';
+import { agentWsUrl } from '@/config/runtime';
 import { SESSION_SOURCE } from '@/config/sessionSource';
 import { planItemsFrom, type PlanItem } from '@/config/sessions';
 import { i18n } from '@/i18n';
@@ -339,8 +340,7 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
   }
 
   function chatSocketUrl(sessionId: string, token: string): string {
-    const url = new URL(agentApiUrl(`/chat/ws/${encodeURIComponent(sessionId)}`), window.location.origin);
-    url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+    const url = new URL(agentWsUrl(`/chat/ws/${encodeURIComponent(sessionId)}`));
     url.searchParams.set('token', token);
     return url.toString();
   }

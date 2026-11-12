@@ -1,4 +1,5 @@
 import { refreshSession } from '@/api-client/runtime';
+import { apiFetch } from '@/config/runtime';
 import { useAuthStore } from '@/stores/authStore';
 
 export async function fetchWithAuth(input: string, init: RequestInit = {}): Promise<Response> {
@@ -9,7 +10,7 @@ export async function fetchWithAuth(input: string, init: RequestInit = {}): Prom
     if (auth.accessToken) {
       headers.set('Authorization', `Bearer ${auth.accessToken}`);
     }
-    return fetch(input, { ...init, headers });
+    return apiFetch(input, { ...init, headers });
   }
 
   const response = await send();

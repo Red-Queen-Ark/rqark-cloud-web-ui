@@ -14,9 +14,13 @@
     "preview": "vite preview --host",
     "test": "vitest",
     "test:e2e": "bunx playwright test",
-    "api-client": "bunx openapi-ts"
+    "api-client": "bunx openapi-ts",
+    "desktop:dev": "wails3 dev -config ./build/devmode.yml",
+    "desktop:build": "wails3 task build",
+    "desktop:build:windows": "wails3 task build GOOS=windows GOARCH=amd64"
   },
   "dependencies": {
+    "@wailsio/runtime": "3.1.0",
     "dompurify": "^3.4.16",
     "marked": "^18.0.0",
     "pinia": "^3.0.4",

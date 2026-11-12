@@ -1,10 +1,15 @@
 <template>
   <div class="relative h-full">
     <div class="absolute right-4 top-4 z-50 flex gap-1">
+      <button v-if="desktop" id="login-server-settings" class="btn btn-ghost btn-sm" :aria-label="t('settings.servers')" @click="showServers = true">
+        <CogIcon class="h-4 w-4" />
+        <span class="hidden sm:inline">{{ t('settings.servers') }}</span>
+      </button>
       <LanguageSwitcher />
       <ThemeSwitcher />
     </div>
     <LoginBox v-model:username="username" v-model:password="password" :loading="loading" :allow-registration="allowRegistration" @login="login" />
+    <ServerSettingsModal v-if="showServers" @close="showServers = false" />
   </div>
 </template>
 
@@ -12,7 +17,10 @@
 import { getSystemConfig } from '@/api';
 import LoginBox from '@/components/Login/LoginBox.vue';
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue';
+import ServerSettingsModal from '@/components/ServerSettingsModal.vue';
 import ThemeSwitcher from '@/components/ThemeSwitcher.vue';
+import CogIcon from '@/components/svg/CogIcon.vue';
+import { isDesktop } from '@/config/runtime';
 import { useAlertStore } from '@/stores/alertStore';
 import { useAuthStore } from '@/stores/authStore';
 import { onMounted, ref } from 'vue';
@@ -29,6 +37,11 @@ const username = ref<string>('');
 const password = ref<string>('');
 const loading = ref(false);
 const allowRegistration = ref(false);
+
+// The desktop app has to be told where the backends are before it can log
+// in, so the server settings are reachable from the login page.
+const desktop = isDesktop();
+const showServers = ref(false);
 
 onMounted(async () => {
   const { data } = await getSystemConfig();

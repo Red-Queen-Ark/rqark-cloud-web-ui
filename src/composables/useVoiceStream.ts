@@ -2,6 +2,7 @@ import { computed, onScopeDispose, ref } from 'vue';
 import { refreshSession } from '@/api-client/runtime';
 import { VOICE_CLOSE, VOICE_FINAL_TIMEOUT_MS, VOICE_READY_TIMEOUT_MS, voiceErrorKey, voiceSocketUrl, type VoiceEvent } from '@/api-client/voice-socket';
 import { useAuthStore } from '@/stores/authStore';
+import { voiceWorkletUrl } from '@/config/runtime';
 import { PCM_TARGET_RATE, StreamResampler } from '@/utils/pcm';
 
 export type VoiceStreamState = 'idle' | 'connecting' | 'armed' | 'listening' | 'stopping';
@@ -259,10 +260,10 @@ async function connect(token: string): Promise<WebSocket> {
   }
 }
 
-function attachMicrophone(active: WebSocket) {
+async function attachMicrophone(active: WebSocket) {
   const audio = new AudioContext();
   context = audio;
-  const workletUrl = new URL(`${import.meta.env.BASE_URL}${WORKLET_PATH}`, window.location.origin).toString();
+  const workletUrl = await voiceWorkletUrl(WORKLET_PATH);
   return audio.audioWorklet
     .addModule(workletUrl)
     .then(() => navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true } }))

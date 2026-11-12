@@ -4,6 +4,7 @@ import { client } from '@/api/client.gen';
 import { getValidRequestBody } from '@/api/core/utils.gen';
 import { postAuthRefresh } from '@/api/sdk.gen';
 import { readTokenPair, withAuthTokenLock } from '@/utils/authSession';
+import { apiBaseUrl, apiFetch } from '@/config/runtime';
 
 /**
  * Paths that must never trigger the "refresh and retry" flow. A rejected login
@@ -27,10 +28,6 @@ export interface ApiRuntimeOptions {
 export type RefreshOutcome = 'refreshed' | 'invalid' | 'unavailable';
 
 let refreshInFlight: Promise<RefreshOutcome> | null = null;
-
-function apiBaseUrl(): string {
-  return import.meta.env.VITE_API_BASE_URL || '/api';
-}
 
 function isRetryExempt(url: string): boolean {
   return RETRY_EXEMPT_PATHS.some((path) => url.includes(path));
@@ -100,7 +97,6 @@ export async function refreshSession(): Promise<boolean> {
 }
 
 async function retryWithToken(request: Request, options: ResolvedRequestOptions, token: string): Promise<Response> {
-  const fetchImpl = (client.getConfig().fetch ?? globalThis.fetch) as typeof fetch;
   const headers = new Headers(request.headers);
   headers.set('Authorization', `Bearer ${token}`);
 
@@ -114,7 +110,17 @@ async function retryWithToken(request: Request, options: ResolvedRequestOptions,
     init.body = body as BodyInit;
   }
 
-  return fetchImpl(new Request(request.url, init));
+  return apiFetch(request.url, init);
+}
+
+/**
+ * Points the generated client at the backend.
+ *
+ * The client caches its base URL, so this has to run again whenever the
+ * backends change, which the desktop settings can do while the app is open.
+ */
+export function applyApiBaseUrl(): void {
+  client.setConfig({ baseUrl: apiBaseUrl(), fetch: apiFetch });
 }
 
 /**
@@ -123,7 +129,7 @@ async function retryWithToken(request: Request, options: ResolvedRequestOptions,
  * request, and rotating an expired token pair once before giving up.
  */
 export function setupApiClient({ onSessionExpired }: ApiRuntimeOptions = {}): void {
-  client.setConfig({ baseUrl: apiBaseUrl() });
+  applyApiBaseUrl();
 
   client.interceptors.request.use((request) => {
     const auth = useAuthStore();

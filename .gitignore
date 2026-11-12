@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# Desktop build output
+bin
+
 # Playwright
 playwright-report
 test-results

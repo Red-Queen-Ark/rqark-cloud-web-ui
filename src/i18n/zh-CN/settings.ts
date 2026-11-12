@@ -23,4 +23,11 @@ export const settings = {
   passwordError: '无法修改密码',
   passwordMismatch: '两次输入的密码不一致',
   passwordRequired: '请填写所有密码字段',
+  servers: '服务器',
+  serversHint: '桌面版要连接的后台地址，保存后立即生效。',
+  apiBaseUrl: '数据云地址',
+  agentApiBaseUrl: '智能体云地址',
+  serversSaved: '服务器地址已保存',
+  serversError: '无法保存服务器地址',
+  serverUrlInvalid: '地址必须以 http:// 或 https:// 开头',
 };
