@@ -27,11 +27,11 @@ function createTestRouter(): Router {
 let pinia: Pinia;
 
 function desktop(): void {
-  (window as unknown as { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__ = {};
+  (window as unknown as { _wails?: unknown })._wails = {};
 }
 
 function browser(): void {
-  delete (window as unknown as { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__;
+  delete (window as unknown as { _wails?: unknown })._wails;
 }
 
 async function mountLogin() {

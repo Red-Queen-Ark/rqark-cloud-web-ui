@@ -1,42 +1,27 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const store = vi.hoisted(() => ({
-  values: new Map<string, unknown>(),
-  saved: 0,
-  get: vi.fn(),
-  set: vi.fn(),
+const bridge = vi.hoisted(() => ({
+  load: vi.fn(),
   save: vi.fn(),
 }));
 
-vi.mock('@tauri-apps/plugin-store', () => ({
-  load: vi.fn(async () => ({
-    get: async (key: string) => store.values.get(key),
-    set: async (key: string, value: unknown) => {
-      store.values.set(key, value);
-    },
-    save: async () => {
-      store.saved += 1;
-    },
-  })),
+vi.mock('@/config/desktopSettings', () => ({
+  loadServerConfig: bridge.load,
+  saveServerConfig: bridge.save,
 }));
 
-import { agentApiBaseUrl, agentWsUrl, apiBaseUrl, apiFetch, initRuntimeConfig, isDesktop, saveServerConfig, serverConfig } from './runtime';
-
-const rustFetch = vi.hoisted(() => vi.fn());
-
-vi.mock('@tauri-apps/plugin-http', () => ({ fetch: rustFetch }));
+import { agentApiBaseUrl, agentWsUrl, apiBaseUrl, apiFetch, initRuntimeConfig, isDesktop, saveServerConfig, serverConfig, voiceWorkletUrl } from './runtime';
 
 function desktop(): void {
-  (window as unknown as { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__ = {};
+  (window as unknown as { _wails?: unknown })._wails = {};
 }
 
 function browser(): void {
-  delete (window as unknown as { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__;
+  delete (window as unknown as { _wails?: unknown })._wails;
 }
 
 beforeEach(() => {
-  store.values.clear();
-  store.saved = 0;
+  vi.clearAllMocks();
   browser();
 });
 
@@ -50,59 +35,69 @@ describe('runtime config', () => {
     expect(isDesktop()).toBe(true);
   });
 
-  it('keeps the relative bases of the web build', async () => {
+  it('addresses both builds through their own origin', async () => {
+    await initRuntimeConfig();
+    expect(apiBaseUrl()).toBe('/api');
+    expect(agentApiBaseUrl()).toBe('/agent-api');
+
+    desktop();
+    bridge.load.mockResolvedValue({ apiBaseUrl: 'http://10.0.0.5:7302/api', agentApiBaseUrl: 'http://10.0.0.5:8000/api' });
     await initRuntimeConfig();
     expect(apiBaseUrl()).toBe('/api');
     expect(agentApiBaseUrl()).toBe('/agent-api');
   });
 
-  it('falls back to the local backends when the desktop store is empty', async () => {
+  it('reads the addresses the desktop app was pointed at', async () => {
     desktop();
+    bridge.load.mockResolvedValue({ apiBaseUrl: 'http://10.0.0.5:7302/api', agentApiBaseUrl: 'http://10.0.0.5:8000/api' });
     await initRuntimeConfig();
-    expect(apiBaseUrl()).toBe('http://localhost:7302/api');
-    expect(agentApiBaseUrl()).toBe('http://localhost:8000/api');
+
+    expect(serverConfig()).toEqual({ apiBaseUrl: 'http://10.0.0.5:7302/api', agentApiBaseUrl: 'http://10.0.0.5:8000/api' });
   });
 
-  it('reads the backends the desktop app was pointed at', async () => {
+  it('falls back to the local backends when the settings file is empty', async () => {
     desktop();
-    store.values.set('apiBaseUrl', 'http://10.0.0.5:7302/api');
-    store.values.set('agentApiBaseUrl', 'http://10.0.0.5:8000/api');
+    bridge.load.mockResolvedValue({ apiBaseUrl: '', agentApiBaseUrl: '' });
     await initRuntimeConfig();
-    expect(apiBaseUrl()).toBe('http://10.0.0.5:7302/api');
-    expect(agentApiBaseUrl()).toBe('http://10.0.0.5:8000/api');
+
+    expect(serverConfig()).toEqual({ apiBaseUrl: 'http://localhost:7302/api', agentApiBaseUrl: 'http://localhost:8000/api' });
   });
 
-  it('applies a saved address at once and keeps it', async () => {
+  it('hands a saved address to the Go side and keeps it', async () => {
     desktop();
+    bridge.load.mockResolvedValue({ apiBaseUrl: 'http://10.0.0.5:7302/api', agentApiBaseUrl: 'http://10.0.0.5:8000/api' });
     await initRuntimeConfig();
     await saveServerConfig({ apiBaseUrl: 'http://10.0.0.6:7302/api/', agentApiBaseUrl: 'http://10.0.0.6:8000/api/' });
 
-    expect(apiBaseUrl()).toBe('http://10.0.0.6:7302/api');
-    expect(agentApiBaseUrl()).toBe('http://10.0.0.6:8000/api');
-    expect(serverConfig().apiBaseUrl).toBe('http://10.0.0.6:7302/api');
-    expect(store.values.get('apiBaseUrl')).toBe('http://10.0.0.6:7302/api');
-    expect(store.saved).toBe(1);
+    expect(serverConfig()).toEqual({ apiBaseUrl: 'http://10.0.0.6:7302/api', agentApiBaseUrl: 'http://10.0.0.6:8000/api' });
+    expect(bridge.save).toHaveBeenCalledWith({ apiBaseUrl: 'http://10.0.0.6:7302/api', agentApiBaseUrl: 'http://10.0.0.6:8000/api' });
   });
 
-  it('turns the agent cloud base into a websocket address', async () => {
-    desktop();
-    await initRuntimeConfig();
+  it('does not reach across the bridge on the web', async () => {
     await saveServerConfig({ apiBaseUrl: 'http://10.0.0.6:7302/api', agentApiBaseUrl: 'http://10.0.0.6:8000/api' });
+
+    expect(bridge.save).not.toHaveBeenCalled();
+  });
+
+  it('turns the agent cloud address into a websocket address', async () => {
+    desktop();
+    bridge.load.mockResolvedValue({ apiBaseUrl: 'http://10.0.0.6:7302/api', agentApiBaseUrl: 'http://10.0.0.6:8000/api' });
+    await initRuntimeConfig();
 
     expect(agentWsUrl('/chat/ws/1')).toBe('ws://10.0.0.6:8000/api/chat/ws/1');
   });
 
   it('keeps a secure agent cloud on a secure websocket', async () => {
     desktop();
+    bridge.load.mockResolvedValue({ apiBaseUrl: 'https://10.0.0.6/api', agentApiBaseUrl: 'https://10.0.0.6/api' });
     await initRuntimeConfig();
-    await saveServerConfig({ apiBaseUrl: 'https://10.0.0.6/api', agentApiBaseUrl: 'https://10.0.0.6/api' });
 
     expect(agentWsUrl('/voice/ws')).toBe('wss://10.0.0.6/api/voice/ws');
   });
 });
 
 describe('apiFetch', () => {
-  it('uses the browser fetch on the web', async () => {
+  it('calls its own origin', async () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true });
     vi.stubGlobal('fetch', fetchMock);
 
@@ -111,17 +106,23 @@ describe('apiFetch', () => {
     expect(fetchMock).toHaveBeenCalledWith('/api/ping', undefined);
     vi.unstubAllGlobals();
   });
+});
 
-  it('uses the Rust client on the desktop', async () => {
+describe('voiceWorkletUrl', () => {
+  it('loads the worklet from the app root on the web', async () => {
+    await expect(voiceWorkletUrl('voice-pcm.worklet.js')).resolves.toContain('/voice-pcm.worklet.js');
+  });
+
+  it('hands the worklet over as a blob on the desktop', async () => {
     desktop();
-    const fetchMock = vi.fn().mockResolvedValue({ ok: true });
-    vi.stubGlobal('fetch', fetchMock);
-    rustFetch.mockResolvedValue({ ok: true });
+    const source = 'registerProcessor("pcm", class extends AudioWorkletProcessor {});';
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ text: async () => source }));
+    const createObjectURL = vi.fn().mockReturnValue('blob:worklet');
+    vi.stubGlobal('URL', Object.assign(URL, { createObjectURL }));
 
-    await apiFetch('http://10.0.0.6:7302/api/ping');
+    await expect(voiceWorkletUrl('voice-pcm.worklet.js')).resolves.toBe('blob:worklet');
+    expect(createObjectURL).toHaveBeenCalledOnce();
 
-    expect(fetchMock).not.toHaveBeenCalled();
-    expect(rustFetch).toHaveBeenCalledWith('http://10.0.0.6:7302/api/ping', undefined);
     vi.unstubAllGlobals();
   });
 });

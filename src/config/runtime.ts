@@ -1,31 +1,42 @@
 /**
  * Where the app talks to the backends, and how it reaches them.
  *
- * The web build is served by the same origin that proxies `/api` and
- * `/agent-api`, so both bases stay relative and the proxy does the work.
+ * Both builds address the backends through the origin that serves the app: the
+ * web build is proxied by the server that serves it, the desktop build by the
+ * Go side of the app. The bases therefore stay relative, and the backends need
+ * no CORS rule for either of them.
  *
- * The desktop build is a webview with no proxy in front of it. Its HTTP calls
- * go through the Rust client of the http plugin, which is not bound to the
- * origin of the page and is therefore not subject to CORS. The bases are
- * absolute URLs, and they are read from the store, because a desktop install
- * talks to whatever machine the user runs the backends on.
+ * A desktop install talks to whatever machine the user runs the backends on, so
+ * the addresses behind those two paths are read from the desktop settings.
  */
-
-const API_BASE_KEY = 'apiBaseUrl';
-const AGENT_API_BASE_KEY = 'agentApiBaseUrl';
-const STORE_FILE = 'server.json';
-
-export const DEFAULT_DESKTOP_API_BASE_URL = 'http://localhost:7302/api';
-export const DEFAULT_DESKTOP_AGENT_API_BASE_URL = 'http://localhost:8000/api';
 
 export interface ServerConfig {
   apiBaseUrl: string;
   agentApiBaseUrl: string;
 }
 
-/** Whether the code is running inside the Tauri webview. */
+/** Path the generated API client prefixes to every call. */
+const API_BASE_PATH = stripTrailingSlash(import.meta.env.VITE_API_BASE_URL || '/api');
+
+/** Path the chat socket and the other agent cloud routes are addressed under. */
+const AGENT_API_BASE_PATH = stripTrailingSlash(import.meta.env.VITE_AGENT_API_BASE_URL || '/agent-api');
+
+/**
+ * Where a fresh install looks for the backends. The Go side owns the same pair,
+ * and answers with them when the settings file is missing.
+ */
+const LOCAL_API_BASE_URL = 'http://localhost:7302/api';
+const LOCAL_AGENT_API_BASE_URL = 'http://localhost:8000/api';
+
+/** The addresses the desktop settings hold. Unused by the web build. */
+let servers: ServerConfig = {
+  apiBaseUrl: LOCAL_API_BASE_URL,
+  agentApiBaseUrl: LOCAL_AGENT_API_BASE_URL,
+};
+
+/** Whether the code is running inside the Wails webview. */
 export function isDesktop(): boolean {
-  return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
+  return typeof window !== 'undefined' && '_wails' in window;
 }
 
 function stripTrailingSlash(value: string): string {
@@ -36,96 +47,57 @@ function isAbsolute(value: string): boolean {
   return /^https?:\/\//i.test(value);
 }
 
-let config: ServerConfig = {
-  apiBaseUrl: stripTrailingSlash(import.meta.env.VITE_API_BASE_URL || '/api'),
-  agentApiBaseUrl: stripTrailingSlash(import.meta.env.VITE_AGENT_API_BASE_URL || '/agent-api'),
-};
-
-interface Store {
-  get<T>(key: string): Promise<T | undefined>;
-  set(key: string, value: unknown): Promise<void>;
-  save(): Promise<void>;
-}
-
-let store: Store | null = null;
-
-/**
- * The desktop store, loaded once.
- *
- * A second load would hand out a second instance over the same file, so the
- * instance is kept and reused.
- */
-async function loadStore(): Promise<Store | null> {
-  if (!isDesktop()) {
-    return null;
-  }
-  if (store) {
-    return store;
-  }
-  try {
-    const { load } = await import('@tauri-apps/plugin-store');
-    store = await load(STORE_FILE, { autoSave: true });
-    return store;
-  } catch {
-    return null;
-  }
-}
-
 /**
  * Reads the backends the desktop app should talk to.
  *
- * The web build has no store to read and keeps the relative bases it was
- * built with, so this only does anything on the desktop.
+ * The web build has nothing to read: its proxy is fixed by the server that
+ * serves it. The desktop build asks the Go side, which owns the settings file.
  */
 export async function initRuntimeConfig(): Promise<void> {
   if (!isDesktop()) {
     return;
   }
-  const loaded = await loadStore();
-  if (!loaded) {
-    config = { apiBaseUrl: DEFAULT_DESKTOP_API_BASE_URL, agentApiBaseUrl: DEFAULT_DESKTOP_AGENT_API_BASE_URL };
-    return;
-  }
-  const storedApi = await loaded.get<string>(API_BASE_KEY);
-  const storedAgent = await loaded.get<string>(AGENT_API_BASE_KEY);
-  config = {
-    apiBaseUrl: stripTrailingSlash(storedApi && storedApi.length > 0 ? storedApi : DEFAULT_DESKTOP_API_BASE_URL),
-    agentApiBaseUrl: stripTrailingSlash(storedAgent && storedAgent.length > 0 ? storedAgent : DEFAULT_DESKTOP_AGENT_API_BASE_URL),
+  const { loadServerConfig } = await import('@/config/desktopSettings');
+  const stored = await loadServerConfig();
+  servers = {
+    apiBaseUrl: stripTrailingSlash(stored.apiBaseUrl) || LOCAL_API_BASE_URL,
+    agentApiBaseUrl: stripTrailingSlash(stored.agentApiBaseUrl) || LOCAL_AGENT_API_BASE_URL,
   };
 }
 
 /** Stores the backends the desktop app should talk to. */
 export async function saveServerConfig(next: ServerConfig): Promise<void> {
-  config = {
+  servers = {
     apiBaseUrl: stripTrailingSlash(next.apiBaseUrl),
     agentApiBaseUrl: stripTrailingSlash(next.agentApiBaseUrl),
   };
-  const loaded = await loadStore();
-  if (!loaded) {
+  if (!isDesktop()) {
     return;
   }
-  await loaded.set(API_BASE_KEY, config.apiBaseUrl);
-  await loaded.set(AGENT_API_BASE_KEY, config.agentApiBaseUrl);
-  await loaded.save();
+  const { saveServerConfig: persist } = await import('@/config/desktopSettings');
+  await persist(servers);
 }
 
 /** Base URL the generated API client prefixes to every path. */
 export function apiBaseUrl(): string {
-  return config.apiBaseUrl;
+  return API_BASE_PATH;
 }
 
 /** Base URL the chat socket and the other agent cloud routes are addressed under. */
 export function agentApiBaseUrl(): string {
-  return config.agentApiBaseUrl;
+  return AGENT_API_BASE_PATH;
 }
 
 export function serverConfig(): ServerConfig {
-  return { ...config };
+  return { ...servers };
 }
 
 /** An absolute URL on the agent cloud, ready for a WebSocket handshake. */
 export function agentWsUrl(path: string): string {
-  const base = agentApiBaseUrl();
+  // The desktop app has no proxy in front of its websockets, so it addresses
+  // the agent cloud host itself. The web build keeps the relative path and
+  // lets its server proxy the upgrade.
+  const base = isDesktop() && servers.agentApiBaseUrl ? servers.agentApiBaseUrl : AGENT_API_BASE_PATH;
   const url = isAbsolute(base) ? new URL(`${base}${path}`) : new URL(`${base}${path}`, window.location.origin);
   url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
   return url.toString();
@@ -134,30 +106,25 @@ export function agentWsUrl(path: string): string {
 /**
  * The fetch the app uses for its HTTP calls.
  *
- * On the desktop the request is made by the Rust client, so it carries no
- * webview origin and the backend needs no CORS rule for the app. On the web
- * the browser fetch is used, unchanged.
+ * Both builds call their own origin, so the browser fetch is the whole story.
  */
 export async function apiFetch(input: string | URL | Request, init?: RequestInit): Promise<Response> {
-  if (isDesktop()) {
-    const { fetch: rustFetch } = await import('@tauri-apps/plugin-http');
-    return rustFetch(input, init);
-  }
   return fetch(input as RequestInfo, init);
 }
 
 /**
  * The URL of the PCM worklet.
  *
- * The webview cannot load a module from the app's own custom protocol, so the
- * desktop build asks the Rust side for the source and hands it over as a blob
- * URL. The web build serves the file from the app root.
+ * The web build loads the module straight from the app root. The desktop
+ * webview cannot import a module over its asset protocol, so it fetches the
+ * source and hands it over as a blob URL.
  */
 export async function voiceWorkletUrl(path: string): Promise<string> {
+  const url = new URL(`${import.meta.env.BASE_URL}${path}`, window.location.origin).toString();
   if (!isDesktop()) {
-    return new URL(`${import.meta.env.BASE_URL}${path}`, window.location.origin).toString();
+    return url;
   }
-  const { invoke } = await import('@tauri-apps/api/core');
-  const source = await invoke<string>('voice_worklet_script');
+  const response = await fetch(url);
+  const source = await response.text();
   return URL.createObjectURL(new Blob([source], { type: 'text/javascript' }));
 }
