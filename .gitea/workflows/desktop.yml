@@ -10,14 +10,14 @@ env:
   BIN_NAME: rqark-agent-cloud
 
 jobs:
-  # The tag is fixed once, so both builds attach to the same release.
+  # The release is created once, so both builds attach to the same one.
   prepare:
     runs-on: carhyme-gitea-runner
     outputs:
-      tag: ${{ steps.tag.outputs.tag }}
+      id: ${{ steps.release.outputs.id }}
     steps:
       - name: Create the pre-release
-        id: tag
+        id: release
         env:
           TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITEA: ${{ github.server_url }}
@@ -26,11 +26,16 @@ jobs:
         run: |
           set -eu
           TAG="desktop-$(date -u +%Y%m%d%H%M)-$(echo "$SHA" | cut -c1-7)"
-          curl -sSf -X POST "$GITEA/api/v1/repos/$REPO/releases" \
+          BODY=$(curl -sSf -X POST "$GITEA/api/v1/repos/$REPO/releases" \
             -H "Authorization: token $TOKEN" \
             -H "Content-Type: application/json" \
-            -d "{\"tag_name\":\"$TAG\",\"name\":\"Desktop $TAG\",\"body\":\"Desktop build of $SHA.\",\"prerelease\":true}" >/dev/null
-          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+            -d "{\"tag_name\":\"$TAG\",\"name\":\"Desktop $TAG\",\"body\":\"Desktop build of $SHA.\",\"prerelease\":true}")
+          ID=$(printf '%s' "$BODY" | grep -o '"id":[0-9]*' | head -n 1 | cut -d: -f2)
+          if [ -z "$ID" ]; then
+            ID=$(curl -sSf "$GITEA/api/v1/repos/$REPO/releases/tags/$TAG" \
+              -H "Authorization: token $TOKEN" | grep -o '"id":[0-9]*' | head -n 1 | cut -d: -f2)
+          fi
+          echo "id=$ID" >> "$GITHUB_OUTPUT"
 
   windows:
     needs: prepare
@@ -54,9 +59,10 @@ jobs:
           TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITEA: ${{ github.server_url }}
           REPO: ${{ github.repository }}
-          TAG: ${{ needs.prepare.outputs.tag }}
+          RELEASE_ID: ${{ needs.prepare.outputs.id }}
         run: |
-          curl -sSf -X POST "$GITEA/api/v1/repos/$REPO/releases/$TAG/assets?name=$BIN_NAME.exe" \
+          set -eu
+          curl -sSf -X POST "$GITEA/api/v1/repos/$REPO/releases/$RELEASE_ID/assets?name=$BIN_NAME.exe" \
             -H "Authorization: token $TOKEN" \
             -F "attachment=@bin/$BIN_NAME.exe" >/dev/null
 
@@ -79,8 +85,9 @@ jobs:
           TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITEA: ${{ github.server_url }}
           REPO: ${{ github.repository }}
-          TAG: ${{ needs.prepare.outputs.tag }}
+          RELEASE_ID: ${{ needs.prepare.outputs.id }}
         run: |
-          curl -sSf -X POST "$GITEA/api/v1/repos/$REPO/releases/$TAG/assets?name=$BIN_NAME-macos-arm64.tar.gz" \
+          set -eu
+          curl -sSf -X POST "$GITEA/api/v1/repos/$REPO/releases/$RELEASE_ID/assets?name=$BIN_NAME-macos-arm64.tar.gz" \
             -H "Authorization: token $TOKEN" \
             -F "attachment=@bin/$BIN_NAME-macos-arm64.tar.gz" >/dev/null
