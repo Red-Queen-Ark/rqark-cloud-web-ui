@@ -20,7 +20,7 @@ import LanguageSwitcher from '@/components/LanguageSwitcher.vue';
 import ServerSettingsModal from '@/components/ServerSettingsModal.vue';
 import ThemeSwitcher from '@/components/ThemeSwitcher.vue';
 import CogIcon from '@/components/svg/CogIcon.vue';
-import { isDesktop } from '@/config/runtime';
+import { isDesktop, serverConfig } from '@/config/runtime';
 import { useAlertStore } from '@/stores/alertStore';
 import { useAuthStore } from '@/stores/authStore';
 import { onMounted, ref } from 'vue';
@@ -44,8 +44,20 @@ const desktop = isDesktop();
 const showServers = ref(false);
 
 onMounted(async () => {
-  const { data } = await getSystemConfig();
-  allowRegistration.value = Boolean(data?.allow_self_registration);
+  try {
+    const { data, response } = await getSystemConfig();
+    if (!response?.ok) {
+      throw new Error('bad status');
+    }
+    allowRegistration.value = Boolean(data?.allow_self_registration);
+  } catch {
+    // A desktop install that cannot reach its backend has nothing to log in
+    // to, so the settings open on their own with the address it tried.
+    if (desktop) {
+      showServers.value = true;
+      alertStore.addItem({ level: 'error', message: t('settings.serversUnreachable', { url: serverConfig().apiBaseUrl }) });
+    }
+  }
 });
 
 async function login() {

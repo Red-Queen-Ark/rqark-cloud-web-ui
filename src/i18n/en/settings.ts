@@ -28,6 +28,7 @@ export const settings = {
   apiBaseUrl: 'Data cloud URL',
   agentApiBaseUrl: 'Agent cloud URL',
   serversSaved: 'Server addresses saved',
+  serversUnreachable: 'Cannot reach the backend at {url}. Check the address and try again.',
   serversError: 'Could not save the server addresses',
   serverUrlInvalid: 'The address must start with http:// or https://',
 };

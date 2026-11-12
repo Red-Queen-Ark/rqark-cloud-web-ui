@@ -62,6 +62,21 @@ describe('LoginPage', () => {
     expect(wrapper.find('#login-server-settings').exists()).toBe(true);
   });
 
+  it('opens the server settings on its own when the backend cannot be reached', async () => {
+    desktop();
+    api.getSystemConfig.mockRejectedValue(new Error('offline'));
+    const wrapper = await mountLogin();
+
+    expect(wrapper.find('#settings-api-base').exists()).toBe(true);
+  });
+
+  it('keeps the login form clean when the web build cannot reach the backend', async () => {
+    api.getSystemConfig.mockRejectedValue(new Error('offline'));
+    const wrapper = await mountLogin();
+
+    expect(wrapper.find('#settings-api-base').exists()).toBe(false);
+  });
+
   it('opens the server settings from the login page', async () => {
     desktop();
     const wrapper = await mountLogin();

@@ -28,6 +28,7 @@ export const settings = {
   apiBaseUrl: '数据云地址',
   agentApiBaseUrl: '智能体云地址',
   serversSaved: '服务器地址已保存',
+  serversUnreachable: '连接不到后台 {url}，请检查地址再试。',
   serversError: '无法保存服务器地址',
   serverUrlInvalid: '地址必须以 http:// 或 https:// 开头',
 };
