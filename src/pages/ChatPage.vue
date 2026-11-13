@@ -1,6 +1,6 @@
 <template>
   <div data-testid="chat-page">
-    <div ref="planDock" class="fixed inset-x-0 top-14 z-30 sm:top-14 lg:left-72 md:mx-10" data-testid="chat-plan-dock">
+    <div ref="planDock" class="fixed inset-x-0 top-12 z-30 pt-2 sm:top-14 lg:left-72 md:mx-10" data-testid="chat-plan-dock">
       <ChatPlanCard :items="chatSocket.planItems" class="shadow-md" />
     </div>
     <div id="chat-history" ref="history" class="mb-30 md:mx-10 flex flex-col" :style="historyStyle">
@@ -96,7 +96,9 @@ async function handleRevert(messageId: string) {
 onMounted(async () => {
   if (planDock.value && typeof ResizeObserver !== 'undefined') {
     planObserver = new ResizeObserver((entries) => {
-      planHeight.value = Math.round(entries[0]?.contentRect.height ?? 0);
+      // offsetHeight, not contentRect: the dock's own padding is the gap that
+      // keeps the card clear of the header, and the history has to clear both.
+      planHeight.value = Math.round((entries[0]?.target as HTMLElement | undefined)?.offsetHeight ?? 0);
     });
     planObserver.observe(planDock.value);
   }
