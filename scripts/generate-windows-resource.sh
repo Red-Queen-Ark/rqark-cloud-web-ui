@@ -9,6 +9,7 @@ GOFLAGS=-mod=mod go run github.com/wailsapp/wails/v3/cmd/wails3 generate syso \
   -arch "$ARCH" \
   -icon ../icon.ico \
   -manifest ../wails.exe.manifest \
+  -info ../info.json \
   -out "../../../rqark-agent-cloud_windows_$ARCH.syso"
 
 echo "rqark-agent-cloud_windows_$ARCH.syso"

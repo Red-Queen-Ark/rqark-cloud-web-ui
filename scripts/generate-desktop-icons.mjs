@@ -1,11 +1,13 @@
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 import { sharpsToIco } from 'sharp-ico';
+import { parse as parseYaml } from 'yaml';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const SOURCE = resolve(ROOT, 'public/logo.svg');
+const CONFIG = resolve(ROOT, 'build/config.yml');
 
 const ICO_SIZES = [16, 24, 32, 48, 64, 128, 256];
 
@@ -58,5 +60,32 @@ async function writeIcns() {
   console.log(`build/darwin/icon.icns (${ICNS_TYPES.map(([, size]) => size).join(', ')})`);
 }
 
+async function writeWindowsVersionInfo() {
+  const config = parseYaml(await readFile(CONFIG, 'utf8'));
+  const info = config?.info ?? {};
+
+  // Windows reads the properties dialog from this block. Explorer hides the
+  // whole page when the text is filed under the neutral language, so it is
+  // filed under en-US (0409), the same choice the Wails generator makes.
+  const json = {
+    fixed: { file_version: info.version },
+    info: {
+      '0409': {
+        ProductVersion: info.version,
+        CompanyName: info.companyName,
+        FileDescription: info.description,
+        LegalCopyright: info.copyright,
+        ProductName: info.productName,
+        Comments: info.comments,
+      },
+    },
+  };
+
+  const out = resolve(ROOT, 'build/windows/info.json');
+  await writeFile(out, `${JSON.stringify(json, null, 2)}\n`);
+  console.log(`build/windows/info.json (${info.companyName})`);
+}
+
 await writeIco();
 await writeIcns();
+await writeWindowsVersionInfo();
