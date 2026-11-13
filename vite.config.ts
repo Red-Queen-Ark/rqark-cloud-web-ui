@@ -65,6 +65,12 @@ export default defineConfig(({ mode }) => {
   }
 
   return {
+    define: {
+      // The runtime check alone cannot see the Wails bridge until the runtime
+      // module is imported, which the app only does when it already believes it
+      // is desktop. The build it is made by is the reliable answer.
+      __DESKTOP_BUILD__: JSON.stringify(isDesktopBuild),
+    },
     // The desktop app serves its own assets from a custom protocol with no
     // server to rewrite paths, so its base is relative.
     base: isDesktopBuild ? './' : '/',

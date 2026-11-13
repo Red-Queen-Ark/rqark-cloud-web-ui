@@ -34,8 +34,21 @@ let servers: ServerConfig = {
   agentApiBaseUrl: LOCAL_AGENT_API_BASE_URL,
 };
 
-/** Whether the code is running inside the Wails webview. */
+/** Set by the Vite build the Wails task drives. */
+declare const __DESKTOP_BUILD__: boolean;
+
+/**
+ * Whether the code is running inside the Wails webview.
+ *
+ * The `_wails` global only exists once the Wails runtime module has been
+ * imported, and the app imports it while loading the desktop settings, so the
+ * build flag has to answer for the first call. The global still covers the
+ * builds the flag does not reach.
+ */
 export function isDesktop(): boolean {
+  if (typeof __DESKTOP_BUILD__ !== 'undefined' && __DESKTOP_BUILD__) {
+    return true;
+  }
   return typeof window !== 'undefined' && '_wails' in window;
 }
 
