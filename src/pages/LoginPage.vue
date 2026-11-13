@@ -33,8 +33,6 @@ const password = ref<string>('');
 const loading = ref(false);
 const allowRegistration = ref(false);
 
-// The desktop app has to be told where the backends are before it can log
-// in, so the server settings are reachable from the login page.
 const desktop = isDesktop();
 const serverSettings = ref<InstanceType<typeof LoginServerSettings> | null>(null);
 
@@ -46,8 +44,6 @@ onMounted(async () => {
     }
     allowRegistration.value = Boolean(data?.allow_self_registration);
   } catch {
-    // A desktop install that cannot reach its backend has nothing to log in
-    // to, so the settings open on their own with the address it tried.
     if (desktop) {
       serverSettings.value?.open();
       alertStore.addItem({ level: 'error', message: t('settings.serversUnreachable', { url: serverConfig().apiBaseUrl }) });
@@ -66,8 +62,6 @@ async function login() {
   loading.value = false;
 
   if (!ok) {
-    // The backend answers every credential failure with the same 401, so a
-    // single localized message is enough.
     alertStore.addItem({ level: 'error', message: t('login.error') });
     return;
   }
