@@ -16,7 +16,6 @@ import { dismissBootSplash } from '@/utils/bootSplash';
 const app = createApp(App);
 app.use(i18n);
 app.use(pinia);
-app.use(router);
 
 // The desktop app reads the backends it should talk to from its store, so the
 // API client must not be pointed at a base URL before that has happened. The
@@ -29,6 +28,11 @@ initRuntimeConfig().then(() => {
     },
   });
 
+  // Installing the router starts the first navigation, and its guard asks the
+  // backend who the stored token belongs to, so it has to come after the client
+  // is configured. Installing it earlier let the guard run against a client
+  // with no base URL and no token header.
+  app.use(router);
   app.mount('#app');
 
   // The splash from index.html stays until the first screen has been routed to,
