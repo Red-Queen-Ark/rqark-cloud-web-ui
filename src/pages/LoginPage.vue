@@ -1,25 +1,20 @@
 <template>
   <div class="relative h-full">
     <div class="absolute right-4 top-4 z-50 flex gap-1">
-      <button v-if="desktop" id="login-server-settings" class="btn btn-ghost btn-sm" :aria-label="t('settings.servers')" @click="showServers = true">
-        <CogIcon class="h-4 w-4" />
-        <span class="hidden sm:inline">{{ t('settings.servers') }}</span>
-      </button>
+      <LoginServerSettings v-if="desktop" ref="serverSettings" />
       <LanguageSwitcher />
       <ThemeSwitcher />
     </div>
     <LoginBox v-model:username="username" v-model:password="password" :loading="loading" :allow-registration="allowRegistration" @login="login" />
-    <ServerSettingsModal v-if="showServers" @close="showServers = false" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { getSystemConfig } from '@/api';
 import LoginBox from '@/components/Login/LoginBox.vue';
+import LoginServerSettings from '@/components/Login/LoginServerSettings.vue';
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue';
-import ServerSettingsModal from '@/components/ServerSettingsModal.vue';
 import ThemeSwitcher from '@/components/ThemeSwitcher.vue';
-import CogIcon from '@/components/svg/CogIcon.vue';
 import { isDesktop, serverConfig } from '@/config/runtime';
 import { useAlertStore } from '@/stores/alertStore';
 import { useAuthStore } from '@/stores/authStore';
@@ -41,7 +36,7 @@ const allowRegistration = ref(false);
 // The desktop app has to be told where the backends are before it can log
 // in, so the server settings are reachable from the login page.
 const desktop = isDesktop();
-const showServers = ref(false);
+const serverSettings = ref<InstanceType<typeof LoginServerSettings> | null>(null);
 
 onMounted(async () => {
   try {
@@ -54,7 +49,7 @@ onMounted(async () => {
     // A desktop install that cannot reach its backend has nothing to log in
     // to, so the settings open on their own with the address it tried.
     if (desktop) {
-      showServers.value = true;
+      serverSettings.value?.open();
       alertStore.addItem({ level: 'error', message: t('settings.serversUnreachable', { url: serverConfig().apiBaseUrl }) });
     }
   }
