@@ -620,6 +620,11 @@ function handleKeydown(e: KeyboardEvent) {
   }
 }
 
+/**
+ * The paste runs through the editing pipeline instead of splicing nodes in by hand:
+ * the browser only records an edit it made itself on the undo stack, so a hand-built
+ * fragment stays behind after Ctrl+Z.
+ */
 function handlePaste(e: ClipboardEvent) {
   const pasted = clipboardImages(e.clipboardData ?? null);
   if (pasted.length > 0) {
@@ -632,24 +637,14 @@ function handlePaste(e: ClipboardEvent) {
   if (!text || !inputRef.value) {
     return;
   }
-  const sel = window.getSelection();
-  if (!sel?.rangeCount) {
-    document.execCommand('insertText', false, text);
-    handleInput();
-    return;
-  }
-  const range = sel.getRangeAt(0);
-  range.deleteContents();
-  const lines = text.split('\n');
-  lines.forEach((line, i) => {
-    if (i > 0) {
-      range.insertNode(document.createElement('br'));
-      range.collapse(false);
-    }
-    range.insertNode(document.createTextNode(line));
-    range.collapse(false);
-  });
+  document.execCommand('insertHTML', false, pastedHtml(text));
   handleInput();
+}
+
+/** The pasted text as markup: escaped, with a `<br>` where a line ends, as a typed Enter leaves it. */
+function pastedHtml(text: string): string {
+  const escaped = text.replace(/\r\n?/g, '\n').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return escaped.split('\n').join('<br>');
 }
 
 function insertTranscript(text: string) {
