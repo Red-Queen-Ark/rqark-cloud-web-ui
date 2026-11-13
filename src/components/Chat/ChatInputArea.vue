@@ -8,6 +8,7 @@
     @drop.prevent="onDrop"
   >
     <SlashCommandPanel :entries="slashEntries" :active-index="slashIndex" :label="t('chat.slashPanelLabel')" @select="completeSlash" @hover="slashIndex = $event" />
+    <FileMentionPanel :entries="fileEntries" :active-index="fileIndex" :label="t('chat.filePanelLabel')" @select="completeMention" @hover="fileIndex = $event" />
     <div v-if="dragging" data-testid="chat-drop-overlay" class="absolute inset-0 z-10 m-2 rounded-box border-2 border-dashed border-primary bg-base-100/85 flex items-center justify-center gap-1.5 text-sm text-primary pointer-events-none">
       <UploadIcon class="h-5 w-5" />
       {{ t('chat.dropImage') }}
@@ -57,7 +58,7 @@
             @keydown="handleKeydown"
             @input="handleInput"
             @paste="handlePaste"
-            @blur="closeSlash"
+            @blur="handleBlur"
             @compositionstart="handleCompositionStart"
             @compositionend="handleCompositionEnd"
           ></div>
@@ -130,6 +131,9 @@ import type { ApiProviderSummaryDto } from '@/api';
 import { CHAT_STATUS, type ChatStatus } from '@/config/chatStatus';
 import { providerDisplayName } from '@/config/providers';
 import { slashEntries as buildSlashEntries, type SlashEntry } from '@/config/slashCommands';
+import type { WorkspaceEntry } from '@/config/workspace';
+import { completeWorkspace } from '@/api-client/workspace';
+import { mentionQuery, type MentionQuery } from '@/components/Chat/fileMention';
 import { IMAGE_MAX_BYTES, IMAGE_MAX_PER_MESSAGE, IMAGE_TYPES, clipboardImages, dataUriBytes, droppedImages, shrinkImage } from '@/components/Chat/imageAttachment';
 import { useSopList } from '@/composables/useSopList';
 import { useSpeechAvailability } from '@/composables/useSpeechAvailability';
@@ -137,6 +141,7 @@ import { canRecord, useRecorder } from '@/composables/useRecorder';
 import { canStream, useVoiceStream } from '@/composables/useVoiceStream';
 import { useAlertStore } from '@/stores/alertStore';
 import SlashCommandPanel from '@/components/Chat/SlashCommandPanel.vue';
+import FileMentionPanel from '@/components/Chat/FileMentionPanel.vue';
 import BoltIcon from '@/components/svg/BoltIcon.vue';
 import CameraIcon from '@/components/svg/CameraIcon.vue';
 import CloseIcon from '@/components/svg/CloseIcon.vue';
@@ -301,12 +306,16 @@ watch(
   { immediate: true },
 );
 
-function readText(el: HTMLElement | null): string {
+function rawText(el: HTMLElement | null): string {
   if (!el) {
     return '';
   }
   const editable = el as unknown as { innerText?: string; textContent: string | null };
-  return (editable.innerText ?? editable.textContent ?? '').trim();
+  return editable.innerText ?? editable.textContent ?? '';
+}
+
+function readText(el: HTMLElement | null): string {
+  return rawText(el).trim();
 }
 
 /**
@@ -379,22 +388,209 @@ function moveSlash(delta: number) {
   slashIndex.value = (slashIndex.value + delta + count) % count;
 }
 
+/** Rows in the `@` panel; empty while it is closed, which is what hides it. */
+const fileEntries = ref<WorkspaceEntry[]>([]);
+const fileIndex = ref(0);
+/** The live `@` token, kept so completing it knows how much text to replace. */
+let mention: MentionQuery | null = null;
+let mentionTimer: ReturnType<typeof setTimeout> | undefined;
+/** Bumped on every request so a slow answer cannot overwrite a newer one. */
+let mentionRequest = 0;
+const MENTION_DEBOUNCE_MS = 120;
+const MENTION_LIMIT = 50;
+
+/** The editor's text from the start up to the caret, or null when it has no caret. */
+function textBeforeCaret(): string | null {
+  const el = inputRef.value;
+  const selection = window.getSelection();
+  if (!el || !selection || selection.rangeCount === 0) {
+    return null;
+  }
+  const range = selection.getRangeAt(0);
+  if (!el.contains(range.startContainer)) {
+    return null;
+  }
+  const before = range.cloneRange();
+  before.selectNodeContents(el);
+  before.setEnd(range.startContainer, range.startOffset);
+  return fragmentText(before.cloneContents());
+}
+
+/** Flattens a fragment the way `innerText` would, counting line breaks. */
+function fragmentText(fragment: DocumentFragment): string {
+  let text = '';
+  const walk = (node: Node) => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      text += node.textContent ?? '';
+      return;
+    }
+    if (node.nodeName === 'BR') {
+      text += '\n';
+      return;
+    }
+    if (node.nodeName === 'DIV' || node.nodeName === 'P') {
+      if (text && !text.endsWith('\n')) {
+        text += '\n';
+      }
+    }
+    node.childNodes.forEach(walk);
+  };
+  fragment.childNodes.forEach(walk);
+  return text;
+}
+
+function closeMention() {
+  fileEntries.value = [];
+  fileIndex.value = 0;
+  mention = null;
+  mentionRequest += 1;
+  if (mentionTimer) {
+    clearTimeout(mentionTimer);
+    mentionTimer = undefined;
+  }
+}
+
+async function loadMention(query: string) {
+  const request = mentionRequest;
+  try {
+    const entries = await completeWorkspace(query, MENTION_LIMIT);
+    if (request !== mentionRequest) {
+      return;
+    }
+    fileEntries.value = entries;
+    fileIndex.value = Math.min(fileIndex.value, Math.max(0, entries.length - 1));
+  } catch {
+    if (request === mentionRequest) {
+      fileEntries.value = [];
+    }
+  }
+}
+
+/** Re-reads the `@` token under the caret and schedules the matching rows. */
+function refreshMention() {
+  if (composing.value || slashEntries.value.length > 0) {
+    closeMention();
+    return;
+  }
+  const before = textBeforeCaret();
+  const found = before === null ? null : mentionQuery(before);
+  if (!found) {
+    closeMention();
+    return;
+  }
+  mention = found;
+  mentionRequest += 1;
+  if (mentionTimer) {
+    clearTimeout(mentionTimer);
+  }
+  mentionTimer = setTimeout(() => {
+    mentionTimer = undefined;
+    void loadMention(found.query);
+  }, MENTION_DEBOUNCE_MS);
+}
+
+/**
+ * Replaces the live `@token` with `@<path>` and the caret after it. A directory
+ * gets a trailing slash and keeps the panel open, so the next segment can be
+ * typed; a file gets a space because the mention is finished.
+ */
+function completeMention(index: number) {
+  const entry = fileEntries.value[index];
+  const el = inputRef.value;
+  const before = el ? textBeforeCaret() : null;
+  if (!entry || !mention || !el || before === null) {
+    closeMention();
+    return;
+  }
+  const isDirectory = entry.type === 'dir';
+  const replacement = `@${entry.path}${isDirectory ? '/' : ' '}`;
+  const text = rawText(el);
+  const start = mention.start;
+  const end = start + 1 + mention.query.length;
+  // The token always sits before the caret, so the caret offset is past `end`.
+  const next = text.slice(0, start) + replacement + text.slice(end);
+  const caret = start + replacement.length;
+  el.textContent = next;
+  placeCaret(el, caret);
+  hasContent.value = next.trim() !== '';
+  if (isDirectory) {
+    refreshMention();
+  } else {
+    closeMention();
+  }
+}
+
+/** Puts a collapsed caret at `offset` in an editor holding a single text node. */
+function placeCaret(el: HTMLElement, offset: number) {
+  const range = document.createRange();
+  const node = el.firstChild;
+  if (node && node.nodeType === Node.TEXT_NODE) {
+    range.setStart(node, Math.min(offset, node.textContent?.length ?? 0));
+    range.collapse(true);
+  } else {
+    range.selectNodeContents(el);
+    range.collapse(false);
+  }
+  const selection = window.getSelection();
+  selection?.removeAllRanges();
+  selection?.addRange(range);
+}
+
+function moveMention(delta: number) {
+  const count = fileEntries.value.length;
+  if (count === 0) {
+    return;
+  }
+  fileIndex.value = (fileIndex.value + delta + count) % count;
+}
+
+function handleBlur() {
+  closeSlash();
+  closeMention();
+}
+
 function handleCompositionStart() {
   composing.value = true;
   closeSlash();
+  closeMention();
 }
 
 function handleCompositionEnd() {
   composing.value = false;
   refreshSlash();
+  refreshMention();
 }
 
 function handleInput() {
   hasContent.value = readText(inputRef.value) !== '';
   refreshSlash();
+  refreshMention();
 }
 
 function handleKeydown(e: KeyboardEvent) {
+  if (fileEntries.value.length > 0) {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      moveMention(1);
+      return;
+    }
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      moveMention(-1);
+      return;
+    }
+    if (e.key === 'Enter' || e.key === 'Tab') {
+      e.preventDefault();
+      completeMention(fileIndex.value);
+      return;
+    }
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      closeMention();
+      return;
+    }
+  }
+
   if (slashEntries.value.length > 0) {
     if (e.key === 'ArrowDown') {
       e.preventDefault();
@@ -481,6 +677,7 @@ function submitTranscript(text: string) {
   inputRef.value.textContent = text;
   hasContent.value = true;
   closeSlash();
+  closeMention();
   submit();
   clear();
 }
@@ -618,6 +815,7 @@ function clear() {
   hasContent.value = false;
   images.value = [];
   closeSlash();
+  closeMention();
 }
 
 onMounted(() => {

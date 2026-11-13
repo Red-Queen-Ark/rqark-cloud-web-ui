@@ -1,5 +1,6 @@
 import * as api from '@/api';
 import * as asr from '@/api-client/asr';
+import * as workspace from '@/api-client/workspace';
 import { i18n } from '@/i18n';
 import type { ChatStatus } from '@/config/chatStatus';
 import { resetSopList } from '@/composables/useSopList';
@@ -20,6 +21,11 @@ vi.mock('@/api', () => ({
 vi.mock('@/api-client/asr', async () => {
   const actual = await vi.importActual<typeof import('@/api-client/asr')>('@/api-client/asr');
   return { ...actual, transcribeAudio: vi.fn() };
+});
+
+vi.mock('@/api-client/workspace', async () => {
+  const actual = await vi.importActual<typeof import('@/api-client/workspace')>('@/api-client/workspace');
+  return { ...actual, completeWorkspace: vi.fn() };
 });
 
 class FakeMediaRecorder {
@@ -48,10 +54,12 @@ beforeEach(() => {
   vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, status: 200 }));
   setActivePinia(createPinia());
   (api.getSops as Mock).mockResolvedValue({ data: { items: [{ slug: 'trip-itinerary', title: 'Trip itinerary' }] } });
+  (workspace.completeWorkspace as Mock).mockResolvedValue([]);
 });
 
-function mountArea(overrides: { agents?: string[]; initialAgent?: string; defaultAgent?: string; providers?: { name?: string; model_name?: string }[]; status?: ChatStatus; streaming?: boolean } = {}) {
+function mountArea(overrides: { agents?: string[]; initialAgent?: string; defaultAgent?: string; providers?: { name?: string; model_name?: string }[]; status?: ChatStatus; streaming?: boolean } = {}, attachTo?: HTMLElement) {
   return mount(ChatInputArea, {
+    ...(attachTo ? { attachTo } : {}),
     props: {
       agents: overrides.agents ?? ['researcher'],
       initialAgent: overrides.initialAgent,
@@ -507,6 +515,140 @@ describe('ChatInputArea slash panel', () => {
     await typeInto(wrapper, '/trip-itinerary 大阪');
 
     expect(wrapper.find('[data-testid="slash-panel"]').exists()).toBe(false);
+  });
+});
+
+describe('ChatInputArea file mention panel', () => {
+  const rows = [
+    { name: 'main.py', path: 'src/main.py', type: 'file' as const, size: 3, mtime: 0 },
+    { name: 'src', path: 'src', type: 'dir' as const, size: 0, mtime: 0 },
+  ];
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    (workspace.completeWorkspace as Mock).mockResolvedValue(rows);
+  });
+
+  const attached: ReturnType<typeof mountArea>[] = [];
+  const mountFileArea = () => {
+    const wrapper = mountArea({}, document.body);
+    attached.push(wrapper);
+    return wrapper;
+  };
+
+  afterEach(() => {
+    for (const wrapper of attached.splice(0)) {
+      wrapper.unmount();
+    }
+    vi.useRealTimers();
+  });
+
+  /** Types `text` into the editor, leaves the caret at the end, and settles the debounce. */
+  async function typeMention(wrapper: ReturnType<typeof mountArea>, text: string) {
+    const input = wrapper.get('[data-testid="chat-input"]');
+    input.element.textContent = text;
+    const range = document.createRange();
+    range.selectNodeContents(input.element);
+    range.collapse(false);
+    const selection = window.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+    await input.trigger('input');
+    await vi.advanceTimersByTimeAsync(200);
+    await flushPromises();
+    await nextTick();
+    return input;
+  }
+
+  it('opens on @ and asks for entries matching the text after it', async () => {
+    const wrapper = mountFileArea();
+    await typeMention(wrapper, '@ma');
+
+    expect(workspace.completeWorkspace).toHaveBeenLastCalledWith('ma', expect.any(Number));
+    expect(wrapper.find('[data-testid="file-panel"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="file-option-src/main.py"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="file-option-src"]').exists()).toBe(true);
+  });
+
+  it('does not open for an @ inside a word', async () => {
+    const wrapper = mountFileArea();
+    await typeMention(wrapper, 'mail@example');
+
+    expect(wrapper.find('[data-testid="file-panel"]').exists()).toBe(false);
+    expect(workspace.completeWorkspace).not.toHaveBeenCalled();
+  });
+
+  it('closes once the token has a space', async () => {
+    const wrapper = mountFileArea();
+    await typeMention(wrapper, '@ma');
+    await typeMention(wrapper, '@main.py ');
+
+    expect(wrapper.find('[data-testid="file-panel"]').exists()).toBe(false);
+  });
+
+  it('completes a file on Enter without sending the turn', async () => {
+    const wrapper = mountFileArea();
+    const input = await typeMention(wrapper, '@ma');
+
+    await input.trigger('keydown', { key: 'Enter' });
+
+    expect(input.element.textContent).toBe('@src/main.py ');
+    expect(wrapper.emitted('submit')).toBeUndefined();
+    expect(wrapper.find('[data-testid="file-panel"]').exists()).toBe(false);
+  });
+
+  it('adds a trailing slash for a directory and keeps the panel open', async () => {
+    const wrapper = mountFileArea();
+    const input = await typeMention(wrapper, '@sr');
+
+    await input.trigger('keydown', { key: 'ArrowDown' });
+    await input.trigger('keydown', { key: 'Enter' });
+    await vi.advanceTimersByTimeAsync(200);
+    await flushPromises();
+    await nextTick();
+
+    expect(input.element.textContent).toBe('@src/');
+    expect(wrapper.find('[data-testid="file-panel"]').exists()).toBe(true);
+  });
+
+  it('completes the row the mouse clicks and moves the caret with it', async () => {
+    const wrapper = mountFileArea();
+    const input = await typeMention(wrapper, '@ma');
+
+    await wrapper.get('[data-testid="file-option-src/main.py"]').trigger('click');
+
+    expect(input.element.textContent).toBe('@src/main.py ');
+    expect(window.getSelection()?.anchorOffset).toBe('@src/main.py '.length);
+  });
+
+  it('closes on Escape and leaves the text alone', async () => {
+    const wrapper = mountFileArea();
+    const input = await typeMention(wrapper, '@ma');
+
+    await input.trigger('keydown', { key: 'Escape' });
+
+    expect(wrapper.find('[data-testid="file-panel"]').exists()).toBe(false);
+    expect(input.element.textContent).toBe('@ma');
+  });
+
+  it('keeps the panel closed when the workspace call fails', async () => {
+    (workspace.completeWorkspace as Mock).mockRejectedValue(new Error('offline'));
+    const wrapper = mountFileArea();
+    await typeMention(wrapper, '@ma');
+
+    expect(wrapper.find('[data-testid="file-panel"]').exists()).toBe(false);
+  });
+
+  it('keeps the text around the completed mention', async () => {
+    const wrapper = mountFileArea();
+    const input = await typeMention(wrapper, 'look at @ma please');
+
+    expect(wrapper.find('[data-testid="file-panel"]').exists()).toBe(false);
+
+    await typeMention(wrapper, 'look at @ma');
+    await input.trigger('keydown', { key: 'Enter' });
+
+    expect(input.element.textContent).toBe('look at @src/main.py ');
   });
 });
 

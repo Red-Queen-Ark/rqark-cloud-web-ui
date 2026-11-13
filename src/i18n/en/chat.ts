@@ -36,6 +36,7 @@ export const chat = {
   statusConnecting: 'Connecting',
   statusConnected: 'Connected',
   statusError: 'Connection error',
+  filePanelLabel: 'Workspace files',
   slashPanelLabel: 'Slash commands',
   slashCompact: 'Compact the current conversation',
   slashStop: 'Stop the current response',
