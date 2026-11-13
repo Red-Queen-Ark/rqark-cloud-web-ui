@@ -1,7 +1,7 @@
 {
   "name": "rqark-agent-cloud-web-ui",
   "private": true,
-  "version": "0.12.26",
+  "version": "0.13.0",
   "license": "MIT",
   "type": "module",
   "scripts": {
