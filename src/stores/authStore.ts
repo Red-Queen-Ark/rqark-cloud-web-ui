@@ -57,6 +57,12 @@ export const useAuthStore = defineStore('authStore', {
      * Restores a persisted session once per page load. The access token may be
      * expired: the request interceptor rotates the pair and retries, so a
      * successful call is proof the session is still usable.
+     *
+     * Only a rejection from the backend ends the session. A backend that cannot
+     * be reached says nothing about the pair, and clearing it there would log
+     * the user out over every network blip — including the first request of a
+     * cold start, which the desktop app makes while its settings are still
+     * loading.
      */
     async restoreSession(): Promise<boolean> {
       if (this.initialized) {
@@ -67,9 +73,15 @@ export const useAuthStore = defineStore('authStore', {
         return false;
       }
 
-      const user = await this.fetchMe();
       this.initialized = true;
-      if (!user) {
+      const { data, response } = await getUsersMe();
+      // A body that is not a user is a misrouted answer (an asset server
+      // handing back index.html), not a session.
+      if (data?.id) {
+        this.user = data;
+        return true;
+      }
+      if (response?.status === 401 || response?.status === 403) {
         this.clearSession();
         return false;
       }

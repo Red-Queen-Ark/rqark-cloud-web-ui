@@ -41,11 +41,21 @@
         </div>
       </div>
     </div>
+
+    <div v-if="desktop" class="card bg-base-200/60 border-base-300 border">
+      <div class="card-body gap-3 p-4 sm:p-6">
+        <h2 class="card-title text-base">{{ t('settings.servers') }}</h2>
+
+        <ServerSettings />
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import ServerSettings from '@/components/ServerSettings.vue';
 import { LANGUAGES, languageOption } from '@/config/languages';
+import { isDesktop } from '@/config/runtime';
 import { useAuthStore } from '@/stores/authStore';
 import { THEME_FAMILIES, THEME_MODES, useThemeStore, type ThemeMode } from '@/stores/themeStore';
 import { onMounted, ref, reactive, watch } from 'vue';
@@ -57,6 +67,10 @@ const route = useRoute();
 const router = useRouter();
 const themeStore = useThemeStore();
 const authStore = useAuthStore();
+
+// The web build is served by the same origin as the backends, so it has
+// nothing to configure. The desktop app has to be told where they are.
+const desktop = isDesktop();
 
 const profile = reactive({ username: '', email: '', displayName: '' });
 const selectedFamily = ref<string>(themeStore.family);

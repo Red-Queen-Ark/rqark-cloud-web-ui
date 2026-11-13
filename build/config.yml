@@ -1,0 +1,38 @@
+version: '3'
+
+# Metadata used by the Wails packaging tasks. A plain `wails3 task build` only
+# needs the version; the rest is picked up when a bundle is made.
+info:
+  companyName: Carhyme
+  productName: RqArk Agent Cloud
+  productIdentifier: com.rqark.agentcloud
+  description: Desktop client for RqArk Agent Cloud — chats, agents, tasks and workspaces.
+  copyright: (c) Carhyme
+  comments: Desktop client
+  version: 0.12.24
+
+# Dev mode builds the frontend assets first, so the Go side has something to
+# embed, then runs the app against the Vite server for hot reload.
+dev_mode:
+  root_path: .
+  log_level: warn
+  debounce: 1000
+  ignore:
+    dir:
+      - .git
+      - node_modules
+      - bin
+      - dist
+    file:
+      - .DS_Store
+      - .gitignore
+    watched_extension:
+      - '*.go'
+  executes:
+    - cmd: wails3 task prepare:dist
+      type: blocking
+    - cmd: bun run dev
+      type: background
+    - cmd: go run .
+      type: primary
+      exit_policy: shutdown

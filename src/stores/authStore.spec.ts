@@ -44,7 +44,10 @@ describe('authStore', () => {
   });
 
   it('clears a persisted session the backend rejects', async () => {
-    (api.getUsersMe as Mock).mockResolvedValue({ error: { error: { code: 'UNAUTHORIZED', message: 'Invalid' } } });
+    (api.getUsersMe as Mock).mockResolvedValue({
+      error: { error: { code: 'UNAUTHORIZED', message: 'Invalid' } },
+      response: new Response(null, { status: 401 }),
+    });
 
     const store = useAuthStore();
     store.setTokens('stale-access', 'stale-refresh');
@@ -54,6 +57,20 @@ describe('authStore', () => {
     expect(restored).toBe(false);
     expect(store.accessToken).toBeUndefined();
     expect(store.initialized).toBe(true);
+  });
+
+  it('keeps the pair when the backend cannot be reached', async () => {
+    (api.getUsersMe as Mock).mockResolvedValue({ error: new TypeError('Failed to fetch') });
+
+    const store = useAuthStore();
+    store.setTokens('access-1', 'refresh-1');
+
+    const restored = await store.restoreSession();
+
+    expect(restored).toBe(true);
+    expect(store.accessToken).toBe('access-1');
+    expect(store.refreshToken).toBe('refresh-1');
+    expect(localStorage.getItem('rqark.auth.tokens')).toContain('refresh-1');
   });
 
   it('marks the session initialized without a network call when no token is stored', async () => {

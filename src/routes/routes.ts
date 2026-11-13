@@ -1,7 +1,8 @@
 import BaseLayout from '@/layouts/BaseLayout.vue';
 import LangLayout from '@/layouts/LangLayout.vue';
 import MainLayout from '@/layouts/MainLayout.vue';
-import { createRouter, createWebHistory } from 'vue-router';
+import { createRouter, createWebHashHistory, createWebHistory } from 'vue-router';
+import { isDesktop } from '@/config/runtime';
 import { setMiddleware } from './middleware';
 import LoginPage from '@/pages/LoginPage.vue';
 import RegisterPage from '@/pages/RegisterPage.vue';
@@ -84,7 +85,10 @@ const routes = [
 ];
 
 const router = createRouter({
-  history: createWebHistory(),
+  // The desktop app is served from a custom protocol with no server to rewrite
+  // paths, so a reload of a deep link would 404. The hash carries the route
+  // instead.
+  history: isDesktop() ? createWebHashHistory() : createWebHistory(),
   routes,
   scrollBehavior() {
     // always scroll to top

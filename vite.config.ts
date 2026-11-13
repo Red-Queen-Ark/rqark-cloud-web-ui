@@ -41,6 +41,11 @@ function manifestDevPlugin(appName: string, appDescription: string) {
   };
 }
 
+// The desktop build is loaded from the app's own asset protocol, where a
+// service worker cannot be registered. The Wails build task sets this for the
+// build it drives, so the PWA plugin steps out of the way.
+const isDesktopBuild = process.env.DESKTOP_BUILD === 'true';
+
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
@@ -60,6 +65,15 @@ export default defineConfig(({ mode }) => {
   }
 
   return {
+    define: {
+      // The runtime check alone cannot see the Wails bridge until the runtime
+      // module is imported, which the app only does when it already believes it
+      // is desktop. The build it is made by is the reliable answer.
+      __DESKTOP_BUILD__: JSON.stringify(isDesktopBuild),
+    },
+    // The desktop app serves its own assets from a custom protocol with no
+    // server to rewrite paths, so its base is relative.
+    base: isDesktopBuild ? './' : '/',
     resolve: {
       alias: {
         '@': resolve(__dirname, './src'),
@@ -91,6 +105,7 @@ export default defineConfig(({ mode }) => {
       manifestDevPlugin(appName, appDescription),
       VitePWA({
         registerType: 'autoUpdate',
+        disable: isDesktopBuild,
         includeAssets: ['favicon.svg', 'favicon.ico', 'logo.png', 'logo.svg', 'apple-touch-icon-180x180.png', 'pwa-64x64.png', 'icons.svg'],
         manifest: buildManifest(appName, appDescription),
         workbox: {

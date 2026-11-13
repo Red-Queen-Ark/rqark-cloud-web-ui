@@ -1,4 +1,4 @@
-import { agentApiUrl } from '@/config/agentApi';
+import { agentWsUrl } from '@/config/runtime';
 
 export const VOICE_CLOSE = {
   unauthorized: 4401,
@@ -42,8 +42,7 @@ export interface VoiceErrorEvent {
 export type VoiceEvent = VoiceReadyEvent | VoiceFinalEvent | VoiceWakeEvent | VoiceErrorEvent | { type: 'started' };
 
 export function voiceSocketUrl(token: string): string {
-  const url = new URL(agentApiUrl('/voice/ws'), window.location.origin);
-  url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+  const url = new URL(agentWsUrl('/voice/ws'));
   url.searchParams.set('token', token);
   return url.toString();
 }

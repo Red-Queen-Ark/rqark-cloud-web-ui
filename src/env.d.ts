@@ -19,6 +19,8 @@ interface ImportMetaEnv {
   readonly VITE_AGENT_API_PROXY_TARGET?: string;
   /** Swagger document consumed by `bun run api-client`. */
   readonly VITE_API_SPEC_URL?: string;
+  /** Base URL the app loads its assets from. Relative on the desktop build. */
+  readonly BASE_URL: string;
 }
 
 interface ImportMeta {

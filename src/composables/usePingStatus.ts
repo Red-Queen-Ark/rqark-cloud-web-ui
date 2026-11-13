@@ -1,5 +1,6 @@
 import { onMounted, ref } from 'vue';
 import { agentApiUrl } from '@/config/agentApi';
+import { apiFetch } from '@/config/runtime';
 import type { ChatStatus } from '@/config/chatStatus';
 
 const PING_TIMEOUT_MS = 5000;
@@ -10,7 +11,7 @@ export function usePingStatus() {
   async function check() {
     status.value = 'connecting';
     try {
-      const response = await fetch(agentApiUrl('/ping'), { signal: AbortSignal.timeout(PING_TIMEOUT_MS) });
+      const response = await apiFetch(agentApiUrl('/ping'), { signal: AbortSignal.timeout(PING_TIMEOUT_MS) });
       status.value = response.ok ? 'connected' : 'error';
     } catch {
       status.value = 'error';

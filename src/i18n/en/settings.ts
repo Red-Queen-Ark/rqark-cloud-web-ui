@@ -23,4 +23,12 @@ export const settings = {
   passwordError: 'Could not change the password',
   passwordMismatch: 'The two passwords do not match',
   passwordRequired: 'Please fill in every password field',
+  servers: 'Servers',
+  serversHint: 'Where the desktop app looks for the backends. Applies as soon as it is saved.',
+  apiBaseUrl: 'Data cloud URL',
+  agentApiBaseUrl: 'Agent cloud URL',
+  serversSaved: 'Server addresses saved',
+  serversUnreachable: 'Cannot reach the backend at {url}. Check the address and try again.',
+  serversError: 'Could not save the server addresses',
+  serverUrlInvalid: 'The address must start with http:// or https://',
 };

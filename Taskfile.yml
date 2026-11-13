@@ -1,0 +1,52 @@
+version: '3'
+
+# The desktop app is built by the Wails CLI, which routes `wails3 build` to the
+# `build` task here so the frontend and the Go side are always built together.
+vars:
+  APP_NAME: rqark-agent-cloud
+  BIN_DIR: bin
+  GOOS: '{{.GOOS | default OS}}'
+  GOARCH: '{{.GOARCH | default ARCH}}'
+
+tasks:
+  build:
+    summary: Builds the desktop app for the host, or for the given GOOS and GOARCH
+    cmds:
+      - task: frontend
+      - task: go:build
+
+  frontend:
+    summary: Builds the web assets the Go side embeds
+    cmds:
+      - DESKTOP_BUILD=true bun run build
+
+  go:build:
+    summary: Compiles the app for {{.GOOS}}/{{.GOARCH}}
+    cmds:
+      - mkdir -p {{.BIN_DIR}}
+      - |
+        if [ "{{.GOOS}}" = "windows" ]; then
+          CGO_ENABLED=0 GOOS={{.GOOS}} GOARCH={{.GOARCH}} go build -trimpath -ldflags "-s -w -H windowsgui" -o {{.BIN_DIR}}/{{.APP_NAME}}.exe .
+        else
+          CGO_ENABLED=0 GOOS={{.GOOS}} GOARCH={{.GOARCH}} go build -trimpath -ldflags "-s -w" -o {{.BIN_DIR}}/{{.APP_NAME}} .
+        fi
+
+  test:go:
+    summary: Runs the Go tests
+    cmds:
+      - go test .
+
+  run:
+    summary: Runs the app
+    cmds:
+      - go run .
+
+  dev:
+    summary: Runs the app against the dev server
+    cmds:
+      - wails3 dev -config ./build/config.yml
+
+  prepare:dist:
+    summary: Creates the directory the Go side embeds before it exists
+    cmds:
+      - mkdir -p dist

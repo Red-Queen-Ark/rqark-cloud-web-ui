@@ -1,6 +1,7 @@
 <template>
   <div class="relative h-full">
     <div class="absolute right-4 top-4 z-50 flex gap-1">
+      <LoginServerSettings v-if="desktop" ref="serverSettings" />
       <LanguageSwitcher />
       <ThemeSwitcher />
     </div>
@@ -11,8 +12,10 @@
 <script setup lang="ts">
 import { getSystemConfig } from '@/api';
 import LoginBox from '@/components/Login/LoginBox.vue';
+import LoginServerSettings from '@/components/Login/LoginServerSettings.vue';
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue';
 import ThemeSwitcher from '@/components/ThemeSwitcher.vue';
+import { isDesktop, serverConfig } from '@/config/runtime';
 import { useAlertStore } from '@/stores/alertStore';
 import { useAuthStore } from '@/stores/authStore';
 import { onMounted, ref } from 'vue';
@@ -30,9 +33,22 @@ const password = ref<string>('');
 const loading = ref(false);
 const allowRegistration = ref(false);
 
+const desktop = isDesktop();
+const serverSettings = ref<InstanceType<typeof LoginServerSettings> | null>(null);
+
 onMounted(async () => {
-  const { data } = await getSystemConfig();
-  allowRegistration.value = Boolean(data?.allow_self_registration);
+  try {
+    const { data, response } = await getSystemConfig();
+    if (!response?.ok) {
+      throw new Error('bad status');
+    }
+    allowRegistration.value = Boolean(data?.allow_self_registration);
+  } catch {
+    if (desktop) {
+      serverSettings.value?.open();
+      alertStore.addItem({ level: 'error', message: t('settings.serversUnreachable', { url: serverConfig().apiBaseUrl }) });
+    }
+  }
 });
 
 async function login() {
@@ -46,8 +62,6 @@ async function login() {
   loading.value = false;
 
   if (!ok) {
-    // The backend answers every credential failure with the same 401, so a
-    // single localized message is enough.
     alertStore.addItem({ level: 'error', message: t('login.error') });
     return;
   }
