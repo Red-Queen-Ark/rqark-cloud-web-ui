@@ -101,9 +101,9 @@ jobs:
         run: |
           set -eu
           ASSET="$BIN_NAME.exe"
-          OLD=$(curl -sS "$GITEA/api/v1/repos/$REPO/releases/$RELEASE_ID/assets" \
-            -H "Authorization: token $TOKEN" | tr '{' '\n' | grep -F "\"name\":\"$ASSET\"" || true)
-          OLD_ID=$(printf '%s' "$OLD" | grep -o '"id":[0-9]*' | head -n 1 | cut -d: -f2)
+          ASSETS=$(curl -sSf "$GITEA/api/v1/repos/$REPO/releases/$RELEASE_ID/assets" \
+            -H "Authorization: token $TOKEN")
+          OLD_ID=$(printf '%s' "$ASSETS" | tr '{' '\n' | grep -F "\"name\":\"$ASSET\"" | grep -o '"id":[0-9]*' | head -n 1 | cut -d: -f2 || true)
           if [ -n "$OLD_ID" ]; then
             curl -sSf -X DELETE "$GITEA/api/v1/repos/$REPO/releases/$RELEASE_ID/assets/$OLD_ID" \
               -H "Authorization: token $TOKEN"
@@ -111,6 +111,7 @@ jobs:
           curl -sSf -X POST "$GITEA/api/v1/repos/$REPO/releases/$RELEASE_ID/assets?name=$ASSET" \
             -H "Authorization: token $TOKEN" \
             -F "attachment=@bin/$ASSET" >/dev/null
+          echo "attached $ASSET to release $RELEASE_ID"
 
   macos:
     needs: prepare
@@ -132,9 +133,9 @@ jobs:
         run: |
           set -eu
           ASSET="$BIN_NAME-macos-arm64.tar.gz"
-          OLD=$(curl -sS "$GITEA/api/v1/repos/$REPO/releases/$RELEASE_ID/assets" \
-            -H "Authorization: token $TOKEN" | tr '{' '\n' | grep -F "\"name\":\"$ASSET\"" || true)
-          OLD_ID=$(printf '%s' "$OLD" | grep -o '"id":[0-9]*' | head -n 1 | cut -d: -f2)
+          ASSETS=$(curl -sSf "$GITEA/api/v1/repos/$REPO/releases/$RELEASE_ID/assets" \
+            -H "Authorization: token $TOKEN")
+          OLD_ID=$(printf '%s' "$ASSETS" | tr '{' '\n' | grep -F "\"name\":\"$ASSET\"" | grep -o '"id":[0-9]*' | head -n 1 | cut -d: -f2 || true)
           if [ -n "$OLD_ID" ]; then
             curl -sSf -X DELETE "$GITEA/api/v1/repos/$REPO/releases/$RELEASE_ID/assets/$OLD_ID" \
               -H "Authorization: token $TOKEN"
@@ -142,3 +143,4 @@ jobs:
           curl -sSf -X POST "$GITEA/api/v1/repos/$REPO/releases/$RELEASE_ID/assets?name=$ASSET" \
             -H "Authorization: token $TOKEN" \
             -F "attachment=@bin/$ASSET" >/dev/null
+          echo "attached $ASSET to release $RELEASE_ID"
