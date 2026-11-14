@@ -110,21 +110,29 @@ const alertStore = useAlertStore();
 const apiError = useApiError();
 const projectStore = useProjectStore();
 
-const expanded = ref(true);
-/** Projects whose sessions are showing. A project starts collapsed: the tree stays readable with many of them. */
-const open = ref<Record<string, boolean>>({});
+/**
+ * The group starts closed. Chat is what people came for, and an unfamiliar
+ * section above it that pushes their sessions down is a worse first impression
+ * than one extra click.
+ */
+const expanded = ref(false);
+/**
+ * The projects the user closed, which is the smaller map: a project's chats are
+ * showing unless it was shut, so one click on the group reaches a conversation.
+ */
+const closed = ref<Record<string, boolean>>({});
 
 const projects = computed(() => projectStore.projects);
 
 function isOpen(id?: string): boolean {
-  return id ? open.value[id] === true : false;
+  return id ? closed.value[id] !== true : false;
 }
 
 function toggle(id?: string) {
   if (!id) {
     return;
   }
-  open.value = { ...open.value, [id]: !open.value[id] };
+  closed.value = { ...closed.value, [id]: isOpen(id) };
 }
 
 function sessionsOf(projectId?: string): ApiSessionDto[] {
@@ -169,11 +177,11 @@ watch(
   (ids) => {
     const next: Record<string, boolean> = {};
     for (const id of ids) {
-      if (id && open.value[id]) {
+      if (id && closed.value[id]) {
         next[id] = true;
       }
     }
-    open.value = next;
+    closed.value = next;
   },
 );
 
@@ -210,7 +218,10 @@ async function save(payload: { project_name: string; project_path: string }) {
     }
     await projectStore.load();
     if (data.id) {
-      open.value = { ...open.value, [data.id]: true };
+      // A project just created is the one being worked on, so it opens and the
+      // group above it opens with it.
+      closed.value = Object.fromEntries(Object.entries(closed.value).filter(([id]) => id !== data.id));
+      expanded.value = true;
     }
     closeForm();
   } finally {

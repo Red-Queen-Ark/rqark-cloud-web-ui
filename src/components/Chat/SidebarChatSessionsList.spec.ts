@@ -111,7 +111,7 @@ describe('SidebarChatSessionsList', () => {
     (api.getSessions as Mock).mockResolvedValue({ data: [{ ...latest, project_id: 'p1' }, older] });
 
     const wrapper = await mountList();
-    await wrapper.get('[data-testid="sidebar-project-toggle-p1"]').trigger('click');
+    await wrapper.get('[data-testid="sidebar-projects-toggle"]').trigger('click');
 
     const inProject = wrapper.findAll('[data-testid="sidebar-project-sessions-p1"] a');
     expect(inProject.map((link) => link.text())).toEqual(['Latest chat']);
@@ -124,7 +124,7 @@ describe('SidebarChatSessionsList', () => {
     (api.getSessions as Mock).mockResolvedValue({ data: [latest] });
 
     const wrapper = await mountList();
-    await wrapper.get('[data-testid="sidebar-project-toggle-p1"]').trigger('click');
+    await wrapper.get('[data-testid="sidebar-projects-toggle"]').trigger('click');
 
     const link = wrapper.get('[data-testid="sidebar-project-new-session-p1"]');
     expect(link.text()).toBe('New session');
@@ -143,5 +143,16 @@ describe('SidebarChatSessionsList', () => {
 
     await vi.advanceTimersByTimeAsync(5000);
     expect(addItem).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the project group closed until it is asked for', async () => {
+    (api.getProjects as Mock).mockResolvedValue({ data: [{ id: 'p1', project_name: 'Acme', project_path: 'acme' }] });
+    (api.getSessions as Mock).mockResolvedValue({ data: [latest] });
+
+    const wrapper = await mountList();
+
+    // Chat is what people came for: the unfamiliar group must not push it down.
+    expect(wrapper.find('[data-testid="sidebar-project-list"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="sidebar-chat-session-list"]').exists()).toBe(true);
   });
 });
