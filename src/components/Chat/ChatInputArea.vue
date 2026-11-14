@@ -6,7 +6,75 @@
       <UploadIcon class="h-5 w-5" />
       {{ t('chat.dropImage') }}
     </div>
-    <div class="bg-base-200 rounded-box border border-base-300 overflow-hidden">
+    <div class="bg-base-200 rounded-box border border-base-300">
+      <div class="flex flex-wrap items-center gap-1 border-b border-base-300/50 px-2 py-1.5">
+        <div class="dropdown dropdown-top">
+          <button type="button" tabindex="0" data-testid="chat-project-select" :data-value="selectedProject" class="btn btn-ghost btn-sm btn-square" :title="projectTitle" :aria-label="`${t('chat.projectLabel')}: ${projectButtonLabel}`">
+            <FolderIcon class="h-5 w-5" />
+          </button>
+          <ul tabindex="0" class="dropdown-content menu z-50 mb-2 max-h-64 w-56 flex-nowrap overflow-y-auto rounded-box border border-base-300 bg-base-200 p-1 shadow-lg">
+            <li class="menu-title px-3 pt-1 text-xs opacity-60">{{ t('chat.projectLabel') }}</li>
+            <li>
+              <button type="button" data-testid="chat-project-option" data-value="" :class="{ 'menu-active': selectedProject === '' }" @click="pickProject('')">{{ t('chat.noProject') }}</button>
+            </li>
+            <li v-for="item in projects" :key="item.id">
+              <button type="button" data-testid="chat-project-option" :data-value="item.id ?? ''" :class="{ 'menu-active': selectedProject === (item.id ?? '') }" @click="pickProject(item.id ?? '')">{{ item.project_name }}</button>
+            </li>
+          </ul>
+        </div>
+        <div class="dropdown dropdown-top">
+          <button
+            type="button"
+            tabindex="0"
+            data-testid="chat-agent-select"
+            :data-value="selectedAgent"
+            class="btn btn-ghost btn-sm btn-square"
+            :title="`${t('chat.agentLabel')}: ${selectedAgent}`"
+            :aria-label="`${t('chat.agentLabel')}: ${selectedAgent}`"
+          >
+            <UserIcon class="h-5 w-5" />
+          </button>
+          <ul tabindex="0" class="dropdown-content menu z-50 mb-2 max-h-64 w-56 flex-nowrap overflow-y-auto rounded-box border border-base-300 bg-base-200 p-1 shadow-lg">
+            <li class="menu-title px-3 pt-1 text-xs opacity-60">{{ t('chat.agentLabel') }}</li>
+            <li v-if="agents.length === 0">
+              <button type="button" disabled>{{ t('chat.noAgents') }}</button>
+            </li>
+            <li v-for="(agent, index) in agents" :key="index">
+              <button type="button" data-testid="chat-agent-option" :data-value="agent" :class="{ 'menu-active': selectedAgent === agent }" @click="pickAgent(agent)">{{ agent }}</button>
+            </li>
+          </ul>
+        </div>
+        <div class="dropdown dropdown-top">
+          <button
+            type="button"
+            tabindex="0"
+            data-testid="chat-provider-select"
+            :data-value="selectedProvider"
+            class="btn btn-ghost btn-sm btn-square"
+            :title="`${t('chat.modelLabel')}: ${selectedProvider}`"
+            :aria-label="`${t('chat.modelLabel')}: ${selectedProvider}`"
+          >
+            <BoltIcon class="h-5 w-5" />
+          </button>
+          <ul tabindex="0" class="dropdown-content menu z-50 mb-2 max-h-64 w-56 flex-nowrap overflow-y-auto rounded-box border border-base-300 bg-base-200 p-1 shadow-lg">
+            <li class="menu-title px-3 pt-1 text-xs opacity-60">{{ t('chat.modelLabel') }}</li>
+            <li v-if="providers.length === 0">
+              <button type="button" disabled>{{ t('chat.noProviders') }}</button>
+            </li>
+            <li v-for="(provider, index) in providers" :key="providerDisplayName(provider) || index">
+              <button
+                type="button"
+                data-testid="chat-provider-option"
+                :data-value="providerDisplayName(provider)"
+                :class="{ 'menu-active': selectedProvider === providerDisplayName(provider) }"
+                @click="pickProvider(providerDisplayName(provider))"
+              >
+                {{ providerDisplayName(provider) }}
+              </button>
+            </li>
+          </ul>
+        </div>
+      </div>
       <div v-if="images.length > 0" data-testid="chat-images" class="flex flex-wrap gap-2 px-3 pt-2">
         <div v-for="(image, index) in images" :key="image.id" data-testid="chat-image" class="relative">
           <img v-if="image.dataUri" :src="image.dataUri" :alt="image.name" class="rounded-box h-16 w-16 p-1 object-cover bg-base-200/40 border" :class="image.status === 'error' ? 'border-error opacity-50' : 'border-base-300'" />
@@ -52,39 +120,8 @@
         </div>
       </div>
 
-      <div class="flex flex-wrap items-center gap-2 px-3 pb-2 pt-1.5 border-t border-base-300/50 bg-base-300/30 rounded-b-box">
+      <div class="flex items-center gap-2 px-3 pb-2 pt-1.5 border-t border-base-300/50 bg-base-300/30 rounded-b-box">
         <div v-if="statusClass" data-testid="chat-status" :class="['status', statusClass]" :aria-label="statusLabel" :title="statusLabel"></div>
-        <div class="flex min-w-0 flex-1 basis-0 items-center gap-1 text-xs text-base-content/70">
-          <BoltIcon class="h-3.5 w-3.5 shrink-0 opacity-60" />
-          <select class="select select-bordered select-xs bg-base-100 w-full min-w-0 max-w-36" :value="selectedProvider" :disabled="providers.length === 0" @change="selectedProvider = ($event.target as HTMLSelectElement).value">
-            <option v-if="providers.length === 0" value="" disabled>{{ t('chat.noProviders') }}</option>
-            <option v-for="(p, i) in providers" :key="providerDisplayName(p) || i" :value="providerDisplayName(p)">{{ providerDisplayName(p) }}</option>
-          </select>
-        </div>
-        <span class="shrink-0 text-base-content/20">|</span>
-        <div class="flex min-w-0 flex-1 basis-0 items-center gap-1 text-xs text-base-content/70">
-          <UserIcon class="h-3.5 w-3.5 shrink-0 opacity-60" />
-          <select class="select select-bordered select-xs bg-base-100 w-full min-w-0 max-w-36" :value="selectedAgent" :disabled="agents.length === 0" @change="chooseAgent">
-            <option v-if="agents.length === 0" value="" disabled>{{ t('chat.noAgents') }}</option>
-            <!-- Keyed by position: two names may repeat, and the wire only carries
-            the name, so the two entries are the same choice either way. -->
-            <option v-for="(a, i) in agents" :key="i" :value="a">{{ a }}</option>
-          </select>
-        </div>
-        <span class="shrink-0 text-base-content/20">|</span>
-        <div class="flex min-w-0 flex-1 basis-0 items-center gap-1 text-xs text-base-content/70">
-          <FolderIcon class="h-3.5 w-3.5 shrink-0 opacity-60" />
-          <select
-            data-testid="chat-project-select"
-            class="select select-bordered select-xs bg-base-100 w-full min-w-0 max-w-36"
-            :value="selectedProject"
-            :title="projectTitle"
-            @change="chooseProject(($event.target as HTMLSelectElement).value)"
-          >
-            <option value="">{{ t('chat.noProject') }}</option>
-            <option v-for="item in projects" :key="item.id" :value="item.id ?? ''">{{ item.project_name }}</option>
-          </select>
-        </div>
         <div class="ml-auto flex shrink-0 items-center gap-1">
           <input ref="imageInputRef" data-testid="chat-image-input" type="file" accept="image/*" multiple class="hidden" @change="pickImages" />
           <input ref="cameraInputRef" data-testid="chat-camera-input" type="file" accept="image/*" capture="environment" class="hidden" @change="pickImages" />
@@ -306,10 +343,33 @@ function firstOnOffer(agents: string[], name?: string): string | undefined {
   return name && agents.includes(name) ? name : undefined;
 }
 
-function chooseAgent(event: Event) {
+function chooseAgent(agent: string) {
   agentChosen.value = true;
-  selectedAgent.value = (event.target as HTMLSelectElement).value;
+  selectedAgent.value = agent;
 }
+
+function pickAgent(agent: string) {
+  closeDropdown();
+  chooseAgent(agent);
+}
+
+function pickProvider(name: string) {
+  closeDropdown();
+  selectedProvider.value = name;
+}
+
+function closeDropdown() {
+  (document.activeElement as HTMLElement | null)?.blur();
+}
+
+function pickProject(id: string) {
+  closeDropdown();
+  chooseProject(id);
+}
+
+const projectButtonLabel = computed(() => {
+  return (props.projects ?? []).find((project) => project.id === selectedProject.value)?.project_name ?? t('chat.noProject');
+});
 
 const projectTitle = computed(() => {
   const project = (props.projects ?? []).find((candidate) => candidate.id === selectedProject.value);

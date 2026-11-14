@@ -3,10 +3,10 @@
     <div ref="planDock" class="fixed inset-x-0 top-12 z-30 pt-3.5 sm:top-14 lg:left-72 md:mx-10" data-testid="chat-plan-dock">
       <ChatPlanCard :items="chatSocket.planItems" class="shadow-md" />
     </div>
-    <div id="chat-history" ref="history" class="mb-30 md:mx-10 flex flex-col" :class="{ 'h-[100dvh] justify-center': chatSocket.loading }" :style="historyStyle">
+    <div id="chat-history" ref="history" class="md:mx-10 flex flex-col" :class="{ 'h-[100dvh] justify-center': chatSocket.loading }" :style="historyStyle">
       <ChatMessage :messages="chatSocket.history" :loading="chatSocket.loading" :busy="reverting || chatSocket.streaming" :streaming-from-seq="chatSocket.streamingFromSeq" @revert="handleRevert" />
     </div>
-    <div class="chat-input-dock fixed inset-x-0 z-30 lg:left-72 md:mx-8 mb-2" data-testid="chat-input-dock">
+    <div ref="dock" class="chat-input-dock fixed inset-x-0 z-30 lg:left-72 md:mx-8 mb-2" data-testid="chat-input-dock">
       <div v-if="!pinned" class="pointer-events-none absolute inset-x-0 bottom-full mb-3 flex justify-end px-4">
         <ScrollToBottomButton class="pointer-events-auto" @click="scrollToBottom" />
       </div>
@@ -63,15 +63,19 @@ const inputArea = ref<InstanceType<typeof ChatInputArea> | null>(null);
 const planDock = ref<HTMLElement | null>(null);
 const planHeight = ref(0);
 const history = ref<HTMLElement | null>(null);
+const dock = ref<HTMLElement | null>(null);
+const dockHeight = ref(160);
 const reverting = ref(false);
 const { pinned, scrollToBottom } = useStickyScroll(history);
 
 const historyStyle = computed<Record<string, string>>(() => ({
   paddingTop: `${planHeight.value}px`,
+  paddingBottom: `${dockHeight.value}px`,
   '--chat-sticky-top': `${planHeight.value}px`,
 }));
 
 let planObserver: ResizeObserver | undefined;
+let dockObserver: ResizeObserver | undefined;
 
 watch(sessionId, () => scrollToBottom());
 
@@ -141,6 +145,15 @@ onMounted(async () => {
     });
     planObserver.observe(planDock.value);
   }
+  if (dock.value && typeof ResizeObserver !== 'undefined') {
+    dockObserver = new ResizeObserver((entries) => {
+      dockHeight.value = Math.round((entries[0]?.target as HTMLElement | undefined)?.offsetHeight ?? 0) + 16;
+      if (pinned.value) {
+        scrollToBottom();
+      }
+    });
+    dockObserver.observe(dock.value);
+  }
   await chatSocket.load();
   // The picker above the input needs the projects before a turn is sent; a
   // failure here leaves it offering only "no project".
@@ -158,5 +171,6 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   planObserver?.disconnect();
+  dockObserver?.disconnect();
 });
 </script>

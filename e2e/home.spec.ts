@@ -76,7 +76,7 @@ test('starts on the default agent stored for the source', async ({ page }) => {
   await page.goto('/en');
 
   // The picker comes up on the stored agent, not on the first one listed.
-  await expect(page.locator('#chat-input-area select').nth(1)).toHaveValue('writer');
+  await expect(page.getByTestId('chat-agent-select')).toHaveAttribute('data-value', 'writer');
 
   const input = page.getByTestId('chat-input');
   await expect(input).toBeEnabled();
@@ -102,8 +102,8 @@ test('keeps the agent picked on the start page after the chat opens', async ({ p
 
   await page.goto('/en');
 
-  const picker = page.locator('#chat-input-area select').nth(1);
-  await picker.selectOption('writer');
+  await page.getByTestId('chat-agent-select').click();
+  await page.locator('[data-testid="chat-agent-option"][data-value="writer"]').click();
 
   const input = page.getByTestId('chat-input');
   await input.fill('hello there');
@@ -112,7 +112,7 @@ test('keeps the agent picked on the start page after the chat opens', async ({ p
   // The chat page mounts its own picker, which has no default to fall back on:
   // without the turn's agent it came up on the first one listed.
   await expect(page).toHaveURL(/\/en\/chat\/session-1$/);
-  await expect(picker).toHaveValue('writer');
+  await expect(page.getByTestId('chat-agent-select')).toHaveAttribute('data-value', 'writer');
 });
 
 test('starts on the first agent when the source holds no default', async ({ page }) => {
@@ -128,5 +128,5 @@ test('starts on the first agent when the source holds no default', async ({ page
 
   await page.goto('/en');
 
-  await expect(page.locator('#chat-input-area select').nth(1)).toHaveValue('researcher');
+  await expect(page.getByTestId('chat-agent-select')).toHaveAttribute('data-value', 'researcher');
 });

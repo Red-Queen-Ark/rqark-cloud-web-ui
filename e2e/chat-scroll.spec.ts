@@ -136,3 +136,15 @@ test('opens a session it switches to on the tail as well', async ({ page }) => {
   await expect.poll(() => distanceToTail(page)).toBeLessThanOrEqual(2);
   await expect(page.getByTestId('chat-scroll-to-bottom')).toBeHidden();
 });
+
+test('keeps the newest message clear of the input dock', async ({ page }) => {
+  await openLongChat(page);
+
+  const boxes = await page.evaluate(() => {
+    const dock = document.querySelector('[data-testid="chat-input-dock"]') as HTMLElement;
+    const message = Array.from(document.querySelectorAll('#chat-history *')).find((node) => node.textContent?.trim() === 'reply 39') as HTMLElement;
+    return { dockTop: dock.getBoundingClientRect().top, messageBottom: message.getBoundingClientRect().bottom };
+  });
+
+  expect(boxes.messageBottom).toBeLessThanOrEqual(boxes.dockTop);
+});

@@ -182,7 +182,7 @@ describe('ChatPage', () => {
 
     // The home page picks the agent, then hands the turn over to a page that
     // never saw it; the picker must not fall back to the first agent there.
-    expect((agentSelect(wrapper).element as HTMLSelectElement).value).toBe('writer');
+    expect(wrapper.get('[data-testid="chat-agent-select"]').attributes('data-value')).toBe('writer');
   });
 
   it('sends the images a turn from the home page was carrying', async () => {
@@ -202,7 +202,7 @@ describe('ChatPage', () => {
     ];
     const { wrapper } = await mountChat('/en/chat/session-a');
 
-    await agentSelect(wrapper).setValue('writer');
+    await wrapper.get('[data-testid="chat-agent-option"][data-value="writer"]').trigger('click');
     const input = wrapper.get('[data-testid="chat-input"]');
     input.element.textContent = 'hello there';
     await input.trigger('input');
@@ -216,7 +216,7 @@ describe('ChatPage', () => {
     const chatStore = useChatStore();
     chatStore.setSessionProjects([{ id: 'session-1', updated_at: '2026-01-01T00:00:00Z' }]);
 
-    await wrapper.get('[data-testid="chat-project-select"]').setValue('p1');
+    await wrapper.get('[data-testid="chat-project-option"][data-value="p1"]').trigger('click');
     await flushPromises();
 
     expect(api.putSessionsByUuid).toHaveBeenCalledWith({ path: { uuid: 'session-1' }, body: { project_id: 'p1' } });
@@ -231,15 +231,10 @@ describe('ChatPage', () => {
     const chatStore = useChatStore();
     chatStore.setSessionProjects([{ id: 'session-1', updated_at: '2026-01-01T00:00:00Z' }]);
 
-    await wrapper.get('[data-testid="chat-project-select"]').setValue('p1');
+    await wrapper.get('[data-testid="chat-project-option"][data-value="p1"]').trigger('click');
     await flushPromises();
 
     expect(chatStore.sessionProjects['session-1']).toBeNull();
-    expect((wrapper.get('[data-testid="chat-project-select"]').element as HTMLSelectElement).value).toBe('');
+    expect(wrapper.get('[data-testid="chat-project-select"]').attributes('data-value')).toBe('');
   });
 });
-
-function agentSelect(wrapper: ReturnType<typeof mount>): ReturnType<ReturnType<typeof mount>['findAll']>[number] {
-  // The provider picker comes first in the toolbar.
-  return wrapper.findAll('select')[1];
-}

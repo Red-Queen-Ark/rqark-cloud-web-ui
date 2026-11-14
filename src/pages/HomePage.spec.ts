@@ -115,13 +115,13 @@ describe('HomePage', () => {
   it('comes up on the project a ?project= link named', async () => {
     const { wrapper } = await mountHome('/en?project=p1');
 
-    expect((wrapper.get('[data-testid="chat-project-select"]').element as HTMLSelectElement).value).toBe('p1');
+    expect(wrapper.get('[data-testid="chat-project-select"]').attributes('data-value')).toBe('p1');
   });
 
   it('ignores a project id the user does not have', async () => {
     const { wrapper } = await mountHome('/en?project=gone');
 
-    expect((wrapper.get('[data-testid="chat-project-select"]').element as HTMLSelectElement).value).toBe('');
+    expect(wrapper.get('[data-testid="chat-project-select"]').attributes('data-value')).toBe('');
   });
 
   it('creates the session in the project the page came up on', async () => {
