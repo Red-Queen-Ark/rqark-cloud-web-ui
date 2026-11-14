@@ -1,4 +1,11 @@
 <template>
+  <li class="session-group min-w-0" data-testid="sidebar-new-session">
+    <RouterLink :to="{ name: 'home', params: { lang } }" :class="{ 'menu-active': isHome }" data-testid="sidebar-chat-new">
+      <PlusIcon class="h-4 w-4" />
+      {{ t('chat.newSession') }}
+    </RouterLink>
+  </li>
+
   <SidebarProjectsList :sessions="sessions" :lang="lang" :active-session-id="activeSessionId" @deleted="handleDeleted" />
 
   <li class="session-group min-w-0" data-testid="sidebar-chat-sessions">
@@ -17,12 +24,6 @@
     </div>
 
     <ul v-if="expanded" class="min-w-0" data-testid="sidebar-chat-session-list">
-      <li>
-        <RouterLink :to="{ name: 'home', params: { lang } }" :class="{ 'menu-active': isHome }" data-testid="sidebar-chat-new">
-          <PlusIcon class="h-4 w-4" />
-          {{ t('chat.newSession') }}
-        </RouterLink>
-      </li>
       <SidebarSessionRow v-for="session in unfiled" :key="session.id" :session="session" :lang="lang" :active="isActive(session)" @deleted="handleDeleted" @renamed="handleRenamed" />
     </ul>
   </li>

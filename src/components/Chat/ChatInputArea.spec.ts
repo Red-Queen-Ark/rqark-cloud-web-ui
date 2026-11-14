@@ -544,8 +544,8 @@ describe('ChatInputArea file mention panel', () => {
   });
 
   const attached: ReturnType<typeof mountArea>[] = [];
-  const mountFileArea = () => {
-    const wrapper = mountArea({}, document.body);
+  const mountFileArea = (overrides: Parameters<typeof mountArea>[0] = {}) => {
+    const wrapper = mountArea(overrides, document.body);
     attached.push(wrapper);
     return wrapper;
   };
@@ -578,10 +578,19 @@ describe('ChatInputArea file mention panel', () => {
     const wrapper = mountFileArea();
     await typeMention(wrapper, '@ma');
 
-    expect(workspace.completeWorkspace).toHaveBeenLastCalledWith('ma', expect.any(Number));
+    expect(workspace.completeWorkspace).toHaveBeenLastCalledWith('ma', expect.any(Number), undefined);
     expect(wrapper.find('[data-testid="file-panel"]').exists()).toBe(true);
     expect(wrapper.find('[data-testid="file-option-src/main.py"]').exists()).toBe(true);
     expect(wrapper.find('[data-testid="file-option-src"]').exists()).toBe(true);
+  });
+
+  it('narrows the entries to the project the input is set to', async () => {
+    const wrapper = mountFileArea({ projects: [{ id: 'p1', project_name: 'Acme', project_path: 'acme' }], project: 'p1' });
+    await flushPromises();
+    expect((wrapper.get('[data-testid="chat-project-select"]').element as HTMLSelectElement).value).toBe('p1');
+    await typeMention(wrapper, '@ma');
+
+    expect(workspace.completeWorkspace).toHaveBeenLastCalledWith('ma', expect.any(Number), 'p1');
   });
 
   it('does not open for an @ inside a word', async () => {

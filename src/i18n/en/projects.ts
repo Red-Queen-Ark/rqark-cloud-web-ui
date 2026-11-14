@@ -5,6 +5,7 @@ export const projects = {
   rename: 'Rename',
   delete: 'Delete',
   empty: 'No projects yet',
+  noSession: 'No session yet',
   cancel: 'Cancel',
   save: 'Save',
   saving: 'Saving…',

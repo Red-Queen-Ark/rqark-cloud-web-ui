@@ -58,11 +58,21 @@ describe('SidebarChatSessionsList', () => {
 
     const wrapper = await mountList();
 
-    // The create action leads the list; a session with no title says so.
-    expect(wrapper.findAll(`${SESSIONS} a`).map((link) => link.text())).toEqual(['New session', 'Latest chat', 'Untitled session', 'Older chat']);
+    // The shared create action sits above both groups; Chat lists only the
+    // sessions that belong to no project, and one with no title says so.
+    expect(wrapper.findAll(`${SESSIONS} a`).map((link) => link.text())).toEqual(['Latest chat', 'Untitled session', 'Older chat']);
+  });
 
-    // The create action carries the plus icon that marks it as an add action.
-    expect(wrapper.findAll(`${SESSIONS} a`)[0].find('svg').exists()).toBe(true);
+  it('keeps the create action above the groups', async () => {
+    (api.getSessions as Mock).mockResolvedValue({ data: [latest] });
+
+    const wrapper = await mountList();
+
+    const create = wrapper.get('[data-testid="sidebar-chat-new"]');
+    expect(create.text()).toBe('New session');
+    // The plus icon marks it as an add action, and it is not inside Chat.
+    expect(create.find('svg').exists()).toBe(true);
+    expect(wrapper.find(`${SESSIONS} [data-testid="sidebar-chat-new"]`).exists()).toBe(false);
   });
 
   it('marks the session the chat route is showing', async () => {
@@ -80,7 +90,7 @@ describe('SidebarChatSessionsList', () => {
 
     const wrapper = await mountList('/en');
 
-    const active = wrapper.findAll(`${SESSIONS} a.menu-active`);
+    const active = wrapper.findAll('a.menu-active');
     expect(active).toHaveLength(1);
     expect(active[0].text()).toBe('New session');
   });
@@ -117,10 +127,10 @@ describe('SidebarChatSessionsList', () => {
     const inProject = wrapper.findAll('[data-testid="sidebar-project-sessions-p1"] a');
     expect(inProject.map((link) => link.text())).toEqual(['Latest chat']);
     // Chat keeps its own sessions, and the project's session is not repeated there.
-    expect(wrapper.findAll(`${SESSIONS} a`).map((link) => link.text())).toEqual(['New session', 'Older chat']);
+    expect(wrapper.findAll(`${SESSIONS} a`).map((link) => link.text())).toEqual(['Older chat']);
   });
 
-  it('offers to start a session in an empty project instead of saying it is empty', async () => {
+  it('says an empty project has no session instead of offering a create action', async () => {
     (api.getProjects as Mock).mockResolvedValue({ data: [{ id: 'p1', project_name: 'Acme', project_path: 'acme' }] });
     (api.getSessions as Mock).mockResolvedValue({ data: [latest] });
 
@@ -128,10 +138,10 @@ describe('SidebarChatSessionsList', () => {
     await wrapper.get('[data-testid="sidebar-projects-toggle"]').trigger('click');
     await wrapper.get('[data-testid="sidebar-project-toggle-p1"]').trigger('click');
 
-    const link = wrapper.get('[data-testid="sidebar-project-new-session-p1"]');
-    expect(link.text()).toBe('New session');
-    // The link carries the project, so the chat it starts is already filed there.
-    expect(link.attributes('href')).toContain('project=p1');
+    const empty = wrapper.get('[data-testid="sidebar-project-empty-p1"]');
+    expect(empty.text()).toBe('No session yet');
+    // The shared New session is the only create action, so the project does not repeat it.
+    expect(wrapper.find('[data-testid="sidebar-project-sessions-p1"] a').exists()).toBe(false);
   });
 
   it('reports a failing load once instead of once per poll', async () => {
