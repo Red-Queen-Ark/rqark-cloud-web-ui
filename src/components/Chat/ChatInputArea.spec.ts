@@ -57,7 +57,19 @@ beforeEach(() => {
   (workspace.completeWorkspace as Mock).mockResolvedValue([]);
 });
 
-function mountArea(overrides: { agents?: string[]; initialAgent?: string; defaultAgent?: string; providers?: { name?: string; model_name?: string }[]; status?: ChatStatus; streaming?: boolean } = {}, attachTo?: HTMLElement) {
+function mountArea(
+  overrides: {
+    agents?: string[];
+    initialAgent?: string;
+    defaultAgent?: string;
+    providers?: { name?: string; model_name?: string }[];
+    projects?: { id?: string; project_name?: string; project_path?: string }[];
+    project?: string | null;
+    status?: ChatStatus;
+    streaming?: boolean;
+  } = {},
+  attachTo?: HTMLElement,
+) {
   return mount(ChatInputArea, {
     ...(attachTo ? { attachTo } : {}),
     props: {
@@ -65,6 +77,8 @@ function mountArea(overrides: { agents?: string[]; initialAgent?: string; defaul
       initialAgent: overrides.initialAgent,
       defaultAgent: overrides.defaultAgent,
       providers: overrides.providers ?? [{ name: 'openai', model_name: 'gpt-5' }],
+      projects: overrides.projects ?? [],
+      project: overrides.project,
       status: overrides.status,
       streaming: overrides.streaming,
     },
@@ -116,7 +130,7 @@ describe('ChatInputArea', () => {
     await input.trigger('input');
     await wrapper.get('[data-testid="chat-send"]').trigger('click');
 
-    expect(wrapper.emitted('submit')?.[0]).toEqual([{ content: 'hello', agent: 'researcher', provider: 'openai', images: [] }]);
+    expect(wrapper.emitted('submit')?.[0]).toEqual([{ content: 'hello', agent: 'researcher', provider: 'openai', images: [], project: null }]);
   });
 
   async function attach(wrapper: ReturnType<typeof mountArea>, files: File[]) {
@@ -278,7 +292,7 @@ describe('ChatInputArea', () => {
     await input.trigger('input');
     await wrapper.get('[data-testid="chat-send"]').trigger('click');
 
-    expect(wrapper.emitted('submit')?.[0]).toEqual([{ content: 'hello', agent: 'researcher', provider: 'gpt-5', images: [] }]);
+    expect(wrapper.emitted('submit')?.[0]).toEqual([{ content: 'hello', agent: 'researcher', provider: 'gpt-5', images: [], project: null }]);
   });
 
   async function submitWith(wrapper: ReturnType<typeof mountArea>): Promise<unknown> {
@@ -298,7 +312,7 @@ describe('ChatInputArea', () => {
     const wrapper = mountArea({ agents: ['researcher', 'writer'], defaultAgent: 'writer' });
 
     expect((agentSelect(wrapper).element as HTMLSelectElement).value).toBe('writer');
-    expect(await submitWith(wrapper)).toEqual([{ content: 'hello', agent: 'writer', provider: 'openai', images: [] }]);
+    expect(await submitWith(wrapper)).toEqual([{ content: 'hello', agent: 'writer', provider: 'openai', images: [], project: null }]);
   });
 
   it('falls back to the first agent when the stored default is not on offer', async () => {
@@ -844,5 +858,53 @@ describe('ChatInputArea voice streaming', () => {
     await wrapper.get('[data-testid="chat-mic"]').trigger('click');
 
     expect(Socket.instances[0].sent).toEqual([JSON.stringify({ type: 'stop' })]);
+  });
+});
+
+describe('ChatInputArea project picker', () => {
+  const projects = [
+    { id: 'p1', project_name: 'Acme', project_path: 'acme' },
+    { id: 'p2', project_name: 'Other', project_path: 'other' },
+  ];
+
+  it('offers the projects and marks the one the chat works in', async () => {
+    const wrapper = await mountReadyArea({ projects, project: 'p2' });
+
+    const select = wrapper.get('[data-testid="chat-project-select"]').element as HTMLSelectElement;
+    expect(select.value).toBe('p2');
+    expect([...select.options].map((option) => option.text)).toEqual(['No project', 'Acme', 'Other']);
+  });
+
+  it('starts on no project when the chat has none', async () => {
+    const wrapper = await mountReadyArea({ projects, project: null });
+
+    expect((wrapper.get('[data-testid="chat-project-select"]').element as HTMLSelectElement).value).toBe('');
+  });
+
+  it('reports a change as a session property rather than a turn property', async () => {
+    const wrapper = await mountReadyArea({ projects, project: null });
+
+    await wrapper.get('[data-testid="chat-project-select"]').setValue('p1');
+
+    expect(wrapper.emitted('project-change')?.[0]).toEqual(['p1']);
+    expect(wrapper.emitted('submit')).toBeUndefined();
+  });
+
+  it('carries the chosen project with the turn', async () => {
+    const wrapper = await mountReadyArea({ projects, project: 'p1' });
+    const input = wrapper.get('[data-testid="chat-input"]');
+    input.element.textContent = 'hello';
+    await input.trigger('input');
+    await wrapper.get('[data-testid="chat-send"]').trigger('click');
+
+    expect(wrapper.emitted('submit')?.[0]).toEqual([{ content: 'hello', agent: 'researcher', provider: 'openai', images: [], project: 'p1' }]);
+  });
+
+  it('clears a project that is no longer on offer', async () => {
+    const wrapper = await mountReadyArea({ projects, project: 'p1' });
+
+    await wrapper.setProps({ projects: [projects[1]] });
+
+    expect((wrapper.get('[data-testid="chat-project-select"]').element as HTMLSelectElement).value).toBe('');
   });
 });

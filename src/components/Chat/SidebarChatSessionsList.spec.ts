@@ -8,7 +8,7 @@ import { defineComponent } from 'vue';
 import { createMemoryHistory, createRouter, type Router } from 'vue-router';
 import SidebarChatSessionsList from './SidebarChatSessionsList.vue';
 
-vi.mock('@/api', () => ({ getSessions: vi.fn() }));
+vi.mock('@/api', () => ({ getSessions: vi.fn(), getProjects: vi.fn() }));
 
 const latest = { id: 'session-latest', title: 'Latest chat', created_at: '2026-04-05T06:07:08Z', updated_at: '2026-04-08T09:10:11Z' };
 const older = { id: 'session-older', title: 'Older chat', created_at: '2026-04-04T06:07:08Z', updated_at: '2026-04-05T06:07:08Z' };
@@ -46,6 +46,7 @@ describe('SidebarChatSessionsList', () => {
     pinia = createPinia();
     setActivePinia(pinia);
     vi.clearAllMocks();
+    (api.getProjects as Mock).mockResolvedValue({ data: [] });
   });
 
   afterEach(() => {
@@ -103,6 +104,29 @@ describe('SidebarChatSessionsList', () => {
     await mountList();
 
     expect(api.getSessions).toHaveBeenCalledWith({ query: { source: 'AGENT_CLOUD' } });
+  });
+
+  it('files a session under its project and leaves the rest in Chat', async () => {
+    (api.getProjects as Mock).mockResolvedValue({ data: [{ id: 'p1', project_name: 'Acme', project_path: 'acme' }] });
+    (api.getSessions as Mock).mockResolvedValue({ data: [{ ...latest, project_id: 'p1' }, older] });
+
+    const wrapper = await mountList();
+    await wrapper.get('[data-testid="sidebar-project-toggle-p1"]').trigger('click');
+
+    const inProject = wrapper.findAll('[data-testid="sidebar-project-sessions-p1"] a');
+    expect(inProject.map((link) => link.text())).toEqual(['Latest chat']);
+    // Chat keeps its own sessions, and the project's session is not repeated there.
+    expect(wrapper.findAll(`${SESSIONS} a`).map((link) => link.text())).toEqual(['New session', 'Older chat']);
+  });
+
+  it('shows a project with no sessions as an empty group', async () => {
+    (api.getProjects as Mock).mockResolvedValue({ data: [{ id: 'p1', project_name: 'Acme', project_path: 'acme' }] });
+    (api.getSessions as Mock).mockResolvedValue({ data: [latest] });
+
+    const wrapper = await mountList();
+    await wrapper.get('[data-testid="sidebar-project-toggle-p1"]').trigger('click');
+
+    expect(wrapper.get('[data-testid="sidebar-project-p1"]').text()).toContain('No chats yet');
   });
 
   it('reports a failing load once instead of once per poll', async () => {

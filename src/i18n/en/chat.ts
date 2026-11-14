@@ -18,6 +18,8 @@ export const chat = {
   stop: 'Stop',
   noProviders: 'No providers',
   noAgents: 'No agents',
+  noProject: 'No project',
+  noProjectHint: 'This chat works at the workspace root',
   more: 'More',
   edit: 'Edit title',
   delete: 'Delete',

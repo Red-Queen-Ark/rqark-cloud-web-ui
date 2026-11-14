@@ -7,6 +7,8 @@ export interface PendingTurn {
   agent: string;
   provider: string;
   images?: string[];
+  /** The project the session was started in, when the home page had one picked. */
+  projectId?: string | null;
 }
 
 export const useChatStore = defineStore('chatStore', {
@@ -14,6 +16,15 @@ export const useChatStore = defineStore('chatStore', {
     pendingTurn: null as PendingTurn | null,
     /** Titles of the sessions the sidebar has seen, keyed by session id. */
     sessionTitles: {} as Record<string, string>,
+    /**
+     * The project each chat works in, keyed by session id; null for a session
+     * with none.
+     *
+     * Filled from the same listing the sidebar reads, so the picker above the
+     * chat input knows the session's project without a request of its own. The
+     * key is present only for sessions the listing carried.
+     */
+    sessionProjects: {} as Record<string, string | null>,
     /**
      * The agent each chat was last sent to, keyed by session id.
      *
@@ -58,6 +69,18 @@ export const useChatStore = defineStore('chatStore', {
     },
     setSessionTitle(sessionId: string, title: string) {
       this.sessionTitles[sessionId] = title;
+    },
+    /** The sidebar lists whole sessions, so it republishes the projects whole. */
+    setSessionProjects(sessions: ApiSessionDto[]) {
+      this.sessionProjects = Object.fromEntries(sessions.filter((session) => session.id).map((session) => [session.id as string, session.project_id ?? null]));
+    },
+    /**
+     * Records a project change on one session. The engine reads the stored
+     * value on the next turn, so this only keeps the picker in step: the
+     * session itself keeps working in the old directory until then.
+     */
+    setSessionProject(sessionId: string, projectId: string | null) {
+      this.sessionProjects[sessionId] = projectId;
     },
   },
 });

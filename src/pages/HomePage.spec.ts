@@ -8,9 +8,9 @@ import { SESSION_SOURCE } from '@/config/sessionSource';
 import { useChatStore } from '@/stores/chatStore';
 import HomePage from './HomePage.vue';
 
-const api = vi.hoisted(() => ({ postSessions: vi.fn() }));
+const api = vi.hoisted(() => ({ postSessions: vi.fn(), getProjects: vi.fn() }));
 
-vi.mock('@/api', () => ({ postSessions: api.postSessions }));
+vi.mock('@/api', () => ({ postSessions: api.postSessions, getProjects: api.getProjects }));
 
 const socket = vi.hoisted(() => ({ load: vi.fn() }));
 
@@ -73,6 +73,7 @@ describe('HomePage', () => {
     pinia = createPinia();
     setActivePinia(pinia);
     api.postSessions.mockResolvedValue({ data: { id: 'session-new' } });
+    api.getProjects.mockResolvedValue({ data: [] });
   });
 
   it('welcomes the user and offers the composer', async () => {
@@ -96,8 +97,8 @@ describe('HomePage', () => {
 
     // The sidebar lists only sessions filed under this source, so a session
     // created without it is invisible to the very UI that started it.
-    expect(api.postSessions).toHaveBeenCalledWith({ body: { source: SESSION_SOURCE } });
-    expect(useChatStore().pendingTurn).toEqual({ sessionId: 'session-new', content: 'hello there', agent: 'researcher', provider: 'openai', images: [] });
+    expect(api.postSessions).toHaveBeenCalledWith({ body: { source: SESSION_SOURCE, project_id: undefined } });
+    expect(useChatStore().pendingTurn).toEqual({ sessionId: 'session-new', content: 'hello there', agent: 'researcher', provider: 'openai', images: [], project: null });
     expect(router.currentRoute.value.fullPath).toBe('/en/chat/session-new');
   });
 

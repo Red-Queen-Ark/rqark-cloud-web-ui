@@ -65,7 +65,7 @@
         </div>
       </div>
 
-      <div class="flex items-center gap-2 px-3 pb-2 pt-1.5 border-t border-base-300/50 bg-base-300/30 rounded-b-box">
+      <div class="flex flex-wrap items-center gap-2 px-3 pb-2 pt-1.5 border-t border-base-300/50 bg-base-300/30 rounded-b-box">
         <div v-if="statusClass" data-testid="chat-status" :class="['status', statusClass]" :aria-label="statusLabel" :title="statusLabel"></div>
         <div class="flex min-w-0 flex-1 basis-0 items-center gap-1 text-xs text-base-content/70">
           <BoltIcon class="h-3.5 w-3.5 shrink-0 opacity-60" />
@@ -82,6 +82,20 @@
             <!-- Keyed by position: two names may repeat, and the wire only carries
             the name, so the two entries are the same choice either way. -->
             <option v-for="(a, i) in agents" :key="i" :value="a">{{ a }}</option>
+          </select>
+        </div>
+        <span class="shrink-0 text-base-content/20">|</span>
+        <div class="flex min-w-0 flex-1 basis-0 items-center gap-1 text-xs text-base-content/70">
+          <FolderIcon class="h-3.5 w-3.5 shrink-0 opacity-60" />
+          <select
+            data-testid="chat-project-select"
+            class="select select-bordered select-xs bg-base-100 w-full min-w-0 max-w-36"
+            :value="selectedProject"
+            :title="projectTitle"
+            @change="chooseProject(($event.target as HTMLSelectElement).value)"
+          >
+            <option value="">{{ t('chat.noProject') }}</option>
+            <option v-for="item in projects" :key="item.id" :value="item.id ?? ''">{{ item.project_name }}</option>
           </select>
         </div>
         <div class="ml-auto flex shrink-0 items-center gap-1">
@@ -127,8 +141,9 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import type { ApiProviderSummaryDto } from '@/api';
+import type { ApiProjectDto, ApiProviderSummaryDto } from '@/api';
 import { CHAT_STATUS, type ChatStatus } from '@/config/chatStatus';
+import { projectPathLabel } from '@/config/projects';
 import { providerDisplayName } from '@/config/providers';
 import { slashEntries as buildSlashEntries, type SlashEntry } from '@/config/slashCommands';
 import type { WorkspaceEntry } from '@/config/workspace';
@@ -152,6 +167,7 @@ import SendIcon from '@/components/svg/SendIcon.vue';
 import StopIcon from '@/components/svg/StopIcon.vue';
 import UploadIcon from '@/components/svg/UploadIcon.vue';
 import WaveformIcon from '@/components/svg/WaveformIcon.vue';
+import FolderIcon from '@/components/svg/FolderIcon.vue';
 import UserIcon from '@/components/svg/UserIcon.vue';
 
 const props = defineProps<{
@@ -161,12 +177,17 @@ const props = defineProps<{
   /** The agent stored as the default for this app's session source, when one resolves. */
   defaultAgent?: string;
   providers: ApiProviderSummaryDto[];
+  /** The projects the picker offers; the list itself is owned by the sidebar. */
+  projects?: ApiProjectDto[];
+  /** The project this chat works in, or null when it works at the volume root. */
+  project?: string | null;
   status?: ChatStatus;
   streaming?: boolean;
 }>();
 
 const emit = defineEmits<{
-  (e: 'submit', payload: { content: string; agent: string; provider: string; images: string[] }): void;
+  (e: 'submit', payload: { content: string; agent: string; provider: string; images: string[]; project: string | null }): void;
+  (e: 'project-change', project: string | null): void;
   (e: 'stop'): void;
 }>();
 
@@ -189,6 +210,8 @@ const dragging = ref(false);
 const readyImages = computed(() => images.value.filter((image) => image.status === 'ready'));
 const canSend = computed(() => hasContent.value || readyImages.value.length > 0);
 const selectedAgent = ref('');
+/** The project the next turn runs in; '' is no project, which the session stores as null. */
+const selectedProject = ref('');
 const selectedProvider = ref('');
 /** Set once the user picks an agent by hand; see the agents watcher below. */
 const agentChosen = ref(false);
@@ -294,6 +317,45 @@ function chooseAgent(event: Event) {
   agentChosen.value = true;
   selectedAgent.value = (event.target as HTMLSelectElement).value;
 }
+
+const projectTitle = computed(() => {
+  const project = (props.projects ?? []).find((candidate) => candidate.id === selectedProject.value);
+  return project?.project_path ? projectPathLabel(project.project_path) : t('chat.noProjectHint');
+});
+
+/**
+ * The project is a property of the session, not of a turn: the caller writes it
+ * to the session, and the engine picks it up on the next turn. Nothing here
+ * reloads the chat, so the picker must not pretend the directory changed.
+ */
+function chooseProject(id: string) {
+  selectedProject.value = id;
+  emit('project-change', id || null);
+}
+
+watch(
+  () => props.project,
+  (project) => {
+    // An empty picker is not a choice: it means the session's project has not
+    // been read yet, and clearing the control then would lose the user's pick.
+    if (project !== undefined) {
+      selectedProject.value = project ?? '';
+    }
+  },
+  { immediate: true },
+);
+
+watch(
+  () => props.projects,
+  (projects) => {
+    // A project removed elsewhere stops being offered; the session keeps the id
+    // until the cloud detaches it, so fall back to "no project" rather than
+    // leaving the select on a value it no longer lists.
+    if (selectedProject.value && !(projects ?? []).some((project) => project.id === selectedProject.value)) {
+      selectedProject.value = '';
+    }
+  },
+);
 
 watch(
   () => props.providers,
@@ -800,7 +862,7 @@ function submit() {
   if (!content && readyImages.value.length === 0) {
     return;
   }
-  emit('submit', { content, agent: selectedAgent.value, provider: selectedProvider.value, images: readyImages.value.map((image) => image.dataUri) });
+  emit('submit', { content, agent: selectedAgent.value, provider: selectedProvider.value, images: readyImages.value.map((image) => image.dataUri), project: selectedProject.value || null });
 }
 
 function clear() {

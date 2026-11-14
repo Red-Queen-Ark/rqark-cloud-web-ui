@@ -18,6 +18,8 @@ export const chat = {
   stop: '停止',
   noProviders: '没有 Provider',
   noAgents: '没有 Agent',
+  noProject: '无项目',
+  noProjectHint: '该对话在工作区根目录工作',
   more: '更多',
   edit: '编辑标题',
   delete: '删除',
