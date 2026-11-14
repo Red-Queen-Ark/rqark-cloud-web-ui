@@ -16,15 +16,29 @@
  * renders with its raw status instead of being hidden or crashing.
  */
 
+import CheckIcon from '@/components/svg/CheckIcon.vue';
+import CircleIcon from '@/components/svg/CircleIcon.vue';
+import CloseIcon from '@/components/svg/CloseIcon.vue';
+import SpinnerIcon from '@/components/svg/SpinnerIcon.vue';
+import type { Component } from 'vue';
+
 export interface PlanStatusStyle {
-  /** Human wording, under `sessions.planStatus`. */
-  labelKey: string;
   /**
-   * daisyUI badge modifier. The four map onto the meaning of each state: an
-   * untouched item is muted, work in flight is informative, and the two
-   * terminal states are good and bad news respectively.
+   * The glyph that carries the state. One per row is all the row shows, so the
+   * icon has to be the whole signal: shape names the state, colour ranks it.
+   *
+   * `null` for a status this build does not know, which tells the row to print
+   * the raw status instead of inventing a glyph.
    */
-  badgeClass: string;
+  icon: Component | null;
+  /**
+   * daisyUI text colour for `icon`. The four map onto the meaning of each
+   * state: an untouched item is muted, work in flight is informative, and the
+   * two terminal states are good and bad news respectively.
+   */
+  iconClass: string;
+  /** Human wording, under `sessions.planStatus`, for the row's screen-reader label. */
+  labelKey: string;
 }
 
 /** The statuses `PlanUpdate` accepts, spelled as the tool spells them. */
@@ -33,25 +47,26 @@ export const PLAN_STATUSES = ['pending', 'in_progress', 'completed', 'cancelled'
 export type PlanStatus = (typeof PLAN_STATUSES)[number];
 
 const PLAN_STATUS_STYLES: Record<PlanStatus, PlanStatusStyle> = {
-  pending: { labelKey: 'sessions.planStatus.pending', badgeClass: 'badge-ghost' },
-  in_progress: { labelKey: 'sessions.planStatus.inProgress', badgeClass: 'badge-info' },
-  completed: { labelKey: 'sessions.planStatus.completed', badgeClass: 'badge-success' },
-  cancelled: { labelKey: 'sessions.planStatus.cancelled', badgeClass: 'badge-error' },
+  pending: { icon: CircleIcon, iconClass: 'text-base-content/30', labelKey: 'sessions.planStatus.pending' },
+  in_progress: { icon: SpinnerIcon, iconClass: 'text-info', labelKey: 'sessions.planStatus.inProgress' },
+  completed: { icon: CheckIcon, iconClass: 'text-success', labelKey: 'sessions.planStatus.completed' },
+  cancelled: { icon: CloseIcon, iconClass: 'text-error', labelKey: 'sessions.planStatus.cancelled' },
 };
 
 /**
- * A badge and a label for `status`, falling back to the raw value.
+ * A glyph, a colour and a label for `status`, falling back to the raw value.
  *
- * `labelKey` is empty for an unknown status, which tells the caller to print the
- * status itself: showing `awaiting_review` is honest, whereas mapping it onto
- * one of the four known styles would invent a meaning the engine never set.
+ * `icon` and `labelKey` are empty for an unknown status, which tells the caller
+ * to print the status itself: showing `awaiting_review` is honest, whereas
+ * mapping it onto one of the four known glyphs would invent a meaning the
+ * engine never set.
  */
 export function planStatusStyle(status?: string): PlanStatusStyle {
   if (status && (PLAN_STATUSES as readonly string[]).includes(status)) {
     return PLAN_STATUS_STYLES[status as PlanStatus];
   }
 
-  return { labelKey: '', badgeClass: 'badge-ghost' };
+  return { icon: null, iconClass: 'text-base-content/40', labelKey: '' };
 }
 
 /**

@@ -1,8 +1,9 @@
 <template>
   <li data-testid="plan-item" class="flex items-start gap-2">
-    <span v-if="item.status === 'in_progress'" class="loading loading-spinner loading-xs text-info shrink-0"></span>
-    <span class="badge badge-xs shrink-0" :class="statusStyle.badgeClass">{{ statusLabel }}</span>
-    <span class="min-w-0 text-sm break-words" :class="{ 'line-through opacity-60': completed }">{{ item.content }}</span>
+    <component :is="statusStyle.icon" v-if="statusStyle.icon" data-testid="plan-item-icon" class="mt-0.5 h-3.5 w-3.5 shrink-0" :class="statusStyle.iconClass" />
+    <span v-else data-testid="plan-item-raw-status" class="text-base-content/50 mt-0.5 shrink-0 font-mono text-xs">{{ item.status }}</span>
+    <span class="min-w-0 text-sm break-words" :class="{ 'line-through opacity-60': completed, 'opacity-60': cancelled }">{{ item.content }}</span>
+    <span v-if="statusLabel" class="sr-only">{{ statusLabel }}</span>
   </li>
 </template>
 
@@ -18,6 +19,7 @@ const props = defineProps<{
 const { t } = useI18n();
 
 const statusStyle = computed(() => planStatusStyle(props.item.status));
-const statusLabel = computed(() => (statusStyle.value.labelKey ? t(statusStyle.value.labelKey) : props.item.status));
+const statusLabel = computed(() => (statusStyle.value.labelKey ? t(statusStyle.value.labelKey) : ''));
 const completed = computed(() => props.item.status === 'completed');
+const cancelled = computed(() => props.item.status === 'cancelled');
 </script>

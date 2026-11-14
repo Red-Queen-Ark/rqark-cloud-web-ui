@@ -2,20 +2,23 @@ import { describe, expect, it } from 'vitest';
 import { PLAN_STATUSES, planItemsFrom, planStatusStyle } from './sessions';
 
 describe('planStatusStyle', () => {
-  it('maps each known status onto its own label and badge', () => {
+  it('maps each known status onto its own glyph, colour and label', () => {
     const styles = PLAN_STATUSES.map((status) => planStatusStyle(status));
 
     expect(styles.map((style) => style.labelKey)).toEqual(['sessions.planStatus.pending', 'sessions.planStatus.inProgress', 'sessions.planStatus.completed', 'sessions.planStatus.cancelled']);
-    // A shared badge would leave the states indistinguishable at a glance.
-    expect(new Set(styles.map((style) => style.badgeClass)).size).toBe(4);
+    // A shared colour would leave the states indistinguishable at a glance.
+    expect(new Set(styles.map((style) => style.iconClass)).size).toBe(4);
+    // Every known status draws something.
+    expect(styles.every((style) => style.icon)).toBe(true);
   });
 
-  it.each([undefined, '', 'awaiting_review'])('falls back for %s without claiming a known label', (status) => {
+  it.each([undefined, '', 'awaiting_review'])('falls back for %s without claiming a known glyph', (status) => {
     const style = planStatusStyle(status);
 
-    // An empty labelKey is the signal to render the raw status instead.
+    // An empty icon is the signal to render the raw status instead.
+    expect(style.icon).toBeNull();
     expect(style.labelKey).toBe('');
-    expect(style.badgeClass).toBe('badge-ghost');
+    expect(style.iconClass).toBe('text-base-content/40');
   });
 
   it('does not treat an inherited object key as a status', () => {

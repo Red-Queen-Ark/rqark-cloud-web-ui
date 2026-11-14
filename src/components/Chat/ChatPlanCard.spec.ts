@@ -46,7 +46,7 @@ describe('ChatPlanCard', () => {
     const card = mountCard(items);
 
     expect(card.get('.line-through').text()).toBe('Draft the plan');
-    expect(card.findAll('[data-testid="plan-item"]')[1]?.find('.loading').exists()).toBe(true);
+    expect(card.findAll('[data-testid="plan-item"]')[1]?.find('.animate-spin').exists()).toBe(true);
   });
 
   it('counts the plan in the footer', () => {
