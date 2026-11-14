@@ -163,4 +163,38 @@ describe('SidebarChatSessionsList', () => {
     expect(wrapper.find('[data-testid="sidebar-project-p1"]').exists()).toBe(true);
     expect(wrapper.find('[data-testid="sidebar-project-sessions-p1"]').exists()).toBe(false);
   });
+
+  it('opens the project the chat being read belongs to', async () => {
+    (api.getProjects as Mock).mockResolvedValue({ data: [{ id: 'p1', project_name: 'Acme', project_path: 'acme' }] });
+    (api.getSessions as Mock).mockResolvedValue({ data: [{ ...latest, project_id: 'p1' }] });
+
+    const wrapper = await mountList(`/en/chat/${latest.id}`);
+
+    // A reload onto a chat shows where that chat lives, without a click.
+    expect(wrapper.find('[data-testid="sidebar-project-sessions-p1"]').exists()).toBe(true);
+  });
+
+  it('leaves the group closed when the chat belongs to no project', async () => {
+    (api.getProjects as Mock).mockResolvedValue({ data: [{ id: 'p1', project_name: 'Acme', project_path: 'acme' }] });
+    (api.getSessions as Mock).mockResolvedValue({ data: [latest] });
+
+    const wrapper = await mountList(`/en/chat/${latest.id}`);
+
+    expect(wrapper.find('[data-testid="sidebar-project-list"]').exists()).toBe(false);
+  });
+
+  it('does not reopen a project the user closed while reading it', async () => {
+    (api.getProjects as Mock).mockResolvedValue({ data: [{ id: 'p1', project_name: 'Acme', project_path: 'acme' }] });
+    (api.getSessions as Mock).mockResolvedValue({ data: [{ ...latest, project_id: 'p1' }] });
+
+    const wrapper = await mountList(`/en/chat/${latest.id}`);
+    await wrapper.get('[data-testid="sidebar-project-toggle-p1"]').trigger('click');
+    expect(wrapper.find('[data-testid="sidebar-project-sessions-p1"]').exists()).toBe(false);
+
+    // The poll republishes the list; that is not a reason to undo the close.
+    await vi.advanceTimersByTimeAsync(5000);
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="sidebar-project-sessions-p1"]').exists()).toBe(false);
+  });
 });

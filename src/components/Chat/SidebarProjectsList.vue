@@ -150,6 +150,28 @@ function isActive(session: ApiSessionDto): boolean {
   return Boolean(session.id) && session.id === props.activeSessionId;
 }
 
+/** The project the open chat belongs to, or null when it belongs to none. */
+const activeProjectId = computed(() => {
+  const session = props.sessions.find((candidate) => candidate.id === props.activeSessionId);
+  return session?.project_id ?? null;
+});
+
+// A reload onto a chat has to show where that chat lives, or the tree says
+// nothing about the page being read. Keyed on the project rather than on the
+// sessions array so reopening on every poll is impossible, and so closing the
+// project by hand is not undone: neither changes which project is active.
+watch(
+  activeProjectId,
+  (id) => {
+    if (!id) {
+      return;
+    }
+    expanded.value = true;
+    open.value = { ...open.value, [id]: true };
+  },
+  { immediate: true },
+);
+
 /**
  * The section's own action is always visible: there is no row to hover, and a
  * control that only appears on hover has nothing to reveal it in a list this
