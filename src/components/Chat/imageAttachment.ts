@@ -49,7 +49,12 @@ export function dataUriBytes(dataUri: string): number {
   return Math.floor((payload * 3) / 4) - padding;
 }
 
-interface Decoded { source: CanvasImageSource; width: number; height: number; release: () => void }
+interface Decoded {
+  source: CanvasImageSource;
+  width: number;
+  height: number;
+  release: () => void;
+}
 
 /**
  * Decodes the photo so it can be drawn to a canvas. `imageOrientation: 'from-image'`

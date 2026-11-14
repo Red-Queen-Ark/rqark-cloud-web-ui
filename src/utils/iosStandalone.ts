@@ -8,13 +8,7 @@
  * The shell needs a clearance band on those platforms only; a desktop browser
  * installed as an app has no scrim and must not get the extra padding.
  */
-export function isIOSStandalone(options: {
-  userAgent: string;
-  platform: string;
-  maxTouchPoints: number;
-  standalone: boolean;
-  displayModeStandalone: boolean;
-}): boolean {
+export function isIOSStandalone(options: { userAgent: string; platform: string; maxTouchPoints: number; standalone: boolean; displayModeStandalone: boolean }): boolean {
   const { userAgent, platform, maxTouchPoints, standalone, displayModeStandalone } = options;
   if (!standalone && !displayModeStandalone) {
     return false;

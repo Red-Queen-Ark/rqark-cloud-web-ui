@@ -42,20 +42,23 @@ import EllipsisVerticalIcon from '@/components/svg/EllipsisVerticalIcon.vue';
 import { nextTick, onBeforeUnmount, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
-withDefaults(defineProps<{
-  /** The trigger's accessible name; the shared "more actions" label by default. */
-  label?: string;
-  /** Extra classes for the trigger, for a row that paints its own button. */
-  triggerClass?: string;
-  /** Test hooks for callers whose menu is not a table row's. */
-  triggerTestId?: string;
-  menuTestId?: string;
-}>(), {
-  label: undefined,
-  triggerClass: undefined,
-  triggerTestId: 'row-actions-button',
-  menuTestId: 'row-actions-menu',
-});
+withDefaults(
+  defineProps<{
+    /** The trigger's accessible name; the shared "more actions" label by default. */
+    label?: string;
+    /** Extra classes for the trigger, for a row that paints its own button. */
+    triggerClass?: string;
+    /** Test hooks for callers whose menu is not a table row's. */
+    triggerTestId?: string;
+    menuTestId?: string;
+  }>(),
+  {
+    label: undefined,
+    triggerClass: undefined,
+    triggerTestId: 'row-actions-button',
+    menuTestId: 'row-actions-menu',
+  },
+);
 
 const { t } = useI18n();
 
