@@ -159,6 +159,14 @@ export interface MockWrite {
  */
 export const WRITE_TIMESTAMP = '2026-05-06T07:08:09Z';
 
+export interface MockProject {
+  id: string;
+  project_name: string;
+  project_path: string;
+  created_at: string;
+  updated_at?: string;
+}
+
 export interface MockSop {
   slug: string;
   title: string;
@@ -176,6 +184,7 @@ export interface MockBackend {
   tasks: MockTask[];
   taskRuns: MockTaskRun[];
   todos: MockTodo[];
+  projects: MockProject[];
   userConfig: Record<string, unknown>;
   /** The default agent per session source, held as the agent id the API stores. */
   agentDefaults: Record<string, string>;
@@ -207,6 +216,8 @@ export interface MockBackendOptions {
   agentDefaults?: Record<string, string>;
   /** Replaces the seeded sop list. */
   sops?: MockSop[];
+  /** Replaces the seeded project list, which the sidebar tree reads. */
+  projects?: MockProject[];
   /** Replaces the seeded account list. */
   users?: MockUser[];
 }
@@ -258,6 +269,7 @@ export async function mockBackend(page_: Page, options: MockBackendOptions = {})
     userConfig: options.userConfig ?? {},
     agentDefaults: options.agentDefaults ?? {},
     sops: options.sops ?? [],
+    projects: options.projects ?? [],
     requests: [],
     writes: [],
   };
@@ -326,6 +338,10 @@ export async function mockBackend(page_: Page, options: MockBackendOptions = {})
           state.userConfig = Object.fromEntries(Object.entries(state.userConfig).filter(([key]) => key !== configKey));
           return route.fulfill({ status: 204, body: '' });
         }
+      }
+
+      if (path === '/projects' && method === 'GET') {
+        return json(route, 200, state.projects);
       }
 
       // The caller's sops: one page, slug ascending, which is all the chat

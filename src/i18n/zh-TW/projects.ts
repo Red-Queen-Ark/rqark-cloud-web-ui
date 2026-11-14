@@ -35,4 +35,6 @@ export const projects = {
   deleteError: '刪除唔到項目。',
   changeError: '改唔到項目。',
   changeNextTurn: '項目會由下一個訊息開始生效。',
+  reorderHint: '拖動可排序',
+  reorderError: '儲存唔到新嘅項目排序。',
 };

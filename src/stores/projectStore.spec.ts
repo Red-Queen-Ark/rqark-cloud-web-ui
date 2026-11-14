@@ -47,4 +47,36 @@ describe('projectStore', () => {
     expect(store.nameOf('missing')).toBe('');
     expect(store.byId(null)).toBeUndefined();
   });
+
+  it('serves the list in the order the user set, unordered projects last', async () => {
+    (api.getProjects as Mock).mockResolvedValue({
+      data: [
+        { id: 'p1', project_name: 'acme' },
+        { id: 'p2', project_name: 'other' },
+        { id: 'p3', project_name: 'new' },
+      ],
+    });
+    const store = useProjectStore();
+    await store.load();
+
+    store.applyOrder(['p2', 'p1']);
+
+    expect(store.sorted.map((project) => project.id)).toEqual(['p2', 'p1', 'p3']);
+  });
+
+  it('returns to the endpoint order when the stored order is cleared', async () => {
+    (api.getProjects as Mock).mockResolvedValue({
+      data: [
+        { id: 'p1', project_name: 'acme' },
+        { id: 'p2', project_name: 'other' },
+      ],
+    });
+    const store = useProjectStore();
+    await store.load();
+    store.applyOrder(['p2', 'p1']);
+
+    store.applyOrder([]);
+
+    expect(store.sorted.map((project) => project.id)).toEqual(['p1', 'p2']);
+  });
 });

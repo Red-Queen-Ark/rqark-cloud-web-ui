@@ -1,5 +1,6 @@
 import { getUserConfig, putUserConfigByKey } from '@/api';
 import { LANGUAGES } from '@/config/languages';
+import { PROJECT_ORDER_CONFIG_KEY, parseProjectOrder, toProjectOrderValue } from '@/config/projectOrder';
 import { THEME_FAMILIES, THEME_MODES, type ThemeFamily, type ThemeMode } from '@/stores/themeStore';
 import { defineStore } from 'pinia';
 
@@ -47,6 +48,8 @@ export const useUserConfigStore = defineStore('userConfigStore', {
   state: () => ({
     theme: undefined as ThemePreference | undefined,
     language: undefined as string | undefined,
+    projectOrder: undefined as string[] | undefined,
+    projectOrderSaving: false,
     loaded: false,
   }),
 
@@ -59,7 +62,21 @@ export const useUserConfigStore = defineStore('userConfigStore', {
 
       this.theme = parseThemePreference(data.find((entry) => entry.key === THEME_CONFIG_KEY)?.value);
       this.language = parseLanguagePreference(data.find((entry) => entry.key === LANGUAGE_CONFIG_KEY)?.value);
+      if (!this.projectOrderSaving) {
+        this.projectOrder = parseProjectOrder(data.find((entry) => entry.key === PROJECT_ORDER_CONFIG_KEY)?.value);
+      }
       this.loaded = true;
+    },
+
+    async refreshProjectOrder(): Promise<void> {
+      if (this.projectOrderSaving) {
+        return;
+      }
+      const { data, error } = await getUserConfig();
+      if (error || !data || this.projectOrderSaving) {
+        return;
+      }
+      this.projectOrder = parseProjectOrder(data.find((entry) => entry.key === PROJECT_ORDER_CONFIG_KEY)?.value);
     },
 
     async saveTheme(preference: ThemePreference): Promise<void> {
@@ -70,6 +87,25 @@ export const useUserConfigStore = defineStore('userConfigStore', {
     async saveLanguage(language: string): Promise<void> {
       this.language = language;
       await putUserConfigByKey({ path: { key: LANGUAGE_CONFIG_KEY }, body: { value: toConfigValue(language) } });
+    },
+
+    async saveProjectOrder(order: readonly string[]): Promise<boolean> {
+      const previous = this.projectOrder;
+      this.projectOrder = [...order];
+      this.projectOrderSaving = true;
+      try {
+        const { error } = await putUserConfigByKey({ path: { key: PROJECT_ORDER_CONFIG_KEY }, body: { value: toProjectOrderValue(order) } });
+        if (error) {
+          this.projectOrder = previous;
+          return false;
+        }
+        return true;
+      } catch {
+        this.projectOrder = previous;
+        return false;
+      } finally {
+        this.projectOrderSaving = false;
+      }
     },
   },
 });

@@ -26,8 +26,19 @@
     <ul v-if="expanded" class="min-w-0" data-testid="sidebar-project-list">
       <li v-if="projects.length === 0" class="text-base-content/50 px-3 py-1 text-xs">{{ t('projects.empty') }}</li>
       <li v-for="project in projects" :key="project.id" class="min-w-0" :data-testid="`sidebar-project-${project.id}`">
-        <div class="group flex min-w-0 items-center gap-1">
-          <button type="button" class="flex min-w-0 flex-1 items-center gap-1.5 px-3 py-1.5 text-left text-sm" :aria-expanded="isOpen(project.id)" :data-testid="`sidebar-project-toggle-${project.id}`" @click="toggle(project.id)">
+        <div
+          class="group flex min-w-0 items-center gap-1 rounded"
+          :class="{ 'bg-base-200': dragOverId === project.id, 'opacity-40': draggingId === project.id }"
+          draggable="true"
+          :data-testid="`sidebar-project-row-${project.id}`"
+          @dragstart="onDragStart($event, project)"
+          @dragover="onDragOver($event, project)"
+          @dragleave="onDragLeave(project)"
+          @drop="onDrop($event, project)"
+          @dragend="clearDrag"
+        >
+          <DragHandleIcon class="text-base-content/25 ml-1 h-3.5 w-3.5 shrink-0 cursor-grab active:cursor-grabbing" :title="t('projects.reorderHint')" />
+          <button type="button" class="flex min-w-0 flex-1 items-center gap-1.5 px-1 py-1.5 text-left text-sm" :aria-expanded="isOpen(project.id)" :data-testid="`sidebar-project-toggle-${project.id}`" @click="toggle(project.id)">
             <ChevronRightIcon class="text-base-content/40 h-3 w-3 shrink-0 transition-transform" :class="{ 'rotate-90': isOpen(project.id) }" />
             <FolderIcon class="text-primary h-3.5 w-3.5 shrink-0" />
             <span class="truncate">{{ project.project_name }}</span>
@@ -78,13 +89,16 @@ import { deleteProjectsByUuid, postProjects, putProjectsByUuid, type ApiProjectD
 import FormModal from '@/components/FormModal.vue';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import ChevronRightIcon from '@/components/svg/ChevronRightIcon.vue';
+import DragHandleIcon from '@/components/svg/DragHandleIcon.vue';
 import FolderIcon from '@/components/svg/FolderIcon.vue';
 import PencilIcon from '@/components/svg/PencilIcon.vue';
 import PlusIcon from '@/components/svg/PlusIcon.vue';
 import TrashIcon from '@/components/svg/TrashIcon.vue';
 import { useApiError } from '@/composables/useApiError';
+import { movedOrder } from '@/config/projectOrder';
 import { useAlertStore } from '@/stores/alertStore';
 import { useProjectStore } from '@/stores/projectStore';
+import { useUserConfigStore } from '@/stores/userConfigStore';
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import ProjectFormModal from './ProjectFormModal.vue';
@@ -102,6 +116,7 @@ const { t } = useI18n();
 const alertStore = useAlertStore();
 const apiError = useApiError();
 const projectStore = useProjectStore();
+const userConfigStore = useUserConfigStore();
 
 /**
  * Both levels start closed. Chat is what people came for: an unfamiliar section
@@ -112,7 +127,70 @@ const expanded = ref(false);
 /** The projects the user opened. Nothing is open until it is asked for. */
 const open = ref<Record<string, boolean>>({});
 
-const projects = computed(() => projectStore.projects);
+const projects = computed(() => projectStore.sorted);
+
+const draggingId = ref<string | null>(null);
+const dragOverId = ref<string | null>(null);
+
+function clearDrag() {
+  draggingId.value = null;
+  dragOverId.value = null;
+}
+
+function onDragStart(event: DragEvent, project: ApiProjectDto) {
+  if (!project.id) {
+    return;
+  }
+  draggingId.value = project.id;
+  event.dataTransfer?.setData('text/plain', project.id);
+  if (event.dataTransfer) {
+    event.dataTransfer.effectAllowed = 'move';
+  }
+}
+
+function onDragOver(event: DragEvent, project: ApiProjectDto) {
+  event.preventDefault();
+  if (event.dataTransfer) {
+    event.dataTransfer.dropEffect = 'move';
+  }
+  if (draggingId.value && draggingId.value !== project.id) {
+    dragOverId.value = project.id ?? null;
+  }
+}
+
+function onDragLeave(project: ApiProjectDto) {
+  if (dragOverId.value === project.id) {
+    dragOverId.value = null;
+  }
+}
+
+async function onDrop(event: DragEvent, project: ApiProjectDto) {
+  event.preventDefault();
+  const fromId = draggingId.value;
+  const toId = project.id;
+  clearDrag();
+  if (!fromId || !toId || fromId === toId) {
+    return;
+  }
+
+  const list = projects.value;
+  const order = movedOrder(
+    list,
+    list.findIndex((candidate) => candidate.id === fromId),
+    list.findIndex((candidate) => candidate.id === toId),
+  );
+  if (!order) {
+    return;
+  }
+
+  const previous = projectStore.order;
+  projectStore.applyOrder(order);
+  const saved = await userConfigStore.saveProjectOrder(order);
+  if (!saved) {
+    projectStore.applyOrder(previous);
+    alertStore.addItem({ level: 'error', message: apiError(undefined, 'projects.reorderError') });
+  }
+}
 
 function isOpen(id?: string): boolean {
   return id ? open.value[id] === true : false;

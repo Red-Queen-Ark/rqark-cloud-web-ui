@@ -16,7 +16,7 @@
         :initial-agent="chatStore.agentFor(sessionId)"
         :default-agent="chatSocket.defaultAgent"
         :providers="chatSocket.providers"
-        :projects="projectStore.projects"
+        :projects="projectStore.sorted"
         :project="sessionProject"
         :status="chatSocket.status"
         :streaming="chatSocket.streaming"

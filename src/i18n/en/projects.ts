@@ -35,4 +35,6 @@ export const projects = {
   deleteError: 'Could not delete the project.',
   changeError: 'Could not change the project.',
   changeNextTurn: 'The project changes from the next message.',
+  reorderHint: 'Drag to reorder',
+  reorderError: 'Could not save the new project order.',
 };

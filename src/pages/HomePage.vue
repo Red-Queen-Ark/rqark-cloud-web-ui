@@ -13,7 +13,7 @@
         :agents="chatSocket.agentNames"
         :default-agent="chatSocket.defaultAgent"
         :providers="chatSocket.providers"
-        :projects="projectStore.projects"
+        :projects="projectStore.sorted"
         :project="presetProject"
         :status="pingStatus"
         @submit="handleSubmit"

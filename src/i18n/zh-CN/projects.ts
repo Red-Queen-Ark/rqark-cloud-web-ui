@@ -35,4 +35,6 @@ export const projects = {
   deleteError: '无法删除项目。',
   changeError: '无法修改项目。',
   changeNextTurn: '项目将从下一条消息开始生效。',
+  reorderHint: '拖动可排序',
+  reorderError: '无法保存新的项目排序。',
 };

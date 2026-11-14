@@ -1,5 +1,6 @@
-import { defineStore } from 'pinia';
 import { getProjects, type ApiProjectDto } from '@/api';
+import { orderProjects } from '@/config/projectOrder';
+import { defineStore } from 'pinia';
 
 /**
  * The user's projects, kept in one place because two components read them: the
@@ -12,12 +13,13 @@ import { getProjects, type ApiProjectDto } from '@/api';
 export const useProjectStore = defineStore('projectStore', {
   state: () => ({
     projects: [] as ApiProjectDto[],
+    order: [] as string[],
     /** Whether a load has finished at least once, so an empty list can be trusted. */
     loaded: false,
   }),
   getters: {
-    /** Projects newest first, the order the endpoint returns them in. */
-    sorted: (state): ApiProjectDto[] => state.projects,
+    /** Projects in the user's order; ones the order does not mention keep the endpoint order, at the end. */
+    sorted: (state): ApiProjectDto[] => orderProjects(state.projects, state.order),
     byId:
       (state) =>
       (id?: string | null): ApiProjectDto | undefined =>
@@ -36,6 +38,9 @@ export const useProjectStore = defineStore('projectStore', {
     setProjects(projects: ApiProjectDto[]) {
       this.projects = projects;
       this.loaded = true;
+    },
+    applyOrder(order: readonly string[]) {
+      this.order = [...order];
     },
     async load() {
       // A failed load is not fatal anywhere: the sidebar keeps whatever it had
