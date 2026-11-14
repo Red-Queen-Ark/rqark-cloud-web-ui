@@ -89,6 +89,32 @@ test('moves to the socket of the session it switches to', async ({ page }) => {
   await expect.poll(() => opened.map(socketPath)).toEqual([`${SOCKET_PREFIX}${first.id}`, `${SOCKET_PREFIX}${second.id}`]);
 });
 
+test('keeps a draft per session across a switch and a reload', async ({ page }) => {
+  await mockBackend(page, { session: boss, sessions: [first, second], agents: [agent], providers: [provider] });
+  await seedSession(page);
+  await page.routeWebSocket(/\/agent-api\/chat\/ws\//, () => undefined);
+
+  await page.goto(`/en/chat/${first.id}`);
+  const input = page.getByTestId('chat-input');
+  await expect(input).toBeEnabled();
+  await input.fill('draft for the first chat');
+
+  const sessions = page.getByTestId('sidebar-chat-sessions');
+  await sessions.getByRole('link', { name: 'Second chat' }).click();
+  await expect(page).toHaveURL(new RegExp(`/en/chat/${second.id}$`));
+  await expect(input).toBeEmpty();
+
+  await input.fill('draft for the second chat');
+  await sessions.getByRole('link', { name: 'First chat' }).click();
+  await expect(input).toHaveText('draft for the first chat');
+
+  await page.reload();
+
+  await expect(input).toHaveText('draft for the first chat');
+  await sessions.getByRole('link', { name: 'Second chat' }).click();
+  await expect(input).toHaveText('draft for the second chat');
+});
+
 test('names the open session in the header', async ({ page }) => {
   await mockBackend(page, { session: boss, sessions: [first, second] });
   await seedSession(page);

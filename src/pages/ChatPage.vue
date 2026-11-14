@@ -22,6 +22,7 @@
         :streaming="chatSocket.streaming"
         @project-change="changeProject"
         @submit="handleSubmit"
+        @content-change="saveDraft"
         @stop="chatSocket.stop"
       />
     </div>
@@ -77,17 +78,48 @@ const historyStyle = computed<Record<string, string>>(() => ({
 let planObserver: ResizeObserver | undefined;
 let dockObserver: ResizeObserver | undefined;
 
-watch(sessionId, () => scrollToBottom());
+watch(sessionId, (id) => {
+  restoreDraft(id);
+  scrollToBottom();
+});
+
+/** Keeps what is typed under its session, so switching away and back finds it again. */
+function saveDraft(text: string) {
+  const id = sessionId.value;
+  if (id) {
+    chatStore.setDraft(id, text);
+  }
+}
+
+/** Fills the composer with the draft the session is holding, blank when it has none. */
+function restoreDraft(id: string | undefined) {
+  inputArea.value?.setText(id ? (chatStore.sessionDrafts[id] ?? '') : '');
+}
 
 function handleSubmit(payload: { content: string; agent: string; provider: string; images?: string[] }) {
+  const id = sessionId.value;
   // `/stop` is answered here rather than sent: it ends the turn already running,
   // so a message carrying it would only queue behind the one it means to stop.
   if (payload.content === STOP_COMMAND) {
     chatSocket.stop();
     inputArea.value?.clear();
+    if (id) {
+      chatStore.clearDraft(id);
+    }
     return;
   }
-  chatSocket.send(payload.content, payload.agent, payload.provider, () => inputArea.value?.clear(), payload.images ?? []);
+  chatSocket.send(
+    payload.content,
+    payload.agent,
+    payload.provider,
+    () => {
+      inputArea.value?.clear();
+      if (id) {
+        chatStore.clearDraft(id);
+      }
+    },
+    payload.images ?? [],
+  );
   // Kept beside the session so the picker comes back to this agent rather than
   // the first one in the listing, both after the pending turn is flushed and
   // when the chat is reopened later in the same page load.
@@ -137,6 +169,7 @@ async function handleRevert(messageId: string) {
 }
 
 onMounted(async () => {
+  restoreDraft(sessionId.value);
   if (planDock.value && typeof ResizeObserver !== 'undefined') {
     planObserver = new ResizeObserver((entries) => {
       // offsetHeight, not contentRect: the dock's own padding is the gap that

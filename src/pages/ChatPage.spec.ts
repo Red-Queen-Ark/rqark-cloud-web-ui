@@ -138,6 +138,45 @@ describe('ChatPage', () => {
     expect(socket.send).toHaveBeenCalledWith('hello there', 'researcher', 'openai', undefined, []);
   });
 
+  it('keeps a draft per session across a switch', async () => {
+    const { wrapper, router } = await mountChat('/en/chat/session-a');
+
+    const input = wrapper.get('[data-testid="chat-input"]');
+    input.element.textContent = 'half a thought';
+    await input.trigger('input');
+
+    await router.push('/en/chat/session-b');
+    expect(input.element.textContent).toBe('');
+
+    input.element.textContent = 'another thought';
+    await input.trigger('input');
+
+    await router.push('/en/chat/session-a');
+    expect(input.element.textContent).toBe('half a thought');
+
+    await router.push('/en/chat/session-b');
+    expect(input.element.textContent).toBe('another thought');
+  });
+
+  it('brings the draft back when the chat is opened again', async () => {
+    useChatStore().setDraft('session-a', 'still writing');
+
+    const { wrapper } = await mountChat('/en/chat/session-a');
+
+    expect(wrapper.get('[data-testid="chat-input"]').element.textContent).toBe('still writing');
+  });
+
+  it('drops the draft once the turn has been sent', async () => {
+    const { wrapper } = await mountChat('/en/chat/session-a');
+
+    const input = wrapper.get('[data-testid="chat-input"]');
+    input.element.textContent = 'hello there';
+    await input.trigger('input');
+    await wrapper.get('[data-testid="chat-send"]').trigger('click');
+
+    expect(useChatStore().sessionDrafts['session-a']).toBeUndefined();
+  });
+
   it('answers /stop by stopping the turn instead of sending it', async () => {
     const { wrapper } = await mountChat('/en/chat/session-a');
 

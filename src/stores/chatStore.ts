@@ -34,6 +34,15 @@ export const useChatStore = defineStore('chatStore', {
      * picker falls back to the first agent the moment a turn is submitted.
      */
     sessionAgents: {} as Record<string, string>,
+    /**
+     * The unsent composer text each chat is holding, keyed by session id.
+     *
+     * Kept in the store rather than in the input itself because the page is
+     * reused across sessions and reloaded freely; a chat that is left and
+     * reopened should still have what was being written in it. Attachments
+     * are not kept, only text.
+     */
+    sessionDrafts: {} as Record<string, string>,
   }),
   getters: {
     /** The agent a chat should come up on, from the last turn or one still in flight. */
@@ -51,6 +60,17 @@ export const useChatStore = defineStore('chatStore', {
   actions: {
     setSessionAgent(sessionId: string, agent: string) {
       this.sessionAgents[sessionId] = agent;
+    },
+    /** Records what is typed in a chat; blank text drops the draft. */
+    setDraft(sessionId: string, text: string) {
+      if (text.trim() === '') {
+        Reflect.deleteProperty(this.sessionDrafts, sessionId);
+        return;
+      }
+      this.sessionDrafts[sessionId] = text;
+    },
+    clearDraft(sessionId: string) {
+      Reflect.deleteProperty(this.sessionDrafts, sessionId);
     },
     setPendingTurn(turn: PendingTurn) {
       this.pendingTurn = turn;
@@ -83,4 +103,7 @@ export const useChatStore = defineStore('chatStore', {
       this.sessionProjects[sessionId] = projectId;
     },
   },
+  // Only the drafts outlive a reload: the rest is rebuilt from the server, and
+  // a pending turn is a one-shot handoff that must not be replayed.
+  persist: { pick: ['sessionDrafts'] },
 });
