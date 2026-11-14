@@ -8,13 +8,22 @@
       </div>
     </div>
     <div class="chat-input-dock fixed inset-x-0 z-30 lg:left-72 md:mx-8 mb-2" data-testid="chat-input-dock">
-      <ChatInputArea ref="inputArea" :agents="chatSocket.agentNames" :default-agent="chatSocket.defaultAgent" :providers="chatSocket.providers" :projects="projectStore.projects" :project="null" :status="pingStatus" @submit="handleSubmit" />
+      <ChatInputArea
+        ref="inputArea"
+        :agents="chatSocket.agentNames"
+        :default-agent="chatSocket.defaultAgent"
+        :providers="chatSocket.providers"
+        :projects="projectStore.projects"
+        :project="presetProject"
+        :status="pingStatus"
+        @submit="handleSubmit"
+      />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 import { postSessions } from '@/api';
@@ -40,6 +49,19 @@ const { status: pingStatus } = usePingStatus();
 const appName = import.meta.env.VITE_APP_NAME || 'App';
 
 useVisualViewportInsets();
+
+/**
+ * The project a `?project=` link asked for, which is how a project's own "new
+ * session" entry reaches this page. An id the user does not have resolves to no
+ * project rather than to an empty picker.
+ */
+const presetProject = computed(() => {
+  const id = route.query.project;
+  if (typeof id !== 'string' || !id) {
+    return null;
+  }
+  return projectStore.projects.some((project) => project.id === id) ? id : null;
+});
 
 const inputArea = ref<InstanceType<typeof ChatInputArea> | null>(null);
 const starting = ref(false);

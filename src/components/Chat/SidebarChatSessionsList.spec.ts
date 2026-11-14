@@ -119,14 +119,17 @@ describe('SidebarChatSessionsList', () => {
     expect(wrapper.findAll(`${SESSIONS} a`).map((link) => link.text())).toEqual(['New session', 'Older chat']);
   });
 
-  it('shows a project with no sessions as an empty group', async () => {
+  it('offers to start a session in an empty project instead of saying it is empty', async () => {
     (api.getProjects as Mock).mockResolvedValue({ data: [{ id: 'p1', project_name: 'Acme', project_path: 'acme' }] });
     (api.getSessions as Mock).mockResolvedValue({ data: [latest] });
 
     const wrapper = await mountList();
     await wrapper.get('[data-testid="sidebar-project-toggle-p1"]').trigger('click');
 
-    expect(wrapper.get('[data-testid="sidebar-project-p1"]').text()).toContain('No chats yet');
+    const link = wrapper.get('[data-testid="sidebar-project-new-session-p1"]');
+    expect(link.text()).toBe('New session');
+    // The link carries the project, so the chat it starts is already filed there.
+    expect(link.attributes('href')).toContain('project=p1');
   });
 
   it('reports a failing load once instead of once per poll', async () => {

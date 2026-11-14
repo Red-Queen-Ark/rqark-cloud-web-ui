@@ -50,9 +50,9 @@ function createTestRouter(): Router {
 
 let pinia: Pinia;
 
-async function mountHome() {
+async function mountHome(path = '/en') {
   const router = createTestRouter();
-  await router.push('/en');
+  await router.push(path);
   await router.isReady();
   const wrapper = mount(HomePage, { global: { plugins: [i18n, router, pinia] } });
   await flushPromises();
@@ -73,7 +73,7 @@ describe('HomePage', () => {
     pinia = createPinia();
     setActivePinia(pinia);
     api.postSessions.mockResolvedValue({ data: { id: 'session-new' } });
-    api.getProjects.mockResolvedValue({ data: [] });
+    api.getProjects.mockResolvedValue({ data: [{ id: 'p1', project_name: 'Acme', project_path: 'acme' }] });
   });
 
   it('welcomes the user and offers the composer', async () => {
@@ -110,5 +110,25 @@ describe('HomePage', () => {
 
     expect(useChatStore().pendingTurn).toBeNull();
     expect(router.currentRoute.value.fullPath).toBe('/en');
+  });
+
+  it('comes up on the project a ?project= link named', async () => {
+    const { wrapper } = await mountHome('/en?project=p1');
+
+    expect((wrapper.get('[data-testid="chat-project-select"]').element as HTMLSelectElement).value).toBe('p1');
+  });
+
+  it('ignores a project id the user does not have', async () => {
+    const { wrapper } = await mountHome('/en?project=gone');
+
+    expect((wrapper.get('[data-testid="chat-project-select"]').element as HTMLSelectElement).value).toBe('');
+  });
+
+  it('creates the session in the project the page came up on', async () => {
+    const { wrapper } = await mountHome('/en?project=p1');
+
+    await submit(wrapper, 'hello');
+
+    expect(api.postSessions).toHaveBeenCalledWith({ body: { source: SESSION_SOURCE, project_id: 'p1' } });
   });
 });
