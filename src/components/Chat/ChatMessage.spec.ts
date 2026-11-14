@@ -44,6 +44,20 @@ function revertibleFlags(wrapper: ReturnType<typeof mountMessages>): (boolean | 
 }
 
 describe('ChatMessage', () => {
+  it('holds the transcript back behind a spinner while the session loads', () => {
+    const wrapper = mount(ChatMessage, { props: { messages: [user(0, 'hi', 'm1')], loading: true }, global: { plugins: [i18n] } });
+
+    expect(wrapper.find('[data-testid="chat-loading"]').exists()).toBe(true);
+    expect(wrapper.findAllComponents({ name: 'UserMessage' })).toHaveLength(0);
+  });
+
+  it('shows the transcript once the session has loaded', () => {
+    const wrapper = mount(ChatMessage, { props: { messages: [user(0, 'hi', 'm1')], loading: false }, global: { plugins: [i18n] } });
+
+    expect(wrapper.find('[data-testid="chat-loading"]').exists()).toBe(false);
+    expect(wrapper.findAllComponents({ name: 'UserMessage' })).toHaveLength(1);
+  });
+
   it('applies the shared block padding to user messages', () => {
     const messages: ChatHistoryEntry[] = [user(0, 'hi', 'm1')];
     const message = mountMessages(messages).getComponent({ name: 'UserMessage' });

@@ -642,6 +642,33 @@ test('retries a rejected agent-cloud call with a refreshed token', async ({ page
   expect(authorizations).toEqual(['Bearer access-token-1', 'Bearer access-token-2']);
 });
 
+test('shows a loading state until the session history lands', async ({ page }) => {
+  await mockBackend(page, { session: boss, sessions: [{ ...first, messages: copyMessages }], agents: [agent], providers: [provider] });
+  await seedSession(page);
+  await page.routeWebSocket(/\/agent-api\/chat\/ws\//, () => undefined);
+
+  let release: (() => void) | undefined;
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route(/\/api\/sessions\/[^/]+\/messages$/, async (route) => {
+    await held;
+    await route.fallback();
+  });
+
+  await page.goto(`/en/chat/${first.id}`);
+
+  const loading = page.getByTestId('chat-loading');
+  await expect(loading).toBeVisible();
+  await expect(loading.locator('.loading-spinner')).toBeVisible();
+  await expect(page.getByTestId('user-message')).toHaveCount(0);
+
+  release?.();
+
+  await expect(loading).toBeHidden();
+  await expect(page.getByTestId('user-message')).toHaveCount(2);
+});
+
 test.describe('bubble corners', () => {
   test('the user bubble follows the radius of the active theme', async ({ page }) => {
     await page.emulateMedia({ colorScheme: 'light' });
