@@ -38,6 +38,10 @@ vi.mock('@/composables/useChatSocket', async () => {
   };
 });
 
+const api = vi.hoisted(() => ({ putSessionsByUuid: vi.fn(), getProjects: vi.fn() }));
+
+vi.mock('@/api', () => ({ putSessionsByUuid: api.putSessionsByUuid, getProjects: api.getProjects }));
+
 const Blank = defineComponent({ template: '<div />' });
 
 function createTestRouter(): Router {
@@ -68,6 +72,8 @@ describe('ChatPage', () => {
     vi.clearAllMocks();
     socket.agentsValue = [{ id: 'agent-1', name: 'researcher' }];
     socket.send.mockImplementation((...args: unknown[]) => (args[3] as (() => void) | undefined)?.());
+    api.getProjects.mockResolvedValue({ data: [{ id: 'p1', project_name: 'Acme', project_path: 'acme' }] });
+    api.putSessionsByUuid.mockResolvedValue({ data: {} });
     pinia = createPinia();
     setActivePinia(pinia);
   });
@@ -204,6 +210,32 @@ describe('ChatPage', () => {
 
     expect(socket.send).toHaveBeenCalledWith('hello there', 'writer', 'openai', expect.any(Function), []);
     expect(useChatStore().agentFor('session-a')).toBe('writer');
+  });
+  it('writes a project change onto the session rather than the turn', async () => {
+    const { wrapper } = await mountChat('/en/chat/session-1');
+    const chatStore = useChatStore();
+    chatStore.setSessionProjects([{ id: 'session-1', updated_at: '2026-01-01T00:00:00Z' }]);
+
+    await wrapper.get('[data-testid="chat-project-select"]').setValue('p1');
+    await flushPromises();
+
+    expect(api.putSessionsByUuid).toHaveBeenCalledWith({ path: { uuid: 'session-1' }, body: { project_id: 'p1' } });
+    expect(chatStore.sessionProjects['session-1']).toBe('p1');
+    // Nothing is sent: the engine reads the stored value when it builds the next turn.
+    expect(socket.send).not.toHaveBeenCalled();
+  });
+
+  it('puts the picker back when the cloud refuses the project change', async () => {
+    api.putSessionsByUuid.mockResolvedValue({ error: { error: { code: 'BAD_REQUEST', message: 'no' } } });
+    const { wrapper } = await mountChat('/en/chat/session-1');
+    const chatStore = useChatStore();
+    chatStore.setSessionProjects([{ id: 'session-1', updated_at: '2026-01-01T00:00:00Z' }]);
+
+    await wrapper.get('[data-testid="chat-project-select"]').setValue('p1');
+    await flushPromises();
+
+    expect(chatStore.sessionProjects['session-1']).toBeNull();
+    expect((wrapper.get('[data-testid="chat-project-select"]').element as HTMLSelectElement).value).toBe('');
   });
 });
 

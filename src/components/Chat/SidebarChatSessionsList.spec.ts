@@ -8,7 +8,7 @@ import { defineComponent } from 'vue';
 import { createMemoryHistory, createRouter, type Router } from 'vue-router';
 import SidebarChatSessionsList from './SidebarChatSessionsList.vue';
 
-vi.mock('@/api', () => ({ getSessions: vi.fn() }));
+vi.mock('@/api', () => ({ getSessions: vi.fn(), getProjects: vi.fn() }));
 
 const latest = { id: 'session-latest', title: 'Latest chat', created_at: '2026-04-05T06:07:08Z', updated_at: '2026-04-08T09:10:11Z' };
 const older = { id: 'session-older', title: 'Older chat', created_at: '2026-04-04T06:07:08Z', updated_at: '2026-04-05T06:07:08Z' };
@@ -46,6 +46,7 @@ describe('SidebarChatSessionsList', () => {
     pinia = createPinia();
     setActivePinia(pinia);
     vi.clearAllMocks();
+    (api.getProjects as Mock).mockResolvedValue({ data: [] });
   });
 
   afterEach(() => {
@@ -105,6 +106,34 @@ describe('SidebarChatSessionsList', () => {
     expect(api.getSessions).toHaveBeenCalledWith({ query: { source: 'AGENT_CLOUD' } });
   });
 
+  it('files a session under its project and leaves the rest in Chat', async () => {
+    (api.getProjects as Mock).mockResolvedValue({ data: [{ id: 'p1', project_name: 'Acme', project_path: 'acme' }] });
+    (api.getSessions as Mock).mockResolvedValue({ data: [{ ...latest, project_id: 'p1' }, older] });
+
+    const wrapper = await mountList();
+    await wrapper.get('[data-testid="sidebar-projects-toggle"]').trigger('click');
+    await wrapper.get('[data-testid="sidebar-project-toggle-p1"]').trigger('click');
+
+    const inProject = wrapper.findAll('[data-testid="sidebar-project-sessions-p1"] a');
+    expect(inProject.map((link) => link.text())).toEqual(['Latest chat']);
+    // Chat keeps its own sessions, and the project's session is not repeated there.
+    expect(wrapper.findAll(`${SESSIONS} a`).map((link) => link.text())).toEqual(['New session', 'Older chat']);
+  });
+
+  it('offers to start a session in an empty project instead of saying it is empty', async () => {
+    (api.getProjects as Mock).mockResolvedValue({ data: [{ id: 'p1', project_name: 'Acme', project_path: 'acme' }] });
+    (api.getSessions as Mock).mockResolvedValue({ data: [latest] });
+
+    const wrapper = await mountList();
+    await wrapper.get('[data-testid="sidebar-projects-toggle"]').trigger('click');
+    await wrapper.get('[data-testid="sidebar-project-toggle-p1"]').trigger('click');
+
+    const link = wrapper.get('[data-testid="sidebar-project-new-session-p1"]');
+    expect(link.text()).toBe('New session');
+    // The link carries the project, so the chat it starts is already filed there.
+    expect(link.attributes('href')).toContain('project=p1');
+  });
+
   it('reports a failing load once instead of once per poll', async () => {
     (api.getSessions as Mock).mockResolvedValue({ error: { error: { code: 'INTERNAL', message: 'boom' } } });
 
@@ -116,5 +145,56 @@ describe('SidebarChatSessionsList', () => {
 
     await vi.advanceTimersByTimeAsync(5000);
     expect(addItem).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps both levels closed until they are asked for', async () => {
+    (api.getProjects as Mock).mockResolvedValue({ data: [{ id: 'p1', project_name: 'Acme', project_path: 'acme' }] });
+    (api.getSessions as Mock).mockResolvedValue({ data: [{ ...latest, project_id: 'p1' }] });
+
+    const wrapper = await mountList();
+
+    // Chat is what people came for: the unfamiliar group must not push it down.
+    expect(wrapper.find('[data-testid="sidebar-project-list"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="sidebar-chat-session-list"]').exists()).toBe(true);
+
+    await wrapper.get('[data-testid="sidebar-projects-toggle"]').trigger('click');
+
+    // The project rows appear, and each one is still shut.
+    expect(wrapper.find('[data-testid="sidebar-project-p1"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="sidebar-project-sessions-p1"]').exists()).toBe(false);
+  });
+
+  it('opens the project the chat being read belongs to', async () => {
+    (api.getProjects as Mock).mockResolvedValue({ data: [{ id: 'p1', project_name: 'Acme', project_path: 'acme' }] });
+    (api.getSessions as Mock).mockResolvedValue({ data: [{ ...latest, project_id: 'p1' }] });
+
+    const wrapper = await mountList(`/en/chat/${latest.id}`);
+
+    // A reload onto a chat shows where that chat lives, without a click.
+    expect(wrapper.find('[data-testid="sidebar-project-sessions-p1"]').exists()).toBe(true);
+  });
+
+  it('leaves the group closed when the chat belongs to no project', async () => {
+    (api.getProjects as Mock).mockResolvedValue({ data: [{ id: 'p1', project_name: 'Acme', project_path: 'acme' }] });
+    (api.getSessions as Mock).mockResolvedValue({ data: [latest] });
+
+    const wrapper = await mountList(`/en/chat/${latest.id}`);
+
+    expect(wrapper.find('[data-testid="sidebar-project-list"]').exists()).toBe(false);
+  });
+
+  it('does not reopen a project the user closed while reading it', async () => {
+    (api.getProjects as Mock).mockResolvedValue({ data: [{ id: 'p1', project_name: 'Acme', project_path: 'acme' }] });
+    (api.getSessions as Mock).mockResolvedValue({ data: [{ ...latest, project_id: 'p1' }] });
+
+    const wrapper = await mountList(`/en/chat/${latest.id}`);
+    await wrapper.get('[data-testid="sidebar-project-toggle-p1"]').trigger('click');
+    expect(wrapper.find('[data-testid="sidebar-project-sessions-p1"]').exists()).toBe(false);
+
+    // The poll republishes the list; that is not a reason to undo the close.
+    await vi.advanceTimersByTimeAsync(5000);
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="sidebar-project-sessions-p1"]').exists()).toBe(false);
   });
 });

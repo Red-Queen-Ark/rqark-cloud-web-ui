@@ -10,7 +10,7 @@
 </template>
 
 <script setup lang="ts">
-import { getSystemConfig } from '@/api';
+import { getSystemConfig2 } from '@/api';
 import LoginBox from '@/components/Login/LoginBox.vue';
 import LoginServerSettings from '@/components/Login/LoginServerSettings.vue';
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue';
@@ -38,7 +38,7 @@ const serverSettings = ref<InstanceType<typeof LoginServerSettings> | null>(null
 
 onMounted(async () => {
   try {
-    const { data, response } = await getSystemConfig();
+    const { data, response } = await getSystemConfig2();
     if (!response?.ok) {
       throw new Error('bad status');
     }

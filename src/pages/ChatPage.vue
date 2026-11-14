@@ -16,8 +16,11 @@
         :initial-agent="chatStore.agentFor(sessionId)"
         :default-agent="chatSocket.defaultAgent"
         :providers="chatSocket.providers"
+        :projects="projectStore.projects"
+        :project="sessionProject"
         :status="chatSocket.status"
         :streaming="chatSocket.streaming"
+        @project-change="changeProject"
         @submit="handleSubmit"
         @stop="chatSocket.stop"
       />
@@ -27,15 +30,20 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
 import ChatInputArea from '@/components/Chat/ChatInputArea.vue';
 import ChatMessage from '@/components/Chat/ChatMessage.vue';
 import ChatPlanCard from '@/components/Chat/ChatPlanCard.vue';
 import ScrollToBottomButton from '@/components/Chat/ScrollToBottomButton.vue';
+import { useApiError } from '@/composables/useApiError';
 import { useChatSocket } from '@/composables/useChatSocket';
 import { useStickyScroll } from '@/composables/useStickyScroll';
 import { useVisualViewportInsets } from '@/composables/useVisualViewportInsets';
+import { putSessionsByUuid, type ApiUpdateSessionRequest } from '@/api';
+import { useAlertStore } from '@/stores/alertStore';
 import { useChatStore } from '@/stores/chatStore';
+import { useProjectStore } from '@/stores/projectStore';
 
 /** The one command the page answers itself; see handleSubmit. */
 const STOP_COMMAND = '/stop';
@@ -44,6 +52,10 @@ const route = useRoute();
 const sessionId = computed(() => (typeof route.params.uuid === 'string' ? route.params.uuid : undefined));
 const chatSocket = useChatSocket(sessionId);
 const chatStore = useChatStore();
+const projectStore = useProjectStore();
+const alertStore = useAlertStore();
+const apiError = useApiError();
+const { t } = useI18n();
 
 useVisualViewportInsets();
 
@@ -81,6 +93,33 @@ function handleSubmit(payload: { content: string; agent: string; provider: strin
   scrollToBottom();
 }
 
+const sessionProject = computed(() => (sessionId.value ? (chatStore.sessionProjects[sessionId.value] ?? null) : null));
+
+/**
+ * Writes the project onto the session. The engine reads the stored value when
+ * it builds the next turn, so this turn's directory still runs where the session
+ * already was; the message says as much.
+ */
+async function changeProject(projectId: string | null) {
+  const id = sessionId.value;
+  if (!id) {
+    return;
+  }
+  const previous = chatStore.sessionProjects[id] ?? null;
+  if (previous === projectId) {
+    return;
+  }
+  // Optimistic: the select has already moved, and an error puts it back.
+  chatStore.setSessionProject(id, projectId);
+  const { error } = await putSessionsByUuid({ path: { uuid: id }, body: { project_id: projectId } as ApiUpdateSessionRequest });
+  if (error) {
+    chatStore.setSessionProject(id, previous);
+    alertStore.addItem({ level: 'error', message: apiError(error, 'projects.changeError') });
+    return;
+  }
+  alertStore.addItem({ level: 'info', message: t('projects.changeNextTurn') });
+}
+
 async function handleRevert(messageId: string) {
   if (reverting.value) {
     return;
@@ -103,6 +142,9 @@ onMounted(async () => {
     planObserver.observe(planDock.value);
   }
   await chatSocket.load();
+  // The picker above the input needs the projects before a turn is sent; a
+  // failure here leaves it offering only "no project".
+  void projectStore.load();
   const pending = chatStore.takePendingTurn(sessionId.value ?? '');
   if (pending) {
     // The turn arrives from the home page, which never showed this session: the

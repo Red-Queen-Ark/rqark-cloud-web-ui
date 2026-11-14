@@ -6,9 +6,9 @@ import { createPinia, setActivePinia, type Pinia } from 'pinia';
 import { i18n } from '@/i18n';
 import LoginPage from './LoginPage.vue';
 
-const api = vi.hoisted(() => ({ getSystemConfig: vi.fn() }));
+const api = vi.hoisted(() => ({ getSystemConfig2: vi.fn() }));
 
-vi.mock('@/api', () => ({ getSystemConfig: api.getSystemConfig }));
+vi.mock('@/api', () => ({ getSystemConfig2: api.getSystemConfig2 }));
 
 const Blank = defineComponent({ template: '<div />' });
 
@@ -46,7 +46,7 @@ async function mountLogin() {
 beforeEach(() => {
   pinia = createPinia();
   setActivePinia(pinia);
-  api.getSystemConfig.mockResolvedValue({ data: { allow_self_registration: false } });
+  api.getSystemConfig2.mockResolvedValue({ data: { allow_self_registration: false } });
   browser();
 });
 
@@ -64,14 +64,14 @@ describe('LoginPage', () => {
 
   it('opens the server settings on its own when the backend cannot be reached', async () => {
     desktop();
-    api.getSystemConfig.mockRejectedValue(new Error('offline'));
+    api.getSystemConfig2.mockRejectedValue(new Error('offline'));
     const wrapper = await mountLogin();
 
     expect(wrapper.find('#settings-api-base').exists()).toBe(true);
   });
 
   it('keeps the login form clean when the web build cannot reach the backend', async () => {
-    api.getSystemConfig.mockRejectedValue(new Error('offline'));
+    api.getSystemConfig2.mockRejectedValue(new Error('offline'));
     const wrapper = await mountLogin();
 
     expect(wrapper.find('#settings-api-base').exists()).toBe(false);

@@ -1,52 +1,47 @@
 <template>
-  <li ref="rootEl" class="session-group min-w-0">
-    <span class="menu-title">{{ t('chat.title') }}</span>
-    <ul data-testid="sidebar-chat-sessions" class="min-w-0">
+  <SidebarProjectsList :sessions="sessions" :lang="lang" :active-session-id="activeSessionId" @deleted="handleDeleted" />
+
+  <li class="session-group min-w-0" data-testid="sidebar-chat-sessions">
+    <div class="flex items-center gap-1">
+      <button
+        type="button"
+        class="text-base-content/70 hover:text-base-content flex min-w-0 flex-1 items-center gap-1 px-3 py-1.5 text-xs font-semibold tracking-wide uppercase"
+        :aria-expanded="expanded"
+        data-testid="sidebar-chat-sessions-toggle"
+        @click="expanded = !expanded"
+      >
+        <ChevronRightIcon class="h-3 w-3 shrink-0 transition-transform" :class="{ 'rotate-90': expanded }" />
+        <span class="truncate">{{ t('chat.title') }}</span>
+        <span v-if="unfiled.length > 0" class="text-base-content/40 shrink-0 tabular-nums">{{ unfiled.length }}</span>
+      </button>
+    </div>
+
+    <ul v-if="expanded" class="min-w-0" data-testid="sidebar-chat-session-list">
       <li>
-        <RouterLink :to="{ name: 'home', params: { lang } }" :class="{ 'menu-active': isHome }">
+        <RouterLink :to="{ name: 'home', params: { lang } }" :class="{ 'menu-active': isHome }" data-testid="sidebar-chat-new">
           <PlusIcon class="h-4 w-4" />
           {{ t('chat.newSession') }}
         </RouterLink>
       </li>
-      <li v-for="session in sessions" :key="session.id" class="group relative min-w-0">
-        <template v-if="session.id">
-          <RouterLink :to="{ name: 'chat', params: { lang, uuid: session.id } }" :class="{ 'menu-active': isActive(session), invisible: editingId === session.id }" class="flex min-w-0 items-center gap-2 pr-8">
-            <span class="min-w-0 truncate">{{ session.title || t('sessions.untitled') }}</span>
-          </RouterLink>
-
-          <div class="pointer-events-none absolute inset-y-0 right-1 flex items-center hover:bg-transparent active:bg-transparent" :class="{ invisible: editingId === session.id }">
-            <SidebarChatSessionMenu :session-id="session.id" :active="isActive(session)" @edit="startEdit(session)" @deleted="handleDeleted" />
-          </div>
-
-          <div v-if="editingId === session.id" class="absolute inset-0 flex! items-center gap-1 px-3">
-            <input v-model="editTitle" :data-edit-id="session.id" type="text" class="input input-sm w-full min-w-0" :placeholder="t('chat.titlePlaceholder')" @keydown="handleEditKeydown($event, session.id)" @blur="saveEdit(session.id)" />
-            <button data-testid="sidebar-chat-rename-save" class="btn btn-ghost btn-sm btn-square text-success" :title="t('chat.edit')" @mousedown.prevent @click="saveEdit(session.id)">
-              <CheckIcon class="h-3.5 w-3.5" />
-            </button>
-            <button data-testid="sidebar-chat-rename-cancel" class="btn btn-ghost btn-sm btn-square text-error" :title="t('chat.cancel')" @mousedown.prevent @click="cancelEdit">
-              <CloseIcon class="h-3.5 w-3.5" />
-            </button>
-          </div>
-        </template>
-        <span v-else class="truncate">{{ session.title || t('sessions.untitled') }}</span>
-      </li>
+      <SidebarSessionRow v-for="session in unfiled" :key="session.id" :session="session" :lang="lang" :active="isActive(session)" @deleted="handleDeleted" @renamed="handleRenamed" />
     </ul>
   </li>
 </template>
 
 <script setup lang="ts">
-import { getSessions, putSessionsByUuid, type ApiSessionDto } from '@/api';
-import CheckIcon from '@/components/svg/CheckIcon.vue';
-import CloseIcon from '@/components/svg/CloseIcon.vue';
+import { getSessions, type ApiSessionDto } from '@/api';
+import ChevronRightIcon from '@/components/svg/ChevronRightIcon.vue';
 import PlusIcon from '@/components/svg/PlusIcon.vue';
-import SidebarChatSessionMenu from '@/components/Chat/SidebarChatSessionMenu.vue';
 import { useApiError } from '@/composables/useApiError';
 import { SESSION_SOURCE } from '@/config/sessionSource';
 import { useAlertStore } from '@/stores/alertStore';
 import { useChatStore } from '@/stores/chatStore';
-import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue';
+import { useProjectStore } from '@/stores/projectStore';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
+import SidebarProjectsList from './SidebarProjectsList.vue';
+import SidebarSessionRow from './SidebarSessionRow.vue';
 
 /** How often the sidebar looks for sessions started somewhere else. */
 const POLL_INTERVAL_MS = 5000;
@@ -57,25 +52,29 @@ const router = useRouter();
 const alertStore = useAlertStore();
 const apiError = useApiError();
 const chatStore = useChatStore();
+const projectStore = useProjectStore();
 
+/**
+ * Every chat session, both groups read from here. Kept whole rather than fetched
+ * per group: one list is one request, and a session that moves between groups
+ * moves without a second round trip.
+ */
 const sessions = ref<ApiSessionDto[]>([]);
+const expanded = ref(true);
 const lang = computed(() => route.params.lang as string);
 /** The create action owns the home route, which is where a session is started. */
 const isHome = computed(() => route.name === 'home');
+const activeSessionId = computed(() => (typeof route.params.uuid === 'string' ? route.params.uuid : undefined));
 
-const rootEl = ref<HTMLElement | null>(null);
-/** Session being renamed in place, if any. */
-const editingId = ref<string | null>(null);
-const editTitle = ref('');
-const savingId = ref<string | null>(null);
+/** The sessions that belong to no project: the ones started before projects existed. */
+const unfiled = computed(() => sessions.value.filter((session) => !session.project_id));
 
 let pollTimer: ReturnType<typeof setInterval> | undefined;
 // A backend that stays down would otherwise stack one alert per poll.
 let loadFailed = false;
 
 function isActive(session: ApiSessionDto): boolean {
-  const uuid = route.params.uuid;
-  return route.name === 'chat' && typeof uuid === 'string' && session.id === uuid;
+  return route.name === 'chat' && Boolean(session.id) && session.id === activeSessionId.value;
 }
 
 function timestamp(value?: string): number {
@@ -100,65 +99,13 @@ async function loadSessions() {
   // The endpoint hands back its own array, so sort a copy rather than it.
   sessions.value = [...data].sort(byRecency);
   chatStore.setSessionTitles(sessions.value);
+  chatStore.setSessionProjects(sessions.value);
 }
 
-function startEdit(session: ApiSessionDto) {
-  if (!session.id) {
-    return;
-  }
-  editingId.value = session.id;
-  editTitle.value = session.title ?? '';
-  nextTick(() => {
-    const input = rootEl.value?.querySelector<HTMLInputElement>(`[data-edit-id="${session.id}"]`);
-    // preventScroll: the row is already visible, and letting focus scroll the list is itself a visible jump.
-    input?.focus({ preventScroll: true });
-    input?.select();
-  });
-}
-
-function cancelEdit() {
-  editingId.value = null;
-  editTitle.value = '';
-}
-
-function handleEditKeydown(event: KeyboardEvent, id?: string) {
-  if (!id) {
-    return;
-  }
-  if (event.key === 'Enter') {
-    saveEdit(id);
-  } else if (event.key === 'Escape') {
-    cancelEdit();
-  }
-}
-
-async function saveEdit(id?: string) {
-  if (!id || savingId.value) {
-    return;
-  }
-  const title = editTitle.value.trim();
+function handleRenamed(id: string, title: string) {
   const session = sessions.value.find((candidate) => candidate.id === id);
-  // An unchanged or emptied title is treated as a cancel, matching the app's other inline edits.
-  if (!session || !title || session.title === title) {
-    cancelEdit();
-    return;
-  }
-  savingId.value = id;
-  try {
-    const { error } = await putSessionsByUuid({ path: { uuid: id }, body: { title } });
-    if (error) {
-      alertStore.addItem({ level: 'error', message: apiError(error, 'chat.renameError') });
-      return;
-    }
-    // Re-resolve after the await: a poll may have replaced the array in the meantime.
-    const current = sessions.value.find((candidate) => candidate.id === id);
-    if (current) {
-      current.title = title;
-      chatStore.setSessionTitle(id, title);
-    }
-    cancelEdit();
-  } finally {
-    savingId.value = null;
+  if (session) {
+    session.title = title;
   }
 }
 
@@ -171,7 +118,7 @@ function handleDeleted(id: string) {
 }
 
 onMounted(async () => {
-  await loadSessions();
+  await Promise.all([loadSessions(), projectStore.load()]);
   pollTimer = setInterval(loadSessions, POLL_INTERVAL_MS);
 });
 
@@ -193,6 +140,7 @@ onUnmounted(() => {
    one of those rows, and it needs daisyUI's own grid item to stretch each
    action to the menu's width. */
 .session-group,
+.session-group > ul,
 .session-group > ul > li {
   display: block;
   max-width: 100%;

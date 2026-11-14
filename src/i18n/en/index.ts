@@ -18,6 +18,7 @@ import { sessions } from './sessions';
 import { users } from './users';
 import { groups } from './groups';
 import { settings } from './settings';
+import { projects } from './projects';
 import { workspace } from './workspace';
 import { tasks } from './tasks';
 import { todos } from './todos';
@@ -43,6 +44,7 @@ export const basis = {
   users,
   groups,
   settings,
+  projects,
   workspace,
   tasks,
   todos,

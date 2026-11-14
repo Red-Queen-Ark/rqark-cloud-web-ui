@@ -8,9 +8,9 @@ import { SESSION_SOURCE } from '@/config/sessionSource';
 import { useChatStore } from '@/stores/chatStore';
 import HomePage from './HomePage.vue';
 
-const api = vi.hoisted(() => ({ postSessions: vi.fn() }));
+const api = vi.hoisted(() => ({ postSessions: vi.fn(), getProjects: vi.fn() }));
 
-vi.mock('@/api', () => ({ postSessions: api.postSessions }));
+vi.mock('@/api', () => ({ postSessions: api.postSessions, getProjects: api.getProjects }));
 
 const socket = vi.hoisted(() => ({ load: vi.fn() }));
 
@@ -50,9 +50,9 @@ function createTestRouter(): Router {
 
 let pinia: Pinia;
 
-async function mountHome() {
+async function mountHome(path = '/en') {
   const router = createTestRouter();
-  await router.push('/en');
+  await router.push(path);
   await router.isReady();
   const wrapper = mount(HomePage, { global: { plugins: [i18n, router, pinia] } });
   await flushPromises();
@@ -73,6 +73,7 @@ describe('HomePage', () => {
     pinia = createPinia();
     setActivePinia(pinia);
     api.postSessions.mockResolvedValue({ data: { id: 'session-new' } });
+    api.getProjects.mockResolvedValue({ data: [{ id: 'p1', project_name: 'Acme', project_path: 'acme' }] });
   });
 
   it('welcomes the user and offers the composer', async () => {
@@ -96,8 +97,8 @@ describe('HomePage', () => {
 
     // The sidebar lists only sessions filed under this source, so a session
     // created without it is invisible to the very UI that started it.
-    expect(api.postSessions).toHaveBeenCalledWith({ body: { source: SESSION_SOURCE } });
-    expect(useChatStore().pendingTurn).toEqual({ sessionId: 'session-new', content: 'hello there', agent: 'researcher', provider: 'openai', images: [] });
+    expect(api.postSessions).toHaveBeenCalledWith({ body: { source: SESSION_SOURCE, project_id: undefined } });
+    expect(useChatStore().pendingTurn).toEqual({ sessionId: 'session-new', content: 'hello there', agent: 'researcher', provider: 'openai', images: [], project: null });
     expect(router.currentRoute.value.fullPath).toBe('/en/chat/session-new');
   });
 
@@ -109,5 +110,25 @@ describe('HomePage', () => {
 
     expect(useChatStore().pendingTurn).toBeNull();
     expect(router.currentRoute.value.fullPath).toBe('/en');
+  });
+
+  it('comes up on the project a ?project= link named', async () => {
+    const { wrapper } = await mountHome('/en?project=p1');
+
+    expect((wrapper.get('[data-testid="chat-project-select"]').element as HTMLSelectElement).value).toBe('p1');
+  });
+
+  it('ignores a project id the user does not have', async () => {
+    const { wrapper } = await mountHome('/en?project=gone');
+
+    expect((wrapper.get('[data-testid="chat-project-select"]').element as HTMLSelectElement).value).toBe('');
+  });
+
+  it('creates the session in the project the page came up on', async () => {
+    const { wrapper } = await mountHome('/en?project=p1');
+
+    await submit(wrapper, 'hello');
+
+    expect(api.postSessions).toHaveBeenCalledWith({ body: { source: SESSION_SOURCE, project_id: 'p1' } });
   });
 });
