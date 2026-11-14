@@ -111,28 +111,25 @@ const apiError = useApiError();
 const projectStore = useProjectStore();
 
 /**
- * The group starts closed. Chat is what people came for, and an unfamiliar
- * section above it that pushes their sessions down is a worse first impression
- * than one extra click.
+ * Both levels start closed. Chat is what people came for: an unfamiliar section
+ * that has already pushed their sessions down, and then a list of folders opened
+ * under it, is a worse first impression than two clicks.
  */
 const expanded = ref(false);
-/**
- * The projects the user closed, which is the smaller map: a project's chats are
- * showing unless it was shut, so one click on the group reaches a conversation.
- */
-const closed = ref<Record<string, boolean>>({});
+/** The projects the user opened. Nothing is open until it is asked for. */
+const open = ref<Record<string, boolean>>({});
 
 const projects = computed(() => projectStore.projects);
 
 function isOpen(id?: string): boolean {
-  return id ? closed.value[id] !== true : false;
+  return id ? open.value[id] === true : false;
 }
 
 function toggle(id?: string) {
   if (!id) {
     return;
   }
-  closed.value = { ...closed.value, [id]: isOpen(id) };
+  open.value = { ...open.value, [id]: !open.value[id] };
 }
 
 function sessionsOf(projectId?: string): ApiSessionDto[] {
@@ -177,11 +174,11 @@ watch(
   (ids) => {
     const next: Record<string, boolean> = {};
     for (const id of ids) {
-      if (id && closed.value[id]) {
+      if (id && open.value[id]) {
         next[id] = true;
       }
     }
-    closed.value = next;
+    open.value = next;
   },
 );
 
@@ -218,9 +215,8 @@ async function save(payload: { project_name: string; project_path: string }) {
     }
     await projectStore.load();
     if (data.id) {
-      // A project just created is the one being worked on, so it opens and the
-      // group above it opens with it.
-      closed.value = Object.fromEntries(Object.entries(closed.value).filter(([id]) => id !== data.id));
+      // The group opens on a project the user just created, so the row they made
+      // is on screen; its chats are empty, so it stays shut.
       expanded.value = true;
     }
     closeForm();

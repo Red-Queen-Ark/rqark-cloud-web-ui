@@ -112,6 +112,7 @@ describe('SidebarChatSessionsList', () => {
 
     const wrapper = await mountList();
     await wrapper.get('[data-testid="sidebar-projects-toggle"]').trigger('click');
+    await wrapper.get('[data-testid="sidebar-project-toggle-p1"]').trigger('click');
 
     const inProject = wrapper.findAll('[data-testid="sidebar-project-sessions-p1"] a');
     expect(inProject.map((link) => link.text())).toEqual(['Latest chat']);
@@ -125,6 +126,7 @@ describe('SidebarChatSessionsList', () => {
 
     const wrapper = await mountList();
     await wrapper.get('[data-testid="sidebar-projects-toggle"]').trigger('click');
+    await wrapper.get('[data-testid="sidebar-project-toggle-p1"]').trigger('click');
 
     const link = wrapper.get('[data-testid="sidebar-project-new-session-p1"]');
     expect(link.text()).toBe('New session');
@@ -145,14 +147,20 @@ describe('SidebarChatSessionsList', () => {
     expect(addItem).toHaveBeenCalledTimes(1);
   });
 
-  it('keeps the project group closed until it is asked for', async () => {
+  it('keeps both levels closed until they are asked for', async () => {
     (api.getProjects as Mock).mockResolvedValue({ data: [{ id: 'p1', project_name: 'Acme', project_path: 'acme' }] });
-    (api.getSessions as Mock).mockResolvedValue({ data: [latest] });
+    (api.getSessions as Mock).mockResolvedValue({ data: [{ ...latest, project_id: 'p1' }] });
 
     const wrapper = await mountList();
 
     // Chat is what people came for: the unfamiliar group must not push it down.
     expect(wrapper.find('[data-testid="sidebar-project-list"]').exists()).toBe(false);
     expect(wrapper.find('[data-testid="sidebar-chat-session-list"]').exists()).toBe(true);
+
+    await wrapper.get('[data-testid="sidebar-projects-toggle"]').trigger('click');
+
+    // The project rows appear, and each one is still shut.
+    expect(wrapper.find('[data-testid="sidebar-project-p1"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="sidebar-project-sessions-p1"]').exists()).toBe(false);
   });
 });
