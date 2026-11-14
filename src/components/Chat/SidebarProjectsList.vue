@@ -13,7 +13,7 @@
         <span class="truncate">{{ t('projects.title') }}</span>
         <span v-if="projects.length > 0" class="text-base-content/40 shrink-0 tabular-nums">{{ projects.length }}</span>
       </button>
-      <RowActionsMenu :label="t('projects.more')" trigger-test-id="sidebar-projects-menu-button" menu-test-id="sidebar-projects-menu" :trigger-class="triggerClass">
+      <RowActionsMenu :label="t('projects.more')" trigger-test-id="sidebar-projects-menu-button" menu-test-id="sidebar-projects-menu" :trigger-class="headerTriggerClass">
         <li>
           <button data-testid="sidebar-project-create" @click="openCreate">
             <PlusIcon class="h-3 w-3" />
@@ -138,8 +138,15 @@ function isActive(session: ApiSessionDto): boolean {
   return Boolean(session.id) && session.id === props.activeSessionId;
 }
 
-/** The row is a sidenav entry, so its kebab shows on hover and focus, like the session rows. */
-const triggerClass = 'border-transparent rounded-full opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-within:opacity-100';
+/**
+ * The section's own action is always visible: there is no row to hover, and a
+ * control that only appears on hover has nothing to reveal it in a list this
+ * tall.
+ */
+const headerTriggerClass = 'border-transparent rounded-full text-base-content/60 hover:text-base-content';
+
+/** A project's kebab is a row action, so it shows on hover and focus like the session rows. */
+const triggerClass = 'border-transparent rounded-full text-base-content/60 transition-opacity duration-200 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100';
 
 const creating = ref(false);
 const renaming = ref<ApiProjectDto | null>(null);
