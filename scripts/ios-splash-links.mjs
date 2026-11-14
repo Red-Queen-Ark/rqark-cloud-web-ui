@@ -17,8 +17,7 @@ import { resolve } from 'node:path';
  */
 
 const INDEX = resolve(import.meta.dirname, '../index.html');
-const LANDSCAPE_LINK =
-  /^(\s*)<link rel="apple-touch-startup-image" media="screen and \(device-width: (\d+)px\) and \(device-height: (\d+)px\) and \(-webkit-device-pixel-ratio: (\d+)\) and \(orientation: landscape\)" href="([^"]+)" \/>$/gm;
+const LANDSCAPE_LINK = /^(\s*)<link rel="apple-touch-startup-image" media="screen and \(device-width: (\d+)px\) and \(device-height: (\d+)px\) and \(-webkit-device-pixel-ratio: (\d+)\) and \(orientation: landscape\)" href="([^"]+)" \/>$/gm;
 
 const html = readFileSync(INDEX, 'utf8');
 const swappedFor = new Map();

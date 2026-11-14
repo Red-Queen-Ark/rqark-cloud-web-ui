@@ -143,10 +143,18 @@ describe('iOS launch images', () => {
           if (!differs((y * info.width + x) * info.channels)) {
             continue;
           }
-          if (x < left) {left = x;}
-          if (x > right) {right = x;}
-          if (y < top) {top = y;}
-          if (y > bottom) {bottom = y;}
+          if (x < left) {
+            left = x;
+          }
+          if (x > right) {
+            right = x;
+          }
+          if (y < top) {
+            top = y;
+          }
+          if (y > bottom) {
+            bottom = y;
+          }
         }
       }
 
