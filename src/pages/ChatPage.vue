@@ -4,7 +4,7 @@
       <ChatPlanCard :items="chatSocket.planItems" class="shadow-md" />
     </div>
     <div id="chat-history" ref="history" class="mb-30 md:mx-10 flex flex-col" :style="historyStyle">
-      <ChatMessage :messages="chatSocket.history" :busy="reverting || chatSocket.streaming" :streaming-from-seq="chatSocket.streamingFromSeq" @revert="handleRevert" />
+      <ChatMessage :messages="chatSocket.history" :loading="chatSocket.loading" :busy="reverting || chatSocket.streaming" :streaming-from-seq="chatSocket.streamingFromSeq" @revert="handleRevert" />
     </div>
     <div class="chat-input-dock fixed inset-x-0 z-30 lg:left-72 md:mx-8 mb-2" data-testid="chat-input-dock">
       <div v-if="!pinned" class="pointer-events-none absolute inset-x-0 bottom-full mb-3 flex justify-end px-4">

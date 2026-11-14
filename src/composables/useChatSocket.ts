@@ -49,6 +49,9 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
   const ws = shallowRef<WebSocket>();
   const status = ref<ChatStatus>('idle');
   const streaming = ref(false);
+  // Set while the session's history and replay are being read, so the page can
+  // hold its transcript back instead of showing an empty one that then fills in.
+  const loading = ref(false);
   const streamingFromSeq = ref<number | null | undefined>(undefined);
   const history = ref<ChatHistoryEntry[]>([]);
   const planItems = ref<PlanItem[]>([]);
@@ -123,11 +126,16 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
     pendingTurn = null;
     hasConnected = false;
     endStreaming();
-    await connect();
-    await loadAgents();
-    await loadAgentDefault();
-    await loadProviders();
-    await resync();
+    loading.value = true;
+    try {
+      await connect();
+      await loadAgents();
+      await loadAgentDefault();
+      await loadProviders();
+      await resync();
+    } finally {
+      loading.value = false;
+    }
   }
 
   async function loadAgents() {
@@ -515,6 +523,7 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
     defaultAgent,
     providers,
     status,
+    loading,
     streaming,
     streamingFromSeq,
     ws,

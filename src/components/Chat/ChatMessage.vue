@@ -1,7 +1,12 @@
 <template>
-  <template v-for="(turn, index) in turns" :key="turn.key">
-    <UserMessage v-if="turn.user" :message="turn.user.data" :revertible="revertible(turn.user)" :busy="props.busy" class="px-4 py-2" @revert="emit('revert', $event)" />
-    <TurnGroup v-if="turn.entries.length" :entries="turn.entries" :tool-result="toolResult" :started-at="turn.user?.created_at" :streaming="isStreaming(turn, index)" class="px-4 pb-2" />
+  <div v-if="loading" data-testid="chat-loading" class="flex flex-col items-center justify-center px-4 py-20 text-center opacity-60" :aria-label="t('chat.loading')">
+    <span class="loading loading-spinner loading-md text-primary"></span>
+  </div>
+  <template v-else>
+    <template v-for="(turn, index) in turns" :key="turn.key">
+      <UserMessage v-if="turn.user" :message="turn.user.data" :revertible="revertible(turn.user)" :busy="props.busy" class="px-4 py-2" @revert="emit('revert', $event)" />
+      <TurnGroup v-if="turn.entries.length" :entries="turn.entries" :tool-result="toolResult" :started-at="turn.user?.created_at" :streaming="isStreaming(turn, index)" class="px-4 pb-2" />
+    </template>
   </template>
 </template>
 
@@ -9,10 +14,15 @@
 import TurnGroup from '@/components/Chat/TurnGroup.vue';
 import UserMessage from '@/components/Chat/message/UserMessage.vue';
 import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 const props = defineProps<{
   messages: ChatHistoryEntry[];
   busy?: boolean;
+  /** The session's history is still being read; the transcript is held back until it lands. */
+  loading?: boolean;
   /** The seq the turn being written starts at; null while that turn is still unsent, undefined when the socket names none. */
   streamingFromSeq?: number | null;
 }>();

@@ -243,6 +243,28 @@ describe('useChatSocket', () => {
     expect(chatSocket.history).toEqual([{ seq: 1, role: 'user', data: { content: 'hi' } }]);
   });
 
+  it('holds the loading flag until the session history has landed', async () => {
+    let release: ((value: unknown) => void) | undefined;
+    (api.getSessionsByUuidMessages as Mock).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          release = resolve;
+        }),
+    );
+
+    const chatSocket = openChat(ref('session-a'));
+    const loading = chatSocket.load();
+    await flushPromises();
+
+    expect(chatSocket.loading).toBe(true);
+
+    release?.({ data: [{ seq: 1, role: 'user', data: { content: 'hi' } }] });
+    await loading;
+
+    expect(chatSocket.loading).toBe(false);
+    expect(chatSocket.history).toHaveLength(1);
+  });
+
   it('loads no history when there is no session', async () => {
     const chatSocket = openChat(ref(undefined));
     await chatSocket.load();

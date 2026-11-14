@@ -1,4 +1,5 @@
 export const chat = {
+  loading: 'Loading',
   title: 'Chat',
   newSession: 'New session',
   loadError: 'Could not load sessions',
