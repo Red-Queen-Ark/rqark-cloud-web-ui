@@ -370,6 +370,28 @@ describe('ChatInputArea', () => {
     expect(wrapper.get('[data-testid="chat-send"]').attributes('disabled')).toBeDefined();
   });
 
+  it('tells the parent what is typed as it changes', async () => {
+    const wrapper = mountArea();
+
+    const input = wrapper.get('[data-testid="chat-input"]');
+    input.element.textContent = 'hello';
+    await input.trigger('input');
+
+    expect(wrapper.emitted('content-change')?.at(-1)).toEqual(['hello']);
+  });
+
+  it('fills the editor with a draft and turns send back on', async () => {
+    const wrapper = mountArea();
+    const area = wrapper.vm as unknown as { setText: (text: string) => void; getText: () => string };
+
+    area.setText('half a thought');
+    await nextTick();
+
+    expect(wrapper.get('[data-testid="chat-input"]').element.textContent).toBe('half a thought');
+    expect(area.getText()).toBe('half a thought');
+    expect(wrapper.get('[data-testid="chat-send"]').attributes('disabled')).toBeUndefined();
+  });
+
   it('replaces send with stop while a turn is in flight', async () => {
     const wrapper = mountArea({ streaming: true });
 

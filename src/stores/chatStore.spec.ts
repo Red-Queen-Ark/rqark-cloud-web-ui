@@ -38,4 +38,30 @@ describe('chatStore', () => {
 
     expect(store.sessionTitles).toEqual({ 'session-b': 'Second chat' });
   });
+
+  it('keeps a draft under the session it was typed in', () => {
+    const store = useChatStore();
+    store.setDraft('session-a', 'half a thought');
+    store.setDraft('session-b', 'another');
+
+    expect(store.sessionDrafts).toEqual({ 'session-a': 'half a thought', 'session-b': 'another' });
+  });
+
+  it('drops the draft when the text is blank', () => {
+    const store = useChatStore();
+    store.setDraft('session-a', 'half a thought');
+
+    store.setDraft('session-a', '   ');
+
+    expect(store.sessionDrafts).toEqual({});
+  });
+
+  it('forgets a draft the caller clears', () => {
+    const store = useChatStore();
+    store.setDraft('session-a', 'half a thought');
+
+    store.clearDraft('session-a');
+
+    expect(store.sessionDrafts).toEqual({});
+  });
 });

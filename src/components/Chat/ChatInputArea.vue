@@ -212,6 +212,8 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'submit', payload: { content: string; agent: string; provider: string; images: string[]; project: string | null }): void;
   (e: 'project-change', project: string | null): void;
+  /** Every keystroke's text, so the parent can keep a per-session draft. */
+  (e: 'content-change', text: string): void;
   (e: 'stop'): void;
 }>();
 
@@ -682,6 +684,7 @@ function handleCompositionEnd() {
 
 function handleInput() {
   hasContent.value = readText(inputRef.value) !== '';
+  emit('content-change', rawText(inputRef.value));
   refreshSlash();
   refreshMention();
 }
@@ -932,11 +935,27 @@ function clear() {
   closeMention();
 }
 
+/** Restores a draft: text only, and no panel left half-open on it. */
+function setText(text: string) {
+  const el = inputRef.value;
+  if (!el) {
+    return;
+  }
+  el.textContent = text;
+  hasContent.value = readText(el) !== '';
+  closeSlash();
+  closeMention();
+}
+
+function getText(): string {
+  return rawText(inputRef.value);
+}
+
 onMounted(() => {
   // Read once, in the background: a deployment without the data cloud answers
   // nothing and the panel keeps offering only the built-in commands.
   void loadSops();
 });
 
-defineExpose({ inputRef, clear });
+defineExpose({ inputRef, clear, setText, getText });
 </script>
