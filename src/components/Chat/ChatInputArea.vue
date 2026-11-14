@@ -9,7 +9,7 @@
     <div class="bg-base-200 rounded-box border border-base-300">
       <div class="flex flex-wrap items-center gap-1 border-b border-base-300/50 px-2 py-1.5">
         <div class="dropdown dropdown-top">
-          <button type="button" tabindex="0" data-testid="chat-project-select" :data-value="selectedProject" class="btn btn-ghost btn-sm btn-square" :title="projectTitle" :aria-label="`${t('chat.projectLabel')}: ${projectButtonLabel}`">
+          <button type="button" tabindex="0" data-testid="chat-project-select" :data-value="selectedProject" class="btn btn-soft btn-sm btn-square" :title="projectTitle" :aria-label="`${t('chat.projectLabel')}: ${projectButtonLabel}`">
             <FolderIcon class="h-5 w-5" />
           </button>
           <ul tabindex="0" class="dropdown-content menu z-50 mb-2 max-h-64 w-56 flex-nowrap overflow-y-auto rounded-box border border-base-300 bg-base-200 p-1 shadow-lg">
@@ -28,7 +28,7 @@
             tabindex="0"
             data-testid="chat-agent-select"
             :data-value="selectedAgent"
-            class="btn btn-ghost btn-sm btn-square"
+            class="btn btn-soft btn-sm btn-square"
             :title="`${t('chat.agentLabel')}: ${selectedAgent}`"
             :aria-label="`${t('chat.agentLabel')}: ${selectedAgent}`"
           >
@@ -50,7 +50,7 @@
             tabindex="0"
             data-testid="chat-provider-select"
             :data-value="selectedProvider"
-            class="btn btn-ghost btn-sm btn-square"
+            class="btn btn-soft btn-sm btn-square"
             :title="`${t('chat.modelLabel')}: ${selectedProvider}`"
             :aria-label="`${t('chat.modelLabel')}: ${selectedProvider}`"
           >
