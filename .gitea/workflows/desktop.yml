@@ -32,11 +32,10 @@ jobs:
           set -eu
           if [ "$EVENT" = "push" ]; then
             TAG="$REF"
-            PRERELEASE=false
           else
             TAG="desktop-$(date -u +%Y%m%d%H%M)-$(echo "$SHA" | cut -c1-7)"
-            PRERELEASE=true
           fi
+          PRERELEASE=true
 
           STATUS=""
           for _ in 1 2 3 4 5 6; do
@@ -51,6 +50,10 @@ jobs:
 
           if [ "$STATUS" = "200" ]; then
             ID=$(printf '%s' "$BODY" | tr '{' '\n' | grep -o '"id":[0-9]*' | head -n 1 | cut -d: -f2)
+            curl -sS -X PATCH "$GITEA/api/v1/repos/$REPO/releases/$ID" \
+              -H "Authorization: token $TOKEN" \
+              -H "Content-Type: application/json" \
+              -d '{"prerelease":true}' >/dev/null
           else
             RANGE="$TAG"
             PREV=$(git describe --tags --abbrev=0 "$TAG^" 2>/dev/null || true)

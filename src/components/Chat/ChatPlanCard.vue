@@ -41,7 +41,6 @@ const { t } = useI18n();
 const collapsed = ref(false);
 const bodyId = useId();
 
-/** The item the engine is working on; empty when it is working on none. */
 const activeIds = computed(() =>
   props.items
     .filter((item) => item.status === 'in_progress')
@@ -53,8 +52,6 @@ const counts = computed(() => {
   const byStatus: Record<string, number> = { completed: 0, in_progress: 0, pending: 0, cancelled: 0 };
 
   for (const item of props.items) {
-    // A status this build does not know is left out of the tally rather than
-    // guessed at: the rows still show it, the footer only counts what it knows.
     if (item.status in byStatus) {
       byStatus[item.status] = (byStatus[item.status] ?? 0) + 1;
     }
@@ -77,8 +74,6 @@ const summary = computed(() => {
     return t('sessions.planAllCompleted', { total: props.items.length });
   }
 
-  // Every state that has a count gets a word, so a cancelled or parked item is
-  // never silently dropped from the total.
   const parts = [t('sessions.planTotal', { total: props.items.length })];
 
   for (const [status, key] of SUMMARY_KEYS) {
@@ -101,9 +96,6 @@ watch(
   { immediate: true },
 );
 
-// A fold the user made while the plan was done would otherwise hide the next
-// plan too, since a plan arriving from done to active does not change
-// `allCompleted`. Any new item in flight opens the card again.
 watch(activeIds, (ids) => {
   if (ids !== '') {
     collapsed.value = false;
