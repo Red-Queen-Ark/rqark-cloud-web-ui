@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { DeleteAgentDefaultsBySourceData, DeleteAgentDefaultsBySourceErrors, DeleteAgentDefaultsBySourceResponses, DeleteAgentsByUuidData, DeleteAgentsByUuidErrors, DeleteAgentsByUuidResponses, DeleteApiKeysByUuidData, DeleteApiKeysByUuidErrors, DeleteApiKeysByUuidResponses, DeleteGroupsByUuidData, DeleteGroupsByUuidErrors, DeleteGroupsByUuidResponses, DeleteGroupsByUuidUsersByUserUuidData, DeleteGroupsByUuidUsersByUserUuidErrors, DeleteGroupsByUuidUsersByUserUuidResponses, DeleteMemoryByUuidData, DeleteMemoryByUuidErrors, DeleteMemoryByUuidResponses, DeleteMemoryStateData, DeleteMemoryStateErrors, DeleteMemoryStateResponses, DeleteProvidersByUuidData, DeleteProvidersByUuidErrors, DeleteProvidersByUuidResponses, DeleteSessionsByUuidData, DeleteSessionsByUuidErrors, DeleteSessionsByUuidResponses, DeleteSopsBySlugData, DeleteSopsBySlugErrors, DeleteSopsBySlugResponses, DeleteTasksByUuidData, DeleteTasksByUuidErrors, DeleteTasksByUuidResponses, DeleteTodosByUuidData, DeleteTodosByUuidErrors, DeleteTodosByUuidResponses, DeleteUserConfigByKeyData, DeleteUserConfigByKeyErrors, DeleteUserConfigByKeyResponses, DeleteUsersByUuidData, DeleteUsersByUuidErrors, DeleteUsersByUuidResponses, GetAgentDefaultsBySourceData, GetAgentDefaultsBySourceErrors, GetAgentDefaultsBySourceResponses, GetAgentDefaultsData, GetAgentDefaultsErrors, GetAgentDefaultsResponses, GetAgentsByUuidData, GetAgentsByUuidErrors, GetAgentsByUuidResponses, GetAgentsData, GetAgentsErrors, GetAgentsNamesData, GetAgentsNamesErrors, GetAgentsNamesResponses, GetAgentsResponses, GetApiKeysData, GetApiKeysErrors, GetApiKeysResponses, GetGroupsByUuidData, GetGroupsByUuidErrors, GetGroupsByUuidResponses, GetGroupsByUuidUsersData, GetGroupsByUuidUsersErrors, GetGroupsByUuidUsersResponses, GetGroupsData, GetGroupsErrors, GetGroupsResponses, GetMemoryByUuidData, GetMemoryByUuidErrors, GetMemoryByUuidResponses, GetMemoryData, GetMemoryErrors, GetMemoryResponses, GetMemoryStateData, GetMemoryStateErrors, GetMemoryStateResponses, GetPingData, GetPingResponses, GetProvidersByUuidData, GetProvidersByUuidErrors, GetProvidersByUuidResponses, GetProvidersData, GetProvidersErrors, GetProvidersModelsData, GetProvidersModelsErrors, GetProvidersModelsResponses, GetProvidersResponses, GetSessionsByUuidData, GetSessionsByUuidErrors, GetSessionsByUuidMessagesData, GetSessionsByUuidMessagesErrors, GetSessionsByUuidMessagesResponses, GetSessionsByUuidResponses, GetSessionsData, GetSessionsErrors, GetSessionsResponses, GetSopsBySlugData, GetSopsBySlugErrors, GetSopsBySlugResponses, GetSopsData, GetSopsErrors, GetSopsResponses, GetSwaggerJsonData, GetSwaggerJsonResponses, GetSwaggerYmlData, GetSwaggerYmlResponses, GetSystemConfigData, GetSystemConfigResponses, GetTasksByUuidData, GetTasksByUuidErrors, GetTasksByUuidResponses, GetTasksByUuidRunsData, GetTasksByUuidRunsErrors, GetTasksByUuidRunsResponses, GetTasksData, GetTasksErrors, GetTasksResponses, GetTodosByUuidData, GetTodosByUuidErrors, GetTodosByUuidResponses, GetTodosData, GetTodosErrors, GetTodosResponses, GetUserConfigData, GetUserConfigErrors, GetUserConfigResponses, GetUsersByUuidData, GetUsersByUuidErrors, GetUsersByUuidResponses, GetUsersData, GetUsersErrors, GetUsersMeData, GetUsersMeErrors, GetUsersMeResponses, GetUsersResponses, GetVersionData, GetVersionResponses, OptionsSwaggerJsonData, OptionsSwaggerJsonResponses, PatchApiKeysByUuidData, PatchApiKeysByUuidErrors, PatchApiKeysByUuidResponses, PatchGroupsByUuidData, PatchGroupsByUuidErrors, PatchGroupsByUuidResponses, PatchMemoryByUuidData, PatchMemoryByUuidErrors, PatchMemoryByUuidResponses, PatchSopsBySlugData, PatchSopsBySlugErrors, PatchSopsBySlugResponses, PatchUsersByUuidData, PatchUsersByUuidErrors, PatchUsersByUuidResponses, PatchUsersMeData, PatchUsersMeErrors, PatchUsersMeResponses, PostAgentsData, PostAgentsErrors, PostAgentsResponses, PostApiKeysData, PostApiKeysErrors, PostApiKeysResponses, PostAuthForgotPasswordData, PostAuthForgotPasswordErrors, PostAuthForgotPasswordResponses, PostAuthLoginData, PostAuthLoginErrors, PostAuthLoginResponses, PostAuthRefreshData, PostAuthRefreshErrors, PostAuthRefreshResponses, PostAuthRegisterData, PostAuthRegisterErrors, PostAuthRegisterResponses, PostAuthResetPasswordData, PostAuthResetPasswordErrors, PostAuthResetPasswordResponses, PostChatByUuidChatCompletionsData, PostChatByUuidChatCompletionsErrors, PostChatByUuidChatCompletionsResponses, PostChatData, PostChatErrors, PostChatResponses, PostGroupsData, PostGroupsErrors, PostGroupsResponses, PostMemoryData, PostMemoryErrors, PostMemoryPromptData, PostMemoryPromptErrors, PostMemoryPromptResponses, PostMemoryResponses, PostMemorySearchData, PostMemorySearchErrors, PostMemorySearchResponses, PostProvidersData, PostProvidersErrors, PostProvidersResponses, PostSessionsData, PostSessionsErrors, PostSessionsResponses, PostSopsData, PostSopsErrors, PostSopsResponses, PostTasksByUuidRunData, PostTasksByUuidRunErrors, PostTasksByUuidRunResponses, PostTasksData, PostTasksErrors, PostTasksResponses, PostTodosData, PostTodosErrors, PostTodosResponses, PostUsersData, PostUsersErrors, PostUsersResponses, PutAgentDefaultsBySourceData, PutAgentDefaultsBySourceErrors, PutAgentDefaultsBySourceResponses, PutAgentsByUuidData, PutAgentsByUuidErrors, PutAgentsByUuidResponses, PutGroupsByUuidUsersByUserUuidData, PutGroupsByUuidUsersByUserUuidErrors, PutGroupsByUuidUsersByUserUuidResponses, PutMemoryStateData, PutMemoryStateErrors, PutMemoryStateResponses, PutProvidersByUuidData, PutProvidersByUuidErrors, PutProvidersByUuidPriorityData, PutProvidersByUuidPriorityErrors, PutProvidersByUuidPriorityResponses, PutProvidersByUuidResponses, PutSessionsByUuidData, PutSessionsByUuidErrors, PutSessionsByUuidResponses, PutTasksByUuidData, PutTasksByUuidErrors, PutTasksByUuidResponses, PutTodosByUuidData, PutTodosByUuidErrors, PutTodosByUuidResponses, PutUserConfigByKeyData, PutUserConfigByKeyErrors, PutUserConfigByKeyResponses, PutUsersByUuidPasswordData, PutUsersByUuidPasswordErrors, PutUsersByUuidPasswordResponses, PutUsersMePasswordData, PutUsersMePasswordErrors, PutUsersMePasswordResponses } from './types.gen';
+import type { DeleteAgentDefaultsBySourceData, DeleteAgentDefaultsBySourceErrors, DeleteAgentDefaultsBySourceResponses, DeleteAgentsByUuidData, DeleteAgentsByUuidErrors, DeleteAgentsByUuidResponses, DeleteApiKeysByUuidData, DeleteApiKeysByUuidErrors, DeleteApiKeysByUuidResponses, DeleteGroupsByUuidData, DeleteGroupsByUuidErrors, DeleteGroupsByUuidResponses, DeleteGroupsByUuidUsersByUserUuidData, DeleteGroupsByUuidUsersByUserUuidErrors, DeleteGroupsByUuidUsersByUserUuidResponses, DeleteMemoryByUuidData, DeleteMemoryByUuidErrors, DeleteMemoryByUuidResponses, DeleteMemoryStateData, DeleteMemoryStateErrors, DeleteMemoryStateResponses, DeleteProjectsByUuidData, DeleteProjectsByUuidErrors, DeleteProjectsByUuidResponses, DeleteProvidersByUuidData, DeleteProvidersByUuidErrors, DeleteProvidersByUuidResponses, DeleteSessionsByUuidData, DeleteSessionsByUuidErrors, DeleteSessionsByUuidResponses, DeleteSopsBySlugData, DeleteSopsBySlugErrors, DeleteSopsBySlugResponses, DeleteSystemConfigByKeyData, DeleteSystemConfigByKeyErrors, DeleteSystemConfigByKeyResponses, DeleteTasksByUuidData, DeleteTasksByUuidErrors, DeleteTasksByUuidResponses, DeleteTodosByUuidData, DeleteTodosByUuidErrors, DeleteTodosByUuidResponses, DeleteUserConfigByKeyData, DeleteUserConfigByKeyErrors, DeleteUserConfigByKeyResponses, DeleteUsersByUuidData, DeleteUsersByUuidErrors, DeleteUsersByUuidResponses, GetAgentDefaultsBySourceData, GetAgentDefaultsBySourceErrors, GetAgentDefaultsBySourceResponses, GetAgentDefaultsData, GetAgentDefaultsErrors, GetAgentDefaultsResponses, GetAgentsByUuidData, GetAgentsByUuidErrors, GetAgentsByUuidResponses, GetAgentsData, GetAgentsErrors, GetAgentsNamesData, GetAgentsNamesErrors, GetAgentsNamesResponses, GetAgentsResponses, GetApiKeysData, GetApiKeysErrors, GetApiKeysResponses, GetGroupsByUuidData, GetGroupsByUuidErrors, GetGroupsByUuidResponses, GetGroupsByUuidUsersData, GetGroupsByUuidUsersErrors, GetGroupsByUuidUsersResponses, GetGroupsData, GetGroupsErrors, GetGroupsResponses, GetMemoryByUuidData, GetMemoryByUuidErrors, GetMemoryByUuidResponses, GetMemoryData, GetMemoryErrors, GetMemoryResponses, GetMemoryStateData, GetMemoryStateErrors, GetMemoryStateResponses, GetPingData, GetPingResponses, GetProjectsByUuidData, GetProjectsByUuidErrors, GetProjectsByUuidResponses, GetProjectsData, GetProjectsErrors, GetProjectsResponses, GetProvidersByUuidData, GetProvidersByUuidErrors, GetProvidersByUuidResponses, GetProvidersData, GetProvidersErrors, GetProvidersModelsData, GetProvidersModelsErrors, GetProvidersModelsResponses, GetProvidersResponses, GetSessionsByUuidData, GetSessionsByUuidErrors, GetSessionsByUuidMessagesData, GetSessionsByUuidMessagesErrors, GetSessionsByUuidMessagesResponses, GetSessionsByUuidResponses, GetSessionsData, GetSessionsErrors, GetSessionsResponses, GetSopsBySlugData, GetSopsBySlugErrors, GetSopsBySlugResponses, GetSopsData, GetSopsErrors, GetSopsResponses, GetSwaggerJsonData, GetSwaggerJsonResponses, GetSwaggerYmlData, GetSwaggerYmlResponses, GetSystemConfig2Data, GetSystemConfig2Responses, GetSystemConfigData, GetSystemConfigErrors, GetSystemConfigResponses, GetTasksByUuidData, GetTasksByUuidErrors, GetTasksByUuidResponses, GetTasksByUuidRunsData, GetTasksByUuidRunsErrors, GetTasksByUuidRunsResponses, GetTasksData, GetTasksErrors, GetTasksResponses, GetTodosByUuidData, GetTodosByUuidErrors, GetTodosByUuidResponses, GetTodosData, GetTodosErrors, GetTodosResponses, GetUserConfigData, GetUserConfigErrors, GetUserConfigResponses, GetUsersByUuidData, GetUsersByUuidErrors, GetUsersByUuidResponses, GetUsersData, GetUsersErrors, GetUsersMeData, GetUsersMeErrors, GetUsersMeResponses, GetUsersResponses, GetVersionData, GetVersionResponses, OptionsSwaggerJsonData, OptionsSwaggerJsonResponses, PatchApiKeysByUuidData, PatchApiKeysByUuidErrors, PatchApiKeysByUuidResponses, PatchGroupsByUuidData, PatchGroupsByUuidErrors, PatchGroupsByUuidResponses, PatchMemoryByUuidData, PatchMemoryByUuidErrors, PatchMemoryByUuidResponses, PatchSopsBySlugData, PatchSopsBySlugErrors, PatchSopsBySlugResponses, PatchUsersByUuidData, PatchUsersByUuidErrors, PatchUsersByUuidResponses, PatchUsersMeData, PatchUsersMeErrors, PatchUsersMeResponses, PostAgentsData, PostAgentsErrors, PostAgentsResponses, PostApiKeysData, PostApiKeysErrors, PostApiKeysResponses, PostAuthForgotPasswordData, PostAuthForgotPasswordErrors, PostAuthForgotPasswordResponses, PostAuthLoginData, PostAuthLoginErrors, PostAuthLoginResponses, PostAuthRefreshData, PostAuthRefreshErrors, PostAuthRefreshResponses, PostAuthRegisterData, PostAuthRegisterErrors, PostAuthRegisterResponses, PostAuthResetPasswordData, PostAuthResetPasswordErrors, PostAuthResetPasswordResponses, PostChatByUuidChatCompletionsData, PostChatByUuidChatCompletionsErrors, PostChatByUuidChatCompletionsResponses, PostChatData, PostChatErrors, PostChatResponses, PostGroupsData, PostGroupsErrors, PostGroupsResponses, PostMemoryData, PostMemoryErrors, PostMemoryPromptData, PostMemoryPromptErrors, PostMemoryPromptResponses, PostMemoryResponses, PostMemorySearchData, PostMemorySearchErrors, PostMemorySearchResponses, PostProjectsData, PostProjectsErrors, PostProjectsResponses, PostProvidersData, PostProvidersErrors, PostProvidersResponses, PostSessionsData, PostSessionsErrors, PostSessionsResponses, PostSopsData, PostSopsErrors, PostSopsResponses, PostTasksByUuidRunData, PostTasksByUuidRunErrors, PostTasksByUuidRunResponses, PostTasksData, PostTasksErrors, PostTasksResponses, PostTodosData, PostTodosErrors, PostTodosResponses, PostUsersData, PostUsersErrors, PostUsersResponses, PutAgentDefaultsBySourceData, PutAgentDefaultsBySourceErrors, PutAgentDefaultsBySourceResponses, PutAgentsByUuidData, PutAgentsByUuidErrors, PutAgentsByUuidResponses, PutGroupsByUuidUsersByUserUuidData, PutGroupsByUuidUsersByUserUuidErrors, PutGroupsByUuidUsersByUserUuidResponses, PutMemoryStateData, PutMemoryStateErrors, PutMemoryStateResponses, PutProjectsByUuidData, PutProjectsByUuidErrors, PutProjectsByUuidResponses, PutProvidersByUuidData, PutProvidersByUuidErrors, PutProvidersByUuidPriorityData, PutProvidersByUuidPriorityErrors, PutProvidersByUuidPriorityResponses, PutProvidersByUuidResponses, PutSessionsByUuidData, PutSessionsByUuidErrors, PutSessionsByUuidResponses, PutSystemConfigByKeyData, PutSystemConfigByKeyErrors, PutSystemConfigByKeyResponses, PutTasksByUuidData, PutTasksByUuidErrors, PutTasksByUuidResponses, PutTodosByUuidData, PutTodosByUuidErrors, PutTodosByUuidResponses, PutUserConfigByKeyData, PutUserConfigByKeyErrors, PutUserConfigByKeyResponses, PutUsersByUuidPasswordData, PutUsersByUuidPasswordErrors, PutUsersByUuidPasswordResponses, PutUsersMePasswordData, PutUsersMePasswordErrors, PutUsersMePasswordResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -779,6 +779,104 @@ export const getPing = <ThrowOnError extends boolean = false>(options?: Options<
 };
 
 /**
+ * List projects
+ *
+ * Returns every project of the caller, most recently updated first. Not paginated: it is one user's own set, which the picker wants whole.
+ */
+export const getProjects = <ThrowOnError extends boolean = false>(options?: Options<GetProjectsData, ThrowOnError>) => {
+    return (options?.client ?? client).get<GetProjectsResponses, GetProjectsErrors, ThrowOnError>({
+        security: [
+            {
+                name: 'Authorization',
+                type: 'apiKey'
+            }
+        ],
+        url: '/projects',
+        ...options
+    });
+};
+
+/**
+ * Create a project
+ *
+ * The project belongs to the caller. project_path is relative to the workspace root and must not escape it. Answers 201 with a Location header pointing at the new project.
+ */
+export const postProjects = <ThrowOnError extends boolean = false>(options: Options<PostProjectsData, ThrowOnError>) => {
+    return (options.client ?? client).post<PostProjectsResponses, PostProjectsErrors, ThrowOnError>({
+        security: [
+            {
+                name: 'Authorization',
+                type: 'apiKey'
+            }
+        ],
+        url: '/projects',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
+};
+
+/**
+ * Delete a project
+ *
+ * Hard delete of one of the caller's projects. Its files stay where they are and its sessions keep their rows, with project_id cleared. Another user's project is reported as 404.
+ */
+export const deleteProjectsByUuid = <ThrowOnError extends boolean = false>(options: Options<DeleteProjectsByUuidData, ThrowOnError>) => {
+    return (options.client ?? client).delete<DeleteProjectsByUuidResponses, DeleteProjectsByUuidErrors, ThrowOnError>({
+        security: [
+            {
+                name: 'Authorization',
+                type: 'apiKey'
+            }
+        ],
+        url: '/projects/{uuid}',
+        ...options
+    });
+};
+
+/**
+ * Get a project
+ *
+ * Returns one of the caller's projects. Another user's project is reported as 404.
+ */
+export const getProjectsByUuid = <ThrowOnError extends boolean = false>(options: Options<GetProjectsByUuidData, ThrowOnError>) => {
+    return (options.client ?? client).get<GetProjectsByUuidResponses, GetProjectsByUuidErrors, ThrowOnError>({
+        security: [
+            {
+                name: 'Authorization',
+                type: 'apiKey'
+            }
+        ],
+        url: '/projects/{uuid}',
+        ...options
+    });
+};
+
+/**
+ * Update a project
+ *
+ * Partial update of one of the caller's projects. Changing project_path does not move files: it re-points the project, and its sessions pick up the new directory on their next turn. Another user's project is reported as 404.
+ */
+export const putProjectsByUuid = <ThrowOnError extends boolean = false>(options: Options<PutProjectsByUuidData, ThrowOnError>) => {
+    return (options.client ?? client).put<PutProjectsByUuidResponses, PutProjectsByUuidErrors, ThrowOnError>({
+        security: [
+            {
+                name: 'Authorization',
+                type: 'apiKey'
+            }
+        ],
+        url: '/projects/{uuid}',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
+};
+
+/**
  * List providers
  *
  * Returns the caller's own providers plus every provider another user shares, ordered by the priority that applies to the caller: its own `priority_override` on a shared provider when one is set, the provider's own `priority` when the caller owns it, and `-99` on a shared provider the caller never ordered. A shared provider carries `is_public` true and `owned` false, and only its owner changes its fields. Not paginated: a user has few of them.
@@ -919,7 +1017,7 @@ export const putProvidersByUuidPriority = <ThrowOnError extends boolean = false>
 /**
  * List sessions
  *
- * Returns all of the caller's sessions, most recently updated first, without their messages. Not paginated: the app syncs its whole session set in one go. A source query keeps only sessions uploaded from that application; without one every source is returned.
+ * Returns all of the caller's sessions, most recently updated first, without their messages. Not paginated: the app syncs its whole session set in one go. A source query keeps only sessions uploaded from that application; without one every source is returned. A project_id query keeps only sessions that work in that project.
  */
 export const getSessions = <ThrowOnError extends boolean = false>(options?: Options<GetSessionsData, ThrowOnError>) => {
     return (options?.client ?? client).get<GetSessionsResponses, GetSessionsErrors, ThrowOnError>({
@@ -1167,12 +1265,70 @@ export const getSwaggerYml = <ThrowOnError extends boolean = false>(options?: Op
 };
 
 /**
+ * List system config
+ *
+ * Returns every deployment-wide config entry, ordered by key. Readable by any signed-in user because a client needs settings such as a theme; not paginated, since the client treats the set as one config file. Never put secrets here.
+ */
+export const getSystemConfig = <ThrowOnError extends boolean = false>(options?: Options<GetSystemConfigData, ThrowOnError>) => {
+    return (options?.client ?? client).get<GetSystemConfigResponses, GetSystemConfigErrors, ThrowOnError>({
+        security: [
+            {
+                name: 'Authorization',
+                type: 'apiKey'
+            }
+        ],
+        url: '/system-config',
+        ...options
+    });
+};
+
+/**
+ * Delete a system config entry
+ *
+ * Hard delete of one deployment-wide config entry.
+ */
+export const deleteSystemConfigByKey = <ThrowOnError extends boolean = false>(options: Options<DeleteSystemConfigByKeyData, ThrowOnError>) => {
+    return (options.client ?? client).delete<DeleteSystemConfigByKeyResponses, DeleteSystemConfigByKeyErrors, ThrowOnError>({
+        security: [
+            {
+                name: 'Authorization',
+                type: 'apiKey'
+            }
+        ],
+        url: '/system-config/{key}',
+        ...options
+    });
+};
+
+/**
+ * Set a system config entry
+ *
+ * Upserts one deployment-wide config entry: the value of an existing key is overwritten, a key that does not exist is created. Superuser only, because one write applies to every user.
+ */
+export const putSystemConfigByKey = <ThrowOnError extends boolean = false>(options: Options<PutSystemConfigByKeyData, ThrowOnError>) => {
+    return (options.client ?? client).put<PutSystemConfigByKeyResponses, PutSystemConfigByKeyErrors, ThrowOnError>({
+        security: [
+            {
+                name: 'Authorization',
+                type: 'apiKey'
+            }
+        ],
+        url: '/system-config/{key}',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
+};
+
+/**
  * System configuration
  *
  * Returns the settings that apply to the whole deployment. Unauthenticated, so the login page can read it. It holds nothing user specific and nothing secret.
  */
-export const getSystemConfig = <ThrowOnError extends boolean = false>(options?: Options<GetSystemConfigData, ThrowOnError>) => {
-    return (options?.client ?? client).get<GetSystemConfigResponses, unknown, ThrowOnError>({
+export const getSystemConfig2 = <ThrowOnError extends boolean = false>(options?: Options<GetSystemConfig2Data, ThrowOnError>) => {
+    return (options?.client ?? client).get<GetSystemConfig2Responses, unknown, ThrowOnError>({
         url: '/system/config',
         ...options
     });
