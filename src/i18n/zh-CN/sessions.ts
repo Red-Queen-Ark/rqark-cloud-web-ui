@@ -2,7 +2,11 @@ export const sessions = {
   untitled: '未命名 Session',
 
   planTitle: '计划',
-  planSummary: '共 {total} 项 · 已完成 {completed} · 进行中 {inProgress}',
+  planTotal: '共 {total} 项',
+  planCountCompleted: '已完成 {count}',
+  planCountInProgress: '进行中 {count}',
+  planCountPending: '待处理 {count}',
+  planCountCancelled: '已取消 {count}',
   planAllCompleted: '共 {total} 项 · 全部完成',
 
   planStatus: {

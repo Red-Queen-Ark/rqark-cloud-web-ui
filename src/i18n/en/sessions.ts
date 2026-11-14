@@ -2,7 +2,11 @@ export const sessions = {
   untitled: 'Untitled session',
 
   planTitle: 'Plan',
-  planSummary: '{total} items · {completed} completed · {inProgress} in progress',
+  planTotal: '{total} items',
+  planCountCompleted: '{count} completed',
+  planCountInProgress: '{count} in progress',
+  planCountPending: '{count} pending',
+  planCountCancelled: '{count} cancelled',
   planAllCompleted: '{total} items · all completed',
 
   planStatus: {
