@@ -1,7 +1,7 @@
 import { registerSW } from 'virtual:pwa-register';
 import { isDesktop } from '@/config/runtime';
 
-const UPDATE_CHECK_INTERVAL = 30 * 60 * 1000;
+const UPDATE_CHECK_INTERVAL = 60 * 1000;
 
 // The desktop app is served from the app's own custom protocol, where a
 // service worker cannot be registered.
@@ -12,9 +12,15 @@ if (!isDesktop()) {
       if (!registration) {
         return;
       }
-      setInterval(() => {
+      const checkForUpdate = () => {
+        if (document.visibilityState === 'hidden') {
+          return;
+        }
         registration.update().catch(() => undefined);
-      }, UPDATE_CHECK_INTERVAL);
+      };
+      setInterval(checkForUpdate, UPDATE_CHECK_INTERVAL);
+      document.addEventListener('visibilitychange', checkForUpdate);
+      window.addEventListener('focus', checkForUpdate);
     },
   });
 }
