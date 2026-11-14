@@ -80,8 +80,11 @@ export async function listWorkspace(path: string, showHidden = false): Promise<W
  * Basename-prefix completion for the `@` picker. `query` is the text after the
  * `@`; the server splits it at the last slash to pick the directory to search.
  */
-export async function completeWorkspace(query: string, limit = 50): Promise<WorkspaceEntry[]> {
+export async function completeWorkspace(query: string, limit = 50, projectId?: string | null): Promise<WorkspaceEntry[]> {
   const params = new URLSearchParams({ query, limit: String(limit) });
+  if (projectId) {
+    params.set('project_id', projectId);
+  }
   const response = await request(`/workspace/complete?${params.toString()}`);
   return ((await response.json()) as { entries: WorkspaceEntry[] }).entries;
 }

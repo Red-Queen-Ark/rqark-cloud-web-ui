@@ -1,12 +1,5 @@
 <template>
-  <div
-    id="chat-input-area"
-    class="py-2 px-3 bg-base-100 shrink-0 relative"
-    @dragenter.prevent="onDragOver"
-    @dragover.prevent="onDragOver"
-    @dragleave="onDragLeave"
-    @drop.prevent="onDrop"
-  >
+  <div id="chat-input-area" class="py-2 px-3 bg-base-100 shrink-0 relative" @dragenter.prevent="onDragOver" @dragover.prevent="onDragOver" @dragleave="onDragLeave" @drop.prevent="onDrop">
     <SlashCommandPanel :entries="slashEntries" :active-index="slashIndex" :label="t('chat.slashPanelLabel')" @select="completeSlash" @hover="slashIndex = $event" />
     <FileMentionPanel :entries="fileEntries" :active-index="fileIndex" :label="t('chat.filePanelLabel')" @select="completeMention" @hover="fileIndex = $event" />
     <div v-if="dragging" data-testid="chat-drop-overlay" class="absolute inset-0 z-10 m-2 rounded-box border-2 border-dashed border-primary bg-base-100/85 flex items-center justify-center gap-1.5 text-sm text-primary pointer-events-none">
@@ -16,13 +9,7 @@
     <div class="bg-base-200 rounded-box border border-base-300 overflow-hidden">
       <div v-if="images.length > 0" data-testid="chat-images" class="flex flex-wrap gap-2 px-3 pt-2">
         <div v-for="(image, index) in images" :key="image.id" data-testid="chat-image" class="relative">
-          <img
-            v-if="image.dataUri"
-            :src="image.dataUri"
-            :alt="image.name"
-            class="rounded-box h-16 w-16 p-1 object-cover bg-base-200/40 border"
-            :class="image.status === 'error' ? 'border-error opacity-50' : 'border-base-300'"
-          />
+          <img v-if="image.dataUri" :src="image.dataUri" :alt="image.name" class="rounded-box h-16 w-16 p-1 object-cover bg-base-200/40 border" :class="image.status === 'error' ? 'border-error opacity-50' : 'border-base-300'" />
           <div v-else class="rounded-box h-16 w-16 p-1 flex items-center justify-center bg-base-200/40 border border-base-300">
             <span v-if="image.status === 'reading'" data-testid="chat-image-reading" class="loading loading-spinner loading-xs" :title="t('chat.imageReading')"></span>
             <ImageIcon v-else class="h-6 w-6 opacity-40" />
@@ -203,7 +190,13 @@ const imageInputRef = ref<HTMLInputElement | null>(null);
 const cameraInputRef = ref<HTMLInputElement | null>(null);
 const hasContent = ref(false);
 /** An attachment keeps its tile from the moment it is picked, so a slow read shows progress. */
-interface Attachment { id: number; name: string; dataUri: string; status: 'reading' | 'ready' | 'error'; file: File }
+interface Attachment {
+  id: number;
+  name: string;
+  dataUri: string;
+  status: 'reading' | 'ready' | 'error';
+  file: File;
+}
 let nextAttachmentId = 0;
 const images = ref<Attachment[]>([]);
 const dragging = ref(false);
@@ -356,6 +349,10 @@ watch(
     }
   },
 );
+
+// The rows belong to the project they were listed from; switching projects
+// leaves them pointing at a tree the next turn will not run in.
+watch(selectedProject, () => closeMention());
 
 watch(
   () => props.providers,
@@ -515,7 +512,7 @@ function closeMention() {
 async function loadMention(query: string) {
   const request = mentionRequest;
   try {
-    const entries = await completeWorkspace(query, MENTION_LIMIT);
+    const entries = await completeWorkspace(query, MENTION_LIMIT, selectedProject.value || undefined);
     if (request !== mentionRequest) {
       return;
     }

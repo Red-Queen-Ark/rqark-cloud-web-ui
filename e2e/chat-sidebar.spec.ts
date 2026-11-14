@@ -30,8 +30,10 @@ test('lists the chat sessions with the newest activity first', async ({ page }) 
   await page.goto('/en');
   await waitForShellStyles(page);
 
-  // The create action leads; the rest follow by activity, not by seed order.
-  await expect(page.getByTestId('sidebar-chat-sessions').getByRole('link')).toHaveText(['New session', 'Latest chat', 'Untitled session', 'Older chat']);
+  // Chat lists only the sessions that belong to no project; the create action
+  // is shared with Projects and sits above them.
+  await expect(page.getByTestId('sidebar-chat-sessions').getByRole('link')).toHaveText(['Latest chat', 'Untitled session', 'Older chat']);
+  await expect(page.getByTestId('sidebar-chat-new')).toHaveText('New session');
 });
 
 test('marks the open chat and follows the selection', async ({ page }) => {
@@ -59,7 +61,7 @@ test('fills the create action while the home route is showing', async ({ page })
   await waitForShellStyles(page);
 
   const sessions = page.getByTestId('sidebar-chat-sessions');
-  const create = sessions.locator('a.menu-active');
+  const create = page.getByTestId('sidebar-chat-new');
   await expect(create).toHaveText('New session');
 
   // daisyUI only paints `.menu-active`, so the marker has to be visible paint.
@@ -69,6 +71,17 @@ test('fills the create action while the home route is showing', async ({ page })
   await sessions.getByRole('link', { name: 'Latest chat' }).click();
   await expect(page).toHaveURL(new RegExp(`/en/chat/${latest.id}$`));
   await expect(sessions.locator('a.menu-active')).toHaveText('Latest chat');
+});
+
+test('starts a new session from the shared action', async ({ page }) => {
+  await mockBackend(page, { session: boss, sessions: [latest, older] });
+  await seedSession(page);
+  await page.goto(`/en/chat/${latest.id}`);
+  await waitForShellStyles(page);
+
+  await page.getByTestId('sidebar-chat-new').click();
+  await expect(page).toHaveURL(/\/en$/);
+  await expect(page.getByTestId('sidebar-chat-new')).toHaveClass(/menu-active/);
 });
 
 /** The alpha daisyUI parks in a computed colour, whatever notation the engine picks. */
@@ -173,7 +186,7 @@ test('picks up a session started elsewhere without a reload', async ({ page }) =
   await waitForShellStyles(page);
 
   const sessions = page.getByTestId('sidebar-chat-sessions');
-  await expect(sessions.getByRole('link')).toHaveText(['New session', 'Latest chat']);
+  await expect(sessions.getByRole('link')).toHaveText(['Latest chat']);
 
   // The sidebar polls, so a session created while the app is open shows up.
   backend.sessions.push(older);

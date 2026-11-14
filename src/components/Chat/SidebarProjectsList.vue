@@ -50,14 +50,7 @@
         </div>
 
         <ul v-if="isOpen(project.id)" class="min-w-0" :data-testid="`sidebar-project-sessions-${project.id}`">
-          <li v-if="sessionsOf(project.id).length === 0">
-            <!-- An empty project offers its one useful action instead of saying
-                 it is empty: the chat it starts is already filed here. -->
-            <RouterLink :to="{ name: 'home', params: { lang }, query: { project: project.id } }" class="text-base-content/60" :data-testid="`sidebar-project-new-session-${project.id}`">
-              <PlusIcon class="h-4 w-4" />
-              {{ t('chat.newSession') }}
-            </RouterLink>
-          </li>
+          <li v-if="sessionsOf(project.id).length === 0" class="text-base-content/50 px-3 py-1 text-xs" :data-testid="`sidebar-project-empty-${project.id}`">{{ t('projects.noSession') }}</li>
           <SidebarSessionRow v-for="session in sessionsOf(project.id)" :key="session.id" :session="session" :lang="lang" :active="isActive(session)" @deleted="emit('deleted', $event)" @renamed="rename" />
         </ul>
       </li>
