@@ -663,6 +663,16 @@ test('shows a loading state until the session history lands', async ({ page }) =
   await expect(loading.locator('.loading-spinner')).toBeVisible();
   await expect(page.getByTestId('user-message')).toHaveCount(0);
 
+  // Centred in the page, not tucked under the plan dock.
+  const pageBox = await page.getByTestId('chat-page').boundingBox();
+  const box = await loading.locator('.loading-spinner').boundingBox();
+  expect(pageBox).not.toBeNull();
+  expect(box).not.toBeNull();
+  if (pageBox && box) {
+    expect(Math.abs(box.x + box.width / 2 - (pageBox.x + pageBox.width / 2))).toBeLessThan(4);
+    expect(Math.abs(box.y + box.height / 2 - (pageBox.y + pageBox.height / 2))).toBeLessThan(40);
+  }
+
   release?.();
 
   await expect(loading).toBeHidden();

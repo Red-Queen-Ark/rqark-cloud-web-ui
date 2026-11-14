@@ -1,6 +1,6 @@
 <template>
-  <div v-if="loading" data-testid="chat-loading" class="flex flex-col items-center justify-center px-4 py-20 text-center opacity-60" :aria-label="t('chat.loading')">
-    <span class="loading loading-spinner loading-md text-primary"></span>
+  <div v-if="loading" data-testid="chat-loading" class="flex w-full flex-1 flex-col items-center justify-center px-4 py-20 text-center opacity-60" :aria-label="t('chat.loading')">
+    <span class="loading loading-spinner loading-lg text-primary"></span>
   </div>
   <template v-else>
     <template v-for="(turn, index) in turns" :key="turn.key">
