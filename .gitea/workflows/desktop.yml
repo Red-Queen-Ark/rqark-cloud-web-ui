@@ -1,10 +1,11 @@
 name: Desktop
 
 on:
-  push:
-    tags:
-      - 'v*'
   workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to attach the builds to; leave empty for a generated desktop-<date>-<sha> tag'
+        required: false
 
 env:
   BIN_NAME: rqark-agent-cloud
@@ -26,15 +27,10 @@ jobs:
           GITEA: ${{ github.server_url }}
           REPO: ${{ github.repository }}
           SHA: ${{ github.sha }}
-          REF: ${{ github.ref_name }}
-          EVENT: ${{ github.event_name }}
+          TAG_INPUT: ${{ inputs.tag }}
         run: |
           set -eu
-          if [ "$EVENT" = "push" ]; then
-            TAG="$REF"
-          else
-            TAG="desktop-$(date -u +%Y%m%d%H%M)-$(echo "$SHA" | cut -c1-7)"
-          fi
+          TAG="${TAG_INPUT:-desktop-$(date -u +%Y%m%d%H%M)-$(echo "$SHA" | cut -c1-7)}"
           PRERELEASE=true
 
           STATUS=""
@@ -55,10 +51,10 @@ jobs:
               -H "Content-Type: application/json" \
               -d '{"prerelease":true}' >/dev/null
           else
-            RANGE="$TAG"
-            PREV=$(git describe --tags --abbrev=0 "$TAG^" 2>/dev/null || true)
+            PREV=$(git describe --tags --abbrev=0 2>/dev/null || true)
+            RANGE="$SHA"
             if [ -n "$PREV" ]; then
-              RANGE="$PREV..$TAG"
+              RANGE="$PREV..$SHA"
             fi
             NOTES=$(git log --no-merges --pretty='- %s' "$RANGE" 2>/dev/null | head -n 40 | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' | awk 'BEGIN { ORS = "\\n" } { print }' | sed 's/\\n$//' || true)
             if [ -z "$NOTES" ]; then
@@ -67,7 +63,7 @@ jobs:
             BODY=$(curl -sSf -X POST "$GITEA/api/v1/repos/$REPO/releases" \
               -H "Authorization: token $TOKEN" \
               -H "Content-Type: application/json" \
-              -d "{\"tag_name\":\"$TAG\",\"name\":\"$TAG\",\"body\":\"$NOTES\",\"prerelease\":$PRERELEASE}")
+              -d "{\"tag_name\":\"$TAG\",\"name\":\"$TAG\",\"target_commitish\":\"$SHA\",\"body\":\"$NOTES\",\"prerelease\":$PRERELEASE}")
             ID=$(printf '%s' "$BODY" | tr '{' '\n' | grep -o '"id":[0-9]*' | head -n 1 | cut -d: -f2)
           fi
 
