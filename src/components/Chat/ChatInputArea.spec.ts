@@ -303,39 +303,38 @@ describe('ChatInputArea', () => {
     return wrapper.emitted('submit')?.[0];
   }
 
-  function agentSelect(wrapper: ReturnType<typeof mountArea>) {
-    // The provider picker comes first in the toolbar.
-    return wrapper.findAll('select')[1];
+  function agentValue(wrapper: ReturnType<typeof mountArea>) {
+    return wrapper.get('[data-testid="chat-agent-select"]').attributes('data-value');
   }
 
   it('starts on the stored default agent when there is one', async () => {
     const wrapper = mountArea({ agents: ['researcher', 'writer'], defaultAgent: 'writer' });
 
-    expect((agentSelect(wrapper).element as HTMLSelectElement).value).toBe('writer');
+    expect(agentValue(wrapper)).toBe('writer');
     expect(await submitWith(wrapper)).toEqual([{ content: 'hello', agent: 'writer', provider: 'openai', images: [], project: null }]);
   });
 
   it('falls back to the first agent when the stored default is not on offer', async () => {
     const wrapper = mountArea({ agents: ['researcher', 'writer'], defaultAgent: 'deleted-since' });
 
-    expect((agentSelect(wrapper).element as HTMLSelectElement).value).toBe('researcher');
+    expect(agentValue(wrapper)).toBe('researcher');
   });
 
   it('keeps a hand-picked agent when the default arrives after it', async () => {
     const wrapper = mountArea({ agents: ['researcher', 'writer'] });
 
-    await agentSelect(wrapper).setValue('writer');
+    await wrapper.get('[data-testid="chat-agent-option"][data-value="writer"]').trigger('click');
     // The default is read on its own request, so it can land after the user has
     // already chosen; the choice is the newer intent of the two.
     await wrapper.setProps({ defaultAgent: 'researcher' });
 
-    expect((agentSelect(wrapper).element as HTMLSelectElement).value).toBe('writer');
+    expect(agentValue(wrapper)).toBe('writer');
   });
 
   it("starts on the chat's own agent rather than the stored default", async () => {
     const wrapper = mountArea({ agents: ['researcher', 'writer'], initialAgent: 'writer', defaultAgent: 'researcher' });
 
-    expect((agentSelect(wrapper).element as HTMLSelectElement).value).toBe('writer');
+    expect(agentValue(wrapper)).toBe('writer');
   });
 
   it("moves to the chat's own agent when it arrives after the mount", async () => {
@@ -345,7 +344,7 @@ describe('ChatInputArea', () => {
     // over has been read, so the agent can land a tick later.
     await wrapper.setProps({ initialAgent: 'writer' });
 
-    expect((agentSelect(wrapper).element as HTMLSelectElement).value).toBe('writer');
+    expect(agentValue(wrapper)).toBe('writer');
   });
 
   it('moves to the stored default when it changes the agent list', async () => {
@@ -353,7 +352,7 @@ describe('ChatInputArea', () => {
 
     await wrapper.setProps({ agents: ['researcher', 'writer'], defaultAgent: 'writer' });
 
-    expect((agentSelect(wrapper).element as HTMLSelectElement).value).toBe('writer');
+    expect(agentValue(wrapper)).toBe('writer');
   });
 
   it('clears the editor and disables send when the parent asks', async () => {
@@ -587,7 +586,7 @@ describe('ChatInputArea file mention panel', () => {
   it('narrows the entries to the project the input is set to', async () => {
     const wrapper = mountFileArea({ projects: [{ id: 'p1', project_name: 'Acme', project_path: 'acme' }], project: 'p1' });
     await flushPromises();
-    expect((wrapper.get('[data-testid="chat-project-select"]').element as HTMLSelectElement).value).toBe('p1');
+    expect(wrapper.get('[data-testid="chat-project-select"]').attributes('data-value')).toBe('p1');
     await typeMention(wrapper, '@ma');
 
     expect(workspace.completeWorkspace).toHaveBeenLastCalledWith('ma', expect.any(Number), 'p1');
@@ -879,21 +878,20 @@ describe('ChatInputArea project picker', () => {
   it('offers the projects and marks the one the chat works in', async () => {
     const wrapper = await mountReadyArea({ projects, project: 'p2' });
 
-    const select = wrapper.get('[data-testid="chat-project-select"]').element as HTMLSelectElement;
-    expect(select.value).toBe('p2');
-    expect([...select.options].map((option) => option.text)).toEqual(['No project', 'Acme', 'Other']);
+    expect(wrapper.get('[data-testid="chat-project-select"]').attributes('data-value')).toBe('p2');
+    expect(wrapper.findAll('[data-testid="chat-project-option"]').map((option) => option.text())).toEqual(['No project', 'Acme', 'Other']);
   });
 
   it('starts on no project when the chat has none', async () => {
     const wrapper = await mountReadyArea({ projects, project: null });
 
-    expect((wrapper.get('[data-testid="chat-project-select"]').element as HTMLSelectElement).value).toBe('');
+    expect(wrapper.get('[data-testid="chat-project-select"]').attributes('data-value')).toBe('');
   });
 
   it('reports a change as a session property rather than a turn property', async () => {
     const wrapper = await mountReadyArea({ projects, project: null });
 
-    await wrapper.get('[data-testid="chat-project-select"]').setValue('p1');
+    await wrapper.get('[data-testid="chat-project-option"][data-value="p1"]').trigger('click');
 
     expect(wrapper.emitted('project-change')?.[0]).toEqual(['p1']);
     expect(wrapper.emitted('submit')).toBeUndefined();
@@ -914,6 +912,6 @@ describe('ChatInputArea project picker', () => {
 
     await wrapper.setProps({ projects: [projects[1]] });
 
-    expect((wrapper.get('[data-testid="chat-project-select"]').element as HTMLSelectElement).value).toBe('');
+    expect(wrapper.get('[data-testid="chat-project-select"]').attributes('data-value')).toBe('');
   });
 });
