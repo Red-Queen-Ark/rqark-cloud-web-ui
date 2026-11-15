@@ -1,6 +1,7 @@
 import BaseLayout from '@/layouts/BaseLayout.vue';
 import LangLayout from '@/layouts/LangLayout.vue';
 import MainLayout from '@/layouts/MainLayout.vue';
+import ManageLayout from '@/layouts/ManageLayout.vue';
 import { createRouter, createWebHashHistory, createWebHistory } from 'vue-router';
 import { isDesktop } from '@/config/runtime';
 import { setMiddleware } from './middleware';
@@ -16,6 +17,7 @@ import TaskPage from '@/pages/TaskPage.vue';
 import TaskDetailPage from '@/pages/TaskDetailPage.vue';
 import TaskSessionPage from '@/pages/TaskSessionPage.vue';
 import TodoPage from '@/pages/TodoPage.vue';
+import ManagePage from '@/pages/ManagePage.vue';
 
 const routes = [
   {
@@ -79,6 +81,17 @@ const routes = [
           { path: 'tasks/:uuid/sessions/:session', component: TaskSessionPage, name: 'taskSession' },
           { path: 'todos', component: TodoPage, name: 'todos' },
         ],
+      },
+    ],
+  },
+  {
+    path: '/:lang/manage',
+    component: ManageLayout,
+    children: [
+      {
+        path: '',
+        component: LangLayout,
+        children: [{ path: '', component: ManagePage, name: 'manage', meta: { superuserOnly: true } }],
       },
     ],
   },

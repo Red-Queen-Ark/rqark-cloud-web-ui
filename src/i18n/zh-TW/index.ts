@@ -22,6 +22,7 @@ import { projects } from './projects';
 import { workspace } from './workspace';
 import { tasks } from './tasks';
 import { todos } from './todos';
+import { manage } from './manage';
 
 export const basis = {
   common,
@@ -48,4 +49,5 @@ export const basis = {
   workspace,
   tasks,
   todos,
+  manage,
 };

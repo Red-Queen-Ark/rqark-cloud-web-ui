@@ -45,6 +45,16 @@
           </li> -->
         </ul>
 
+        <div v-if="manageItems.length > 0" class="border-base-300 shrink-0 border-t p-2">
+          <ul class="menu menu-md w-full flex-nowrap gap-1 p-0">
+            <li v-for="item in manageItems" :key="item.pageId">
+              <RouterLink :to="{ name: item.pageId, params: { lang: route.params.lang as string } }" :class="{ 'menu-active': isActive(item) }" :data-testid="`sidebar-${item.pageId}-link`">
+                <component :is="item.icon" class="h-4 w-4" />
+                {{ t(item.i18nKey) }}
+              </RouterLink>
+            </li>
+          </ul>
+        </div>
         <div class="border-base-300 shrink-0 border-t p-2">
           <button class="btn btn-ghost btn-sm text-error w-full justify-start gap-2" @click="logout">
             <LogoutIcon class="h-4 w-4" />
@@ -63,6 +73,7 @@ import BoltIcon from '@/components/svg/BoltIcon.vue';
 import ListIcon from '@/components/svg/ListIcon.vue';
 import { useAuthStore } from '@/stores/authStore';
 import type { SiderItem } from '@/config/siderbar';
+import { siderItemsFor, siderItemFor } from '@/config/siderbar';
 import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
@@ -81,6 +92,7 @@ const { t } = useI18n();
 const drawerToggle = ref<HTMLInputElement | null>(null);
 const drawerId = computed(() => `${props.buttonLabel}-drawer`);
 const appName = import.meta.env.VITE_APP_NAME || 'App';
+const manageItems = computed(() => siderItemsFor('manage').filter((item) => !item.superuserOnly || authStore.user?.is_superuser === true));
 // const visibleItems = computed(() => props.items.filter((item) => !item.superuserOnly || authStore.user?.is_superuser === true));
 
 // The drawer overlays the page on small screens, so navigating has to dismiss
@@ -93,11 +105,9 @@ watch(
     }
   },
 );
-// function isActive(item: SiderItem): boolean {
-//   // The shared lookup rather than a name comparison, so a detail page keeps its
-//   // list's entry marked (see `SiderItem.aliases`).
-//   return siderItemFor(route.name as string)?.pageId === item.pageId;
-// }
+function isActive(item: SiderItem): boolean {
+  return siderItemFor(route.name as string)?.pageId === item.pageId;
+}
 
 function logout() {
   authStore.logout();

@@ -2,13 +2,19 @@ import type { Component } from 'vue';
 import CogIcon from '@/components/svg/CogIcon.vue';
 import FolderIcon from '@/components/svg/FolderIcon.vue';
 import BoltIcon from '@/components/svg/BoltIcon.vue';
+import GridIcon from '@/components/svg/GridIcon.vue';
 import ListIcon from '@/components/svg/ListIcon.vue';
+
+/** Where the sidebar draws the entry: the page list or the console block below it. */
+export type SiderSection = 'main' | 'manage';
 
 export interface SiderItem {
   pageId: string;
   i18nKey: string;
   subtitleKey: string;
   icon: Component;
+  /** Defaults to `main`. */
+  section?: SiderSection;
   /** Hides the entry from callers that are not superusers. */
   superuserOnly?: boolean;
   /**
@@ -42,6 +48,14 @@ export const siderItems: SiderItem[] = [
     icon: ListIcon,
   },
   {
+    pageId: 'manage',
+    i18nKey: 'manage.title',
+    subtitleKey: 'manage.subtitle',
+    icon: GridIcon,
+    section: 'manage',
+    superuserOnly: true,
+  },
+  {
     pageId: 'settings',
     i18nKey: 'settings.title',
     subtitleKey: 'settings.subtitle',
@@ -52,4 +66,9 @@ export const siderItems: SiderItem[] = [
 /** The navigation entry a route name belongs to, if any. */
 export function siderItemFor(pageId?: string): SiderItem | undefined {
   return siderItems.find((item) => item.pageId === pageId || (pageId !== undefined && item.aliases?.includes(pageId) === true));
+}
+
+/** The entries the sidebar draws in one of its blocks. */
+export function siderItemsFor(section: SiderSection): SiderItem[] {
+  return siderItems.filter((item) => (item.section ?? 'main') === section);
 }
