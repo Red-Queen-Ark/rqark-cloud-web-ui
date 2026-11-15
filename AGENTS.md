@@ -3,6 +3,7 @@
 ## General Rules
 
 - 你寫代碼不要寫注解，AI Agent 寫注解太丑，如果發現有注解都是主人寫的。
+- 禁止 squash merge 同 `git revert`；PR 一律用 merge commit，改錯用新 commit
 - frontend 必須用 `bun`，不可用 npm/pnpm/yarn
 - 最憎硬編碼
 - Frontend 用 `import.meta.env.VITE_*`（Vite convention）+ 合理 fallback
