@@ -105,7 +105,7 @@ const routes = [
         path: '',
         component: LangLayout,
         children: [
-          { path: '', component: ManageHomePage, name: 'manage', meta: { superuserOnly: true } },
+          { path: '', component: ManageHomePage, name: 'manage' },
           { path: 'agents', component: ManageAgentPage, name: 'agents' },
           { path: 'agent-defaults', component: ManageAgentDefaultPage, name: 'agentDefaults' },
           { path: 'providers', component: ManageProviderPage, name: 'providers' },

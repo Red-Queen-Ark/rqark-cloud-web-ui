@@ -17,6 +17,15 @@
  * still preserved on save (see `AgentComponentRef`), so an agent written by a
  * newer engine is not stripped by an older UI.
  *
+ * `MemorySave`, `MemorySearch`, `Task`, `MemoryPrompt` and `StatePrompt` are
+ * rqark-app's, not the core's: they talk to the data cloud through the `extras`
+ * the app hands to a turn, and `MemoryPrompt` and `StatePrompt` stay silent when
+ * that connection is missing. They are listed here because an agent still names
+ * them like any other entry.
+ * `Task` also answers only `list` inside a run started by a task, so a
+ * scheduled agent cannot schedule more work. `Todo` reads and writes the
+ * user's own todo list, which is not a plan for the current run.
+ *
  * Only *constructor* arguments appear as params. The arguments in a tool's
  * `get_openai_schema` (`path`, `pattern`, `command`, …) describe how the model
  * calls the tool at run time and are never part of an agent's configuration.
@@ -67,10 +76,15 @@ export const AGENT_TOOLS: AgentComponentSpec[] = [
   { name: 'EditFile', params: [] },
   { name: 'ListDir', params: [] },
   { name: 'Grep', params: [] },
+  { name: 'ConvertDocument', params: [] },
   { name: 'WebSearch', params: [] },
   { name: 'WebFetch', params: [] },
   { name: 'Exec', params: [] },
   { name: 'PlanUpdate', params: [] },
+  { name: 'MemorySave', params: [] },
+  { name: 'MemorySearch', params: [] },
+  { name: 'Task', params: [] },
+  { name: 'Todo', params: [] },
   { name: SUB_AGENT_TOOL_NAME, params: [], nested: true },
   { name: 'Gitea', params: [{ key: 'token', secret: true }, { key: 'base_url' }, { key: 'username' }] },
   { name: 'GitHub', params: [{ key: 'token', secret: true }, { key: 'base_url' }, { key: 'username' }] },
@@ -95,6 +109,8 @@ export const AGENT_PROMPTS: AgentComponentSpec[] = [
     ],
   },
   { name: 'SubAgentPrompt', params: [] },
+  { name: 'StatePrompt', params: [] },
+  { name: 'MemoryPrompt', params: [] },
   { name: 'PlatformPrompt', params: [] },
   { name: 'WorkspacePrompt', params: [] },
   { name: 'AgentsMdPrompt', params: [] },

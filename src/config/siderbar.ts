@@ -47,7 +47,6 @@ export const siderItems: SiderItem[] = [
     i18nKey: 'manage.title',
     subtitleKey: 'manage.subtitle',
     icon: GridIcon,
-    superuserOnly: true,
   },
   {
     pageId: 'settings',
