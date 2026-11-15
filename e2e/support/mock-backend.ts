@@ -9,6 +9,8 @@ export interface MockUser {
   is_staff: boolean;
   is_superuser: boolean;
   created_at: string;
+  /** The last signed-in request. Absent means the account has never been seen. */
+  last_seen_at?: string;
 }
 
 export interface MockGroup {
@@ -31,6 +33,13 @@ export interface MockAgent {
   updated_at?: string;
   prompts?: MockAgentComponent[];
   tools?: MockAgentComponent[];
+  /** Whether another user's agent is shared with everyone. */
+  is_public?: boolean;
+  /**
+   * Whether the caller owns the agent; `false` is how a shared agent is
+   * modelled. Absent means the caller owns it, matching the API.
+   */
+  owned?: boolean;
 }
 
 export interface MockProvider {
@@ -175,6 +184,44 @@ export interface MockSop {
   updated_at?: string;
 }
 
+/** One source's default agent, as the account stores it. */
+export interface MockAgentDefault {
+  source: string;
+  agent_id: string;
+}
+
+/**
+ * One row of an agent's memory log. The list endpoint omits `source_message`, so
+ * a row carries it only for the detail endpoint the UI calls when a card is
+ * opened.
+ */
+export interface MockMemory {
+  id: string;
+  agent_id: string;
+  content: string;
+  occurred_at: string;
+  /** `fact` rows are injected into the prompt, `event` rows are the per-turn log. */
+  kind?: 'fact' | 'event';
+  keywords?: string[];
+  hits?: number;
+  pinned?: boolean;
+  source?: string;
+  source_message?: Record<string, unknown> | null;
+}
+
+/**
+ * One agent's state board. The board is per (user, agent) pair and is overwritten
+ * in full, so there is at most one per agent rather than a log.
+ */
+export interface MockAgentState {
+  agent_id: string;
+  content: string;
+  version?: number;
+  source?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface MockBackend {
   users: MockUser[];
   groups: MockGroup[];
@@ -190,6 +237,10 @@ export interface MockBackend {
   agentDefaults: Record<string, string>;
   /** Every sop the account holds. */
   sops: MockSop[];
+  /** Every memory row the account holds, across all its agents. */
+  memories: MockMemory[];
+  /** Every agent's state board, at most one per agent. */
+  states: MockAgentState[];
   requests: string[];
   /** Every request that carried a JSON body, in order. */
   writes: MockWrite[];
@@ -216,10 +267,67 @@ export interface MockBackendOptions {
   agentDefaults?: Record<string, string>;
   /** Replaces the seeded sop list. */
   sops?: MockSop[];
+  /** Replaces the seeded memory log. */
+  memories?: MockMemory[];
+  /** Replaces the seeded state boards. */
+  states?: MockAgentState[];
   /** Replaces the seeded project list, which the sidebar tree reads. */
   projects?: MockProject[];
   /** Replaces the seeded account list. */
   users?: MockUser[];
+}
+
+/** An agent as the caller sees it: owned unless the seed says otherwise. */
+function agentView(agent: MockAgent): MockAgent {
+  return { owned: true, ...agent };
+}
+
+/**
+ * The priority a shared provider is served with to a caller that never ordered
+ * it. Mirrors the API's `UnsetProviderPriority`.
+ */
+const UNSET_PROVIDER_PRIORITY = -99;
+
+/**
+ * A provider as the caller sees it, so `priority` is always the effective value:
+ * the caller's own `priority_override` on a shared provider when it set one, the
+ * provider's own priority on a row the caller owns, and `UNSET_PROVIDER_PRIORITY`
+ * on a shared row the caller never ordered.
+ */
+function providerView(provider: MockProvider) {
+  const override = provider.priority_override;
+  if (provider.owned === false) {
+    return { ...provider, priority: override ?? UNSET_PROVIDER_PRIORITY };
+  }
+  return { owned: true, ...provider };
+}
+
+/** Accepts either a map of source to agent id or a list of the same pairs. */
+function normalizeAgentDefaults(seed: Record<string, string> | MockAgentDefault[] | undefined): Record<string, string> {
+  if (seed === undefined) {
+    return {};
+  }
+  if (Array.isArray(seed)) {
+    return Object.fromEntries(seed.map((entry) => [entry.source, entry.agent_id]));
+  }
+  return { ...seed };
+}
+
+/** A stored default agent as the list renders it. */
+function agentDefaultView(entry: MockAgentDefault) {
+  return { id: `agent-default-${entry.source}`, source: entry.source, agent_id: entry.agent_id, created_at: '2026-04-05T06:07:08Z', updated_at: WRITE_TIMESTAMP };
+}
+
+/** The title the API derives from a sop body: its first heading, else the slug. */
+function sopTitle(content: string, slug: string): string {
+  for (const raw of content.split('\n')) {
+    const line = raw.trim();
+    if (line === '') {
+      continue;
+    }
+    return line.startsWith('#') ? line.replace(/^#+/, '').trim() || slug : slug;
+  }
+  return slug;
 }
 
 function page(items: unknown[], limit: number, offset: number, total = items.length) {
@@ -267,8 +375,10 @@ export async function mockBackend(page_: Page, options: MockBackendOptions = {})
     taskRuns: options.taskRuns ?? [],
     todos: options.todos ?? [],
     userConfig: options.userConfig ?? {},
-    agentDefaults: options.agentDefaults ?? {},
+    agentDefaults: normalizeAgentDefaults(options.agentDefaults),
     sops: options.sops ?? [],
+    memories: options.memories ?? [],
+    states: options.states ?? [],
     projects: options.projects ?? [],
     requests: [],
     writes: [],
@@ -347,7 +457,49 @@ export async function mockBackend(page_: Page, options: MockBackendOptions = {})
       // The caller's sops: one page, slug ascending, which is all the chat
       // input reads to fill its slash panel.
       if (path === '/sops' && method === 'GET') {
-        return json(route, 200, { items: state.sops, next_cursor: '' });
+        const limit = Number(url.searchParams.get('limit') ?? 100);
+        const cursor = url.searchParams.get('cursor');
+        const rows = [...state.sops].sort((a, b) => (a.slug < b.slug ? -1 : a.slug > b.slug ? 1 : 0));
+        const remaining = cursor ? rows.slice(rows.findIndex((row) => row.slug === cursor) + 1) : rows;
+        const items = remaining.slice(0, limit);
+        return json(route, 200, { items, next_cursor: remaining.length > limit ? items[items.length - 1].slug : '' });
+      }
+
+      if (path === '/sops' && method === 'POST') {
+        const slug = String(body?.slug ?? '');
+        if (state.sops.some((row) => row.slug === slug)) {
+          return json(route, 409, error(409, 'CONFLICT', 'That slug is already taken.').body);
+        }
+        const content = String(body?.content ?? '');
+        const row: MockSop = { slug, title: String(body?.title ?? '') || sopTitle(content, slug), content, created_at: WRITE_TIMESTAMP, updated_at: WRITE_TIMESTAMP };
+        state.sops.push(row);
+        return json(route, 201, row);
+      }
+
+      const sopMatch = /^\/sops\/([^/]+)$/.exec(path);
+      if (sopMatch) {
+        const slug = decodeURIComponent(sopMatch[1]);
+        const row = state.sops.find((candidate) => candidate.slug === slug);
+        if (!row) {
+          return json(route, 404, error(404, 'NOT_FOUND', 'Sop not found.').body);
+        }
+        if (method === 'GET') {
+          return json(route, 200, row);
+        }
+        if (method === 'PATCH') {
+          if (typeof body?.content === 'string') {
+            row.content = body.content;
+          }
+          if (typeof body?.title === 'string') {
+            row.title = body.title;
+          }
+          row.updated_at = WRITE_TIMESTAMP;
+          return json(route, 200, row);
+        }
+        if (method === 'DELETE') {
+          state.sops = state.sops.filter((candidate) => candidate.slug !== slug);
+          return route.fulfill({ status: 204, body: '' });
+        }
       }
 
       // One default per source. A source with none answers 404, which is how the
@@ -423,7 +575,7 @@ export async function mockBackend(page_: Page, options: MockBackendOptions = {})
       // Both collections answer with the whole list: neither takes limit or
       // offset. Both are owned by the caller.
       if (path === '/agents' && method === 'GET') {
-        return json(route, 200, state.agents);
+        return json(route, 200, state.agents.map(agentView));
       }
 
       if (path === '/agents' && method === 'POST') {
@@ -435,9 +587,10 @@ export async function mockBackend(page_: Page, options: MockBackendOptions = {})
           updated_at: WRITE_TIMESTAMP,
           prompts: (body?.prompts as MockAgentComponent[] | undefined) ?? [],
           tools: (body?.tools as MockAgentComponent[] | undefined) ?? [],
+          is_public: body?.is_public === true,
         };
         state.agents.push(created);
-        return json(route, 201, created);
+        return json(route, 201, agentView(created));
       }
 
       if (path === '/agents/names' && method === 'GET') {
@@ -451,7 +604,10 @@ export async function mockBackend(page_: Page, options: MockBackendOptions = {})
       if (agentMatch) {
         const agent = state.agents.find((candidate) => candidate.id === agentMatch[1]);
         if (!agent) {
-          return json(route, 400, error(400, 'BAD_REQUEST', 'Agent not found.').body);
+          return json(route, 404, error(404, 'NOT_FOUND', 'Agent not found.').body);
+        }
+        if (method === 'GET') {
+          return json(route, 200, agentView(agent));
         }
         if (method === 'PUT') {
           // The service treats an absent field as untouched; the UI always sends
@@ -464,8 +620,11 @@ export async function mockBackend(page_: Page, options: MockBackendOptions = {})
           if (body?.tools !== undefined) {
             agent.tools = body.tools as MockAgentComponent[];
           }
+          if (body?.is_public !== undefined) {
+            agent.is_public = body.is_public === true;
+          }
           agent.updated_at = WRITE_TIMESTAMP;
-          return json(route, 200, agent);
+          return json(route, 200, agentView(agent));
         }
         if (method === 'DELETE') {
           state.agents = state.agents.filter((candidate) => candidate.id !== agent.id);
@@ -588,10 +747,17 @@ export async function mockBackend(page_: Page, options: MockBackendOptions = {})
         }
       }
 
+      // The caller's default agent per source. The whole set is answered at
+      // once, ordered by source; the source is the key a write upserts on.
+      if (path === '/agent-defaults' && method === 'GET') {
+        const entries = Object.entries(state.agentDefaults).map(([source, agentId]) => ({ source, agent_id: agentId }));
+        return json(route, 200, entries.sort((a, b) => a.source.localeCompare(b.source)).map(agentDefaultView));
+      }
+
       if (path === '/providers' && method === 'GET') {
-        // The endpoint is not paginated; it answers with the whole list, lowest
-        // priority first.
-        const sorted = [...state.providers].sort((a, b) => Number(a.priority ?? 0) - Number(b.priority ?? 0));
+        // The endpoint is not paginated; it answers with the whole list, ordered
+        // by the priority that applies to the caller.
+        const sorted = state.providers.map(providerView).sort((a, b) => Number(a.priority ?? 0) - Number(b.priority ?? 0));
         return json(route, 200, sorted);
       }
 
@@ -621,12 +787,22 @@ export async function mockBackend(page_: Page, options: MockBackendOptions = {})
           // controls, so an assign matches the real partial semantics.
           Object.assign(provider, body);
           provider.updated_at = WRITE_TIMESTAMP;
-          return json(route, 200, provider);
+          return json(route, 200, providerView(provider));
         }
         if (method === 'DELETE') {
           state.providers = state.providers.filter((candidate) => candidate.id !== provider.id);
           return route.fulfill({ status: 204, body: '' });
         }
+      }
+
+      const providerPriorityMatch = /^\/providers\/([^/]+)\/priority$/.exec(path);
+      if (providerPriorityMatch && method === 'PUT') {
+        const provider = state.providers.find((candidate) => candidate.id === providerPriorityMatch[1]);
+        if (!provider) {
+          return json(route, 400, error(400, 'BAD_REQUEST', 'Provider not found.').body);
+        }
+        provider.priority_override = Number(body?.priority ?? 0);
+        return json(route, 200, providerView(provider));
       }
 
       if (path === '/api-keys' && method === 'GET') {
@@ -691,6 +867,85 @@ export async function mockBackend(page_: Page, options: MockBackendOptions = {})
         }
       }
 
+      // An agent's memory log, paged by keyset on (occurred_at, id) descending.
+      // The list omits `source_message`; only the detail route carries it.
+      if (path === '/memory' && method === 'GET') {
+        const agentId = url.searchParams.get('agent_id');
+        const limit = Number(url.searchParams.get('limit') ?? 100);
+        const cursor = url.searchParams.get('cursor');
+        const rows = state.memories.filter((row) => agentId === null || row.agent_id === agentId).sort((a, b) => (a.occurred_at === b.occurred_at ? (a.id < b.id ? 1 : -1) : a.occurred_at < b.occurred_at ? 1 : -1));
+        const remaining = cursor ? rows.slice(rows.findIndex((row) => row.id === cursor) + 1) : rows;
+        const items = remaining.slice(0, limit).map((row) => ({ ...row, source_message: undefined }));
+        return json(route, 200, { items, next_cursor: remaining.length > limit ? items[items.length - 1].id : '' });
+      }
+
+      // One agent's state board. A pair that has never been written answers 404
+      // rather than an empty board, which the page reads as "no state yet".
+      if (path === '/memory/state' && method === 'GET') {
+        const agentId = url.searchParams.get('agent_id') ?? '';
+        const agent = state.agents.find((candidate) => candidate.id === agentId);
+        const board = state.states.find((candidate) => candidate.agent_id === agentId);
+        if (!agent || !board) {
+          return json(route, 404, error(404, 'NOT_FOUND', 'State not found.').body);
+        }
+        return json(route, 200, board);
+      }
+
+      if (path === '/memory/state' && method === 'PUT') {
+        const agentId = String(body?.agent_id ?? '');
+        const agent = state.agents.find((candidate) => candidate.id === agentId);
+        if (!agent) {
+          return json(route, 404, error(404, 'NOT_FOUND', 'Agent not found.').body);
+        }
+        const content = String(body?.content ?? '');
+        if (content.trim() === '' || [...content].length > 2000) {
+          return json(route, 400, error(400, 'INVALID_CONTENT', 'content is required.').body);
+        }
+        const existing = state.states.find((candidate) => candidate.agent_id === agentId);
+        if (existing && body?.version !== undefined && body.version !== existing.version) {
+          return json(route, 409, error(409, 'STATE_CONFLICT', 'The state changed.').body);
+        }
+        const written: MockAgentState = {
+          agent_id: agentId,
+          content,
+          version: (existing?.version ?? 0) + 1,
+          source: String(body?.source ?? ''),
+          created_at: existing?.created_at ?? WRITE_TIMESTAMP,
+          updated_at: WRITE_TIMESTAMP,
+        };
+        state.states = [...state.states.filter((candidate) => candidate.agent_id !== agentId), written];
+        return json(route, 200, written);
+      }
+
+      if (path === '/memory/state' && method === 'DELETE') {
+        const agentId = url.searchParams.get('agent_id') ?? '';
+        if (!state.states.some((candidate) => candidate.agent_id === agentId)) {
+          return json(route, 404, error(404, 'NOT_FOUND', 'State not found.').body);
+        }
+        state.states = state.states.filter((candidate) => candidate.agent_id !== agentId);
+        return route.fulfill({ status: 204, body: '' });
+      }
+
+      const memoryMatch = /^\/memory\/([^/]+)$/.exec(path);
+      if (memoryMatch) {
+        const row = state.memories.find((candidate) => candidate.id === memoryMatch[1]);
+        if (!row) {
+          return json(route, 404, error(404, 'NOT_FOUND', 'Memory not found.').body);
+        }
+        if (method === 'GET') {
+          return json(route, 200, row);
+        }
+        if (method === 'PATCH') {
+          // pinned is the only field a caller may change.
+          row.pinned = body?.pinned === true;
+          return json(route, 200, row);
+        }
+        if (method === 'DELETE') {
+          state.memories = state.memories.filter((candidate) => candidate.id !== row.id);
+          return route.fulfill({ status: 204, body: '' });
+        }
+      }
+
       // A session belongs to the caller and is listed whole: like the agents
       // and providers endpoints it takes no limit or offset.
       if (path === '/sessions' && method === 'GET') {
@@ -730,6 +985,9 @@ export async function mockBackend(page_: Page, options: MockBackendOptions = {})
         if (method === 'PUT') {
           if (body?.title !== undefined) {
             session.title = String(body.title);
+          }
+          if (body?.source !== undefined) {
+            session.source = String(body.source);
           }
           if (body?.plan_items !== undefined) {
             session.plan_items = body.plan_items as MockSession['plan_items'];

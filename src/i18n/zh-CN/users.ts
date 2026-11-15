@@ -38,4 +38,6 @@ export const users = {
   next: '下一页',
   loadError: '无法加载用户',
   saveError: '无法保存用户',
+  lastSeen: '最后上线',
+  lastSeenHint: '这个账号最后一次使用 app 的时间。显示 — 表示加入此字段后没有登录过；使用 API key 的请求不计。',
 };

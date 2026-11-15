@@ -2,6 +2,7 @@ import type { Component } from 'vue';
 import CogIcon from '@/components/svg/CogIcon.vue';
 import FolderIcon from '@/components/svg/FolderIcon.vue';
 import BoltIcon from '@/components/svg/BoltIcon.vue';
+import GridIcon from '@/components/svg/GridIcon.vue';
 import ListIcon from '@/components/svg/ListIcon.vue';
 
 export interface SiderItem {
@@ -40,6 +41,12 @@ export const siderItems: SiderItem[] = [
     i18nKey: 'todos.title',
     subtitleKey: 'todos.subtitle',
     icon: ListIcon,
+  },
+  {
+    pageId: 'manage',
+    i18nKey: 'manage.title',
+    subtitleKey: 'manage.subtitle',
+    icon: GridIcon,
   },
   {
     pageId: 'settings',

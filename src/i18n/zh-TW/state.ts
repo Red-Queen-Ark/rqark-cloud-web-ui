@@ -1,0 +1,51 @@
+export const agentState = {
+  title: 'Agent 現況',
+  subtitle: '每個 agent 帶去下一個 turn 嘅現況表。',
+  hint: '揀一個 agent 睇佢上一次收到嘅現況。每個 turn 全量覆寫，所以呢個係 agent 現在所知，唔係歷史。',
+  autoUpdate: '每輪更新現況',
+  autoUpdateHint: '關咗之後，agent 唔會再覆寫現況表，會保留現有內容。',
+  toggleError: '改唔到設定',
+
+  loading: '載入中',
+  loadError: '無法載入 agent',
+  empty: '冇搵到 agent。',
+  emptyDesc: 'Agent 有現況表之後，就會出現喺呢度。',
+
+  agent: 'Agent',
+  description: '描述',
+  created: '建立日期',
+  actions: '操作',
+  view: '現況',
+
+  pickAgent: '揀一個 agent 睇佢嘅現況。',
+  pickAgentDesc: '現況就係每個 turn 開始時話俾 agent 知嘅嘢。',
+
+  boardLoading: '載入現況表',
+  boardError: '無法載入現況表',
+  noState: '呢個 agent 仲未有現況表。',
+  noStateDesc: '第一個有改動嘅 turn 會寫低一張，你亦可以喺度直接寫。',
+
+  version: '版本 {version}',
+  source: '來源',
+  updatedAt: '更新',
+
+  edit: '編輯',
+  editTitle: '編輯現況表',
+  editDescription: '全量覆寫，取代原本嗰份。Agent 每個 turn 開始時都會讀佢。',
+  content: '現況',
+  contentPlaceholder: '## 現況\n\n- 而家做緊乜\n- 仲有咩未解決',
+  charCount: '{count} / {max}',
+  contentRequired: '現況唔可以留空。想清走就刪佢。',
+  contentTooLong: '現況最多 {max} 字。',
+  save: '儲存',
+  cancel: '取消',
+  saved: '現況表已儲存',
+  saveError: '無法儲存現況表',
+  conflict: '另一個寫入者先改咗現況，所以呢次編輯冇儲存。而家顯示最新版本。',
+
+  delete: '刪除',
+  deleteTitle: '刪除現況表',
+  deleteConfirm: 'Agent 下一個 turn 開始時就冇現況表。舊嗰份刪咗就拎唔返。',
+  deleteError: '無法刪除現況表',
+  deleted: '現況表已刪除',
+};

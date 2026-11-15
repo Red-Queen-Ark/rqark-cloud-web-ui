@@ -38,4 +38,6 @@ export const users = {
   next: '下一頁',
   loadError: '無法載入用戶',
   saveError: '無法儲存用戶',
+  lastSeen: '最後上線',
+  lastSeenHint: '呢個帳號最後一次用 app 嘅時間。顯示 — 代表加入呢個欄位之後未試過登入；用 API key 嘅請求唔計。',
 };

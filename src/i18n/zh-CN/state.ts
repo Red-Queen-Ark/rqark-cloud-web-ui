@@ -1,0 +1,51 @@
+export const agentState = {
+  title: 'Agent 现况',
+  subtitle: '每个 agent 带去下一个 turn 的现况表。',
+  hint: '选择一个 agent 查看它上一次收到的现况。每个 turn 全量覆盖，所以这是 agent 现在所知，不是历史。',
+  autoUpdate: '每个 turn 更新现况',
+  autoUpdateHint: '关闭后，agent 不再覆写现况表，保留现有内容。',
+  toggleError: '无法更改设置',
+
+  loading: '加载中',
+  loadError: '无法加载 agent',
+  empty: '没有找到 agent。',
+  emptyDesc: 'agent 有现况表之后，就会出现在这里。',
+
+  agent: 'Agent',
+  description: '描述',
+  created: '创建日期',
+  actions: '操作',
+  view: '现况',
+
+  pickAgent: '选择一个 agent 查看它的现况。',
+  pickAgentDesc: '现况就是每个 turn 开始时告诉 agent 的内容。',
+
+  boardLoading: '正在加载现况表',
+  boardError: '无法加载现况表',
+  noState: '这个 agent 还没有现况表。',
+  noStateDesc: '第一个有改动的 turn 会写下一张，你也可以直接在这里写。',
+
+  version: '版本 {version}',
+  source: '来源',
+  updatedAt: '更新',
+
+  edit: '编辑',
+  editTitle: '编辑现况表',
+  editDescription: '全量覆盖，替换原来的内容。agent 每个 turn 开始时都会读取它。',
+  content: '现况',
+  contentPlaceholder: '## 现况\n\n- 现在在做什么\n- 还有什么没解决',
+  charCount: '{count} / {max}',
+  contentRequired: '现况不能为空。想清走就删除它。',
+  contentTooLong: '现况最多 {max} 个字符。',
+  save: '保存',
+  cancel: '取消',
+  saved: '现况表已保存',
+  saveError: '无法保存现况表',
+  conflict: '另一个写入者先改了现况，所以这次编辑没有保存。现在显示最新版本。',
+
+  delete: '删除',
+  deleteTitle: '删除现况表',
+  deleteConfirm: 'agent 下一个 turn 开始时就没有现况表了。旧的那份删掉就找不回来。',
+  deleteError: '无法删除现况表',
+  deleted: '现况表已删除',
+};

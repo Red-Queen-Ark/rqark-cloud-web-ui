@@ -36,5 +36,11 @@ export const providers = {
     reasoning_effort: '推理强度',
     thinking: '思考模式',
     combine: '合并',
+    api_keyKeep: '留空则保留原来的密钥',
+    is_public: '公用',
   },
+  public: '公用',
+  publicHint: '公用供应商所有用户都能使用，但只有你可以修改它的字段。',
+  setOrder: '设定顺序',
+  setOrderHint: '设置 {name} 在你自己列表中的位置。只会改你选用供应商的顺序，供应商本身仍归拥有者。',
 };

@@ -45,6 +45,16 @@
           </li> -->
         </ul>
 
+        <div v-if="manageItem" class="border-base-300 shrink-0 border-t p-2">
+          <ul class="menu menu-md w-full flex-nowrap gap-1 p-0">
+            <li>
+              <RouterLink :to="{ name: manageItem.pageId, params: { lang: route.params.lang as string } }" :class="{ 'menu-active': isActive(manageItem) }" data-testid="sidebar-manage-link">
+                <component :is="manageItem.icon" class="h-4 w-4" />
+                {{ t(manageItem.i18nKey) }}
+              </RouterLink>
+            </li>
+          </ul>
+        </div>
         <div class="border-base-300 shrink-0 border-t p-2">
           <button class="btn btn-ghost btn-sm text-error w-full justify-start gap-2" @click="logout">
             <LogoutIcon class="h-4 w-4" />
@@ -63,6 +73,7 @@ import BoltIcon from '@/components/svg/BoltIcon.vue';
 import ListIcon from '@/components/svg/ListIcon.vue';
 import { useAuthStore } from '@/stores/authStore';
 import type { SiderItem } from '@/config/siderbar';
+import { siderItemFor } from '@/config/siderbar';
 import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
@@ -81,7 +92,10 @@ const { t } = useI18n();
 const drawerToggle = ref<HTMLInputElement | null>(null);
 const drawerId = computed(() => `${props.buttonLabel}-drawer`);
 const appName = import.meta.env.VITE_APP_NAME || 'App';
-// const visibleItems = computed(() => props.items.filter((item) => !item.superuserOnly || authStore.user?.is_superuser === true));
+const manageItem = computed(() => {
+  const item = siderItemFor('manage');
+  return item && (!item.superuserOnly || authStore.user?.is_superuser === true) ? item : undefined;
+});
 
 // The drawer overlays the page on small screens, so navigating has to dismiss
 // it. The checkbox is uncontrolled: the hamburger label toggles it natively.
@@ -93,11 +107,9 @@ watch(
     }
   },
 );
-// function isActive(item: SiderItem): boolean {
-//   // The shared lookup rather than a name comparison, so a detail page keeps its
-//   // list's entry marked (see `SiderItem.aliases`).
-//   return siderItemFor(route.name as string)?.pageId === item.pageId;
-// }
+function isActive(item: SiderItem): boolean {
+  return siderItemFor(route.name as string)?.pageId === item.pageId;
+}
 
 function logout() {
   authStore.logout();

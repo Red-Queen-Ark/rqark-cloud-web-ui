@@ -30,4 +30,8 @@ export const agents = {
   nameRequired: 'Please enter an agent name',
   loadError: 'Could not load agents',
   saveError: 'Could not save the agent',
+  view: 'View',
+  public: 'Public',
+  publicHint: 'A public agent can be used by every user, but only you can change its fields.',
+  close: 'Close',
 };

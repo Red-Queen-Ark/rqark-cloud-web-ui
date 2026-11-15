@@ -16,3 +16,20 @@ export async function waitForShellStyles(page: Page): Promise<void> {
 export async function waitForAuthStyles(page: Page): Promise<void> {
   await expect(page.locator('#auth-panel')).toHaveCSS('display', 'flex');
 }
+
+/**
+ * Opens a daisyUI-free disclosure and leaves it open.
+ *
+ * Idempotent: an already open panel is left alone, so a spec can call it without
+ * knowing whether an earlier step opened it.
+ */
+export async function openDisclosure(page: Page, id: string): Promise<void> {
+  const disclosure = page.locator(`#${id}`);
+
+  if (!(await disclosure.evaluate((el: HTMLDetailsElement) => el.open))) {
+    await disclosure.locator('summary').click();
+  }
+
+  // The panel is only worth interacting with once it really is open.
+  await expect(disclosure).toHaveAttribute('open', '');
+}

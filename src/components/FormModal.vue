@@ -1,7 +1,7 @@
 <template>
   <div data-testid="form-modal" class="modal modal-open">
-    <div data-testid="form-modal-box" class="modal-box" :class="[{ 'max-w-2xl': wide }, boxClass]">
-      <div class="flex items-start justify-between gap-3">
+    <div data-testid="form-modal-box" class="modal-box flex max-h-[calc(100vh-6rem)] flex-col self-center overflow-hidden" :class="[{ 'max-w-2xl': wide }, boxClass]">
+      <div class="flex shrink-0 items-start justify-between gap-3">
         <div class="min-w-0">
           <h3 class="text-lg font-bold">{{ title }}</h3>
           <p v-if="description" class="text-base-content/60 pt-1 text-sm">{{ description }}</p>
@@ -9,13 +9,14 @@
         <slot name="header-actions"></slot>
       </div>
 
-      <div class="space-y-3 py-4">
+      <!-- Only the fields scroll, so a tall form never pushes the title or the actions out of the dialog. -->
+      <div data-testid="form-modal-fields" class="scrollbar-thin min-h-0 flex-1 space-y-3 overflow-y-auto py-4">
         <slot></slot>
       </div>
 
-      <div class="modal-action">
+      <div class="modal-action shrink-0">
         <button class="btn btn-ghost" @click="emit('cancel')">{{ cancelLabel }}</button>
-        <button class="btn" :class="confirmClass" :disabled="saving" @click="emit('confirm')">
+        <button v-if="!readonly" class="btn" :class="confirmClass" :disabled="saving" @click="emit('confirm')">
           <span v-if="saving" class="loading loading-spinner loading-sm"></span>
           {{ confirmLabel }}
         </button>
@@ -29,7 +30,7 @@ withDefaults(
   defineProps<{
     title: string;
     description?: string;
-    confirmLabel: string;
+    confirmLabel?: string;
     cancelLabel: string;
     /** Styles the confirm action, e.g. btn-error for a destructive dialog. */
     confirmClass?: string;
@@ -40,8 +41,9 @@ withDefaults(
      * out in columns and would be cramped at the default width.
      */
     boxClass?: string;
+    readonly?: boolean;
   }>(),
-  { description: '', confirmClass: 'btn-primary', saving: false, wide: false, boxClass: '' },
+  { description: '', confirmLabel: '', confirmClass: 'btn-primary', saving: false, wide: false, boxClass: '', readonly: false },
 );
 
 const emit = defineEmits<{

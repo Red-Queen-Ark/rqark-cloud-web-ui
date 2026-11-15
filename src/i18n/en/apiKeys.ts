@@ -43,4 +43,5 @@ export const apiKeys = {
   next: 'Next',
   loadError: 'Could not load API keys',
   saveError: 'Could not save the API key',
+  expiresAtNone: 'Never',
 };

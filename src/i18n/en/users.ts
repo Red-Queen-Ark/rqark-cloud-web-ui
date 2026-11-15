@@ -38,4 +38,6 @@ export const users = {
   next: 'Next',
   loadError: 'Could not load users',
   saveError: 'Could not save the user',
+  lastSeen: 'Last seen',
+  lastSeenHint: 'The last time this account used the app. A dash means no signed-in request since the column was added; calls made with an API key do not count.',
 };
