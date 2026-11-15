@@ -58,6 +58,15 @@ export type ApiChangePasswordRequest = {
 
 export type ApiChatRequest = {
     /**
+     * AgentID is the agent that issued the call, for usage attribution.
+     */
+    agent_id?: string;
+    /**
+     * IsCompaction marks a call that summarised the conversation to shrink the
+     * context. It is reported by the caller and defaults to false.
+     */
+    is_compaction?: boolean;
+    /**
      * Messages is required and forwarded unchanged.
      */
     messages?: Array<{
@@ -73,6 +82,19 @@ export type ApiChatRequest = {
      */
     provider_id?: string;
     reasoning_effort?: string;
+    /**
+     * The four fields below describe the call rather than ask it. They are read
+     * here and never forwarded to the provider; all are optional and a malformed
+     * value is ignored rather than rejected.
+     *
+     * SessionID is the session the call belongs to, for usage attribution.
+     */
+    session_id?: string;
+    /**
+     * Source is the caller's own label for itself, such as TUI or AGENT_CLOUD.
+     * It is stored as reported and never reconciled against the session.
+     */
+    source?: string;
     /**
      * Stream asks the provider for a server-sent event stream. The events are
      * relayed as they arrive.
@@ -541,6 +563,53 @@ export type ApiUpdateUserRequest = {
     is_staff?: boolean;
     is_superuser?: boolean;
     username?: string;
+};
+
+export type ApiUsageLogDto = {
+    agent_id?: string;
+    api_key_name?: string;
+    cached_tokens?: number;
+    completion_tokens?: number;
+    created_at?: string;
+    id?: string;
+    is_compaction?: boolean;
+    model?: string;
+    prompt_tokens?: number;
+    provider_id?: string;
+    reasoning_tokens?: number;
+    session_id?: string;
+    source?: string;
+    total_tokens?: number;
+    user_id?: string;
+};
+
+export type ApiUsageQuery = {
+    agent_id?: string;
+    /**
+     * APIKeyName selects rows by the name of the rqark API key they were made
+     * with. It is a name rather than an id because that is what the caller
+     * knows; two keys may share a name, in which case both match.
+     */
+    api_key_name?: string;
+    /**
+     * From and To bound created_at, half-open: from is included, to excluded.
+     */
+    from?: string;
+    is_compaction?: boolean;
+    provider_id?: string;
+    /**
+     * Source, AgentID, ProviderID and IsCompaction select the rows the proxy
+     * recorded, not the rows themselves: they narrow the listing by what the
+     * caller reported at call time.
+     */
+    source?: string;
+    to?: string;
+    /**
+     * UserID restricts the listing to one user's rows. It is accepted only
+     * from a superuser: a plain caller is always scoped to itself, and a body
+     * that names another user is rejected rather than silently narrowed.
+     */
+    user_id?: string;
 };
 
 export type ApiUserConfigDto = {
@@ -3873,6 +3942,42 @@ export type PutTodosByUuidResponses = {
 };
 
 export type PutTodosByUuidResponse = PutTodosByUuidResponses[keyof PutTodosByUuidResponses];
+
+export type PostUsageData = {
+    /**
+     * Filters; every field is optional
+     */
+    body?: ApiUsageQuery;
+    path?: never;
+    query?: never;
+    url: '/usage';
+};
+
+export type PostUsageErrors = {
+    /**
+     * Bad Request
+     */
+    400: UtilsErrorResponse;
+    /**
+     * Unauthorized
+     */
+    401: UtilsErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: UtilsErrorResponse;
+};
+
+export type PostUsageError = PostUsageErrors[keyof PostUsageErrors];
+
+export type PostUsageResponses = {
+    /**
+     * OK
+     */
+    200: Array<ApiUsageLogDto>;
+};
+
+export type PostUsageResponse = PostUsageResponses[keyof PostUsageResponses];
 
 export type GetUserConfigData = {
     body?: never;
