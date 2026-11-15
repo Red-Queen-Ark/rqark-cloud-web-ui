@@ -11,7 +11,6 @@
         <div class="border-base-300 flex h-12 shrink-0 items-center gap-2 border-b px-3 sm:h-14 sm:px-4">
           <img src="/logo.svg" alt="" class="h-8 w-8 shrink-0" />
           <span class="truncate text-lg font-bold tracking-tight">{{ appName }}</span>
-          <span class="badge badge-ghost badge-sm ml-auto shrink-0">{{ t('manage.title') }}</span>
         </div>
 
         <ul class="menu menu-md w-full flex-nowrap scrollbar-thin flex-1 gap-1 overflow-x-hidden overflow-y-auto p-2">
