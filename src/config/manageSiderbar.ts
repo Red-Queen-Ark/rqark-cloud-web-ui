@@ -3,6 +3,7 @@ import CogIcon from '@/components/svg/CogIcon.vue';
 import GroupIcon from '@/components/svg/GroupIcon.vue';
 import GridIcon from '@/components/svg/GridIcon.vue';
 import KeyIcon from '@/components/svg/KeyIcon.vue';
+import UsageIcon from '@/components/svg/UsageIcon.vue';
 import MemoryIcon from '@/components/svg/MemoryIcon.vue';
 import ProviderIcon from '@/components/svg/ProviderIcon.vue';
 import SessionIcon from '@/components/svg/SessionIcon.vue';
@@ -68,6 +69,12 @@ export const manageSiderItems: SiderItem[] = [
     i18nKey: 'apiKeys.title',
     subtitleKey: 'apiKeys.subtitle',
     icon: KeyIcon,
+  },
+  {
+    pageId: 'usage',
+    i18nKey: 'usage.title',
+    subtitleKey: 'usage.subtitle',
+    icon: UsageIcon,
   },
   {
     pageId: 'users',

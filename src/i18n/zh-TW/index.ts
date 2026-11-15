@@ -27,6 +27,7 @@ import { agentDefaults } from './agentDefaults';
 import { memory } from './memory';
 import { agentState } from './state';
 import { sops } from './sops';
+import { usage } from './usage';
 
 export const basis = {
   common,
@@ -58,4 +59,5 @@ export const basis = {
   memory,
   agentState,
   sops,
+  usage,
 };

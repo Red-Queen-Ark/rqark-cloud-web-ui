@@ -11,6 +11,7 @@ const pages: { link: string; path: string; title: string }[] = [
   { link: 'manage-sidebar-agentState-link', path: '/en/manage/agent-state', title: 'Agent State' },
   { link: 'manage-sidebar-sops-link', path: '/en/manage/sops', title: 'SOPs' },
   { link: 'manage-sidebar-apiKeys-link', path: '/en/manage/api-keys', title: 'API keys' },
+  { link: 'manage-sidebar-usage-link', path: '/en/manage/usage', title: 'Usage' },
   { link: 'manage-sidebar-users-link', path: '/en/manage/users', title: 'Users' },
   { link: 'manage-sidebar-groups-link', path: '/en/manage/groups', title: 'Groups' },
   { link: 'manage-sidebar-manageSettings-link', path: '/en/manage/settings', title: 'Settings' },

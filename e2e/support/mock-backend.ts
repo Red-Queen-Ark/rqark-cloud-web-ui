@@ -222,6 +222,15 @@ export interface MockAgentState {
   updated_at?: string;
 }
 
+export interface MockUsageLog {
+  created_at: string;
+  prompt_tokens?: number;
+  completion_tokens?: number;
+  total_tokens?: number;
+  api_key_name?: string | null;
+  user_id?: string;
+}
+
 export interface MockBackend {
   users: MockUser[];
   groups: MockGroup[];
@@ -241,6 +250,8 @@ export interface MockBackend {
   memories: MockMemory[];
   /** Every agent's state board, at most one per agent. */
   states: MockAgentState[];
+  /** Every usage row the account holds. */
+  usage: MockUsageLog[];
   requests: string[];
   /** Every request that carried a JSON body, in order. */
   writes: MockWrite[];
@@ -275,6 +286,8 @@ export interface MockBackendOptions {
   projects?: MockProject[];
   /** Replaces the seeded account list. */
   users?: MockUser[];
+  /** Replaces the seeded usage log. */
+  usage?: MockUsageLog[];
 }
 
 /** An agent as the caller sees it: owned unless the seed says otherwise. */
@@ -379,6 +392,7 @@ export async function mockBackend(page_: Page, options: MockBackendOptions = {})
     sops: options.sops ?? [],
     memories: options.memories ?? [],
     states: options.states ?? [],
+    usage: options.usage ?? [],
     projects: options.projects ?? [],
     requests: [],
     writes: [],
@@ -803,6 +817,21 @@ export async function mockBackend(page_: Page, options: MockBackendOptions = {})
         }
         provider.priority_override = Number(body?.priority ?? 0);
         return json(route, 200, providerView(provider));
+      }
+
+      if (path === '/usage' && method === 'POST') {
+        const from = body?.from as string | undefined;
+        const to = body?.to as string | undefined;
+        const apiKeyName = body?.api_key_name as string | undefined;
+        const userIdQuery = body?.user_id as string | undefined;
+        const scopedUser = session.is_superuser ? userIdQuery : session.id;
+        const rows = state.usage
+          .filter((row) => (scopedUser ? row.user_id === undefined || row.user_id === scopedUser : true))
+          .filter((row) => (apiKeyName ? row.api_key_name === apiKeyName : true))
+          .filter((row) => (from ? row.created_at >= from : true))
+          .filter((row) => (to ? row.created_at < to : true))
+          .sort((left, right) => right.created_at.localeCompare(left.created_at));
+        return json(route, 200, rows);
       }
 
       if (path === '/api-keys' && method === 'GET') {

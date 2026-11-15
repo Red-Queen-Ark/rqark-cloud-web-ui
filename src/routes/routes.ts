@@ -28,6 +28,7 @@ import ManageMemoryDetailPage from '@/pages/manage/MemoryDetailPage.vue';
 import ManageAgentStatePage from '@/pages/manage/AgentStatePage.vue';
 import ManageSopPage from '@/pages/manage/SopPage.vue';
 import ManageApiKeysPage from '@/pages/manage/ApiKeysPage.vue';
+import ManageUsagePage from '@/pages/manage/UsagePage.vue';
 import ManageUsersPage from '@/pages/manage/UsersPage.vue';
 import ManageGroupsPage from '@/pages/manage/GroupsPage.vue';
 import ManageSettingsPage from '@/pages/manage/SettingsPage.vue';
@@ -116,6 +117,7 @@ const routes = [
           { path: 'agent-state', component: ManageAgentStatePage, name: 'agentState' },
           { path: 'sops', component: ManageSopPage, name: 'sops' },
           { path: 'api-keys', component: ManageApiKeysPage, name: 'apiKeys' },
+          { path: 'usage', component: ManageUsagePage, name: 'usage' },
           { path: 'users', component: ManageUsersPage, name: 'users', meta: { superuserOnly: true } },
           { path: 'groups', component: ManageGroupsPage, name: 'groups', meta: { superuserOnly: true } },
           { path: 'settings', component: ManageSettingsPage, name: 'manageSettings' },
