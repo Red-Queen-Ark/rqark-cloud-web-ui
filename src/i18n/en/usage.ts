@@ -13,8 +13,11 @@ export const usage = {
   tokens: 'Tokens',
   requests: 'Requests',
   promptTokens: 'Input tokens',
+  cachedTokens: 'Cached tokens',
+  cacheHitRate: 'Cache hit rate',
   completionTokens: 'Output tokens',
   promptLabel: 'Input',
+  cachedLabel: 'Cached',
   completionLabel: 'Output',
   chartTitle: 'Token usage',
   range: {

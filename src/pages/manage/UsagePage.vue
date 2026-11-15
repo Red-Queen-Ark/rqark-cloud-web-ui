@@ -43,7 +43,7 @@
 
     <p v-if="rangeError" class="text-error text-xs" data-testid="usage-range-error">{{ t('usage.invalidRange') }}</p>
 
-    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
       <div class="stat bg-base-200/60 border-base-300 rounded-box border p-4">
         <div class="stat-title text-xs">{{ t('usage.tokens') }}</div>
         <div class="stat-value text-2xl" data-testid="usage-total-tokens">{{ formatTokens(summary.totalTokens) }}</div>
@@ -60,6 +60,11 @@
         <div class="stat-title text-xs">{{ t('usage.completionTokens') }}</div>
         <div class="stat-value text-2xl" data-testid="usage-completion-tokens">{{ formatTokens(summary.completionTokens) }}</div>
       </div>
+      <div class="stat bg-base-200/60 border-base-300 rounded-box border p-4">
+        <div class="stat-title text-xs">{{ t('usage.cachedTokens') }}</div>
+        <div class="stat-value text-2xl" data-testid="usage-cached-tokens">{{ formatTokens(summary.cachedTokens) }}</div>
+        <div class="stat-desc text-xs" data-testid="usage-cache-hit-rate">{{ t('usage.cacheHitRate') }} {{ formatPercent(cacheHitRate) }}</div>
+      </div>
     </div>
 
     <div class="card bg-base-200/60 border-base-300 border">
@@ -73,7 +78,7 @@
           <span class="loading loading-spinner loading-md"></span>
         </div>
         <p v-else-if="rows.length === 0" class="text-base-content/70 py-16 text-center text-sm" data-testid="usage-empty">{{ t('usage.empty') }}</p>
-        <UsageChart v-else :buckets="buckets" :prompt-label="t('usage.promptLabel')" :completion-label="t('usage.completionLabel')" :height="280" />
+        <UsageChart v-else :buckets="buckets" :prompt-label="t('usage.promptLabel')" :completion-label="t('usage.completionLabel')" :cached-label="t('usage.cachedLabel')" :height="280" />
       </div>
     </div>
   </div>
@@ -85,7 +90,7 @@ import { getApiKeys, getUsers, postUsage } from '@/api';
 import { useApiError } from '@/composables/useApiError';
 import { useAlertStore } from '@/stores/alertStore';
 import { useAuthStore } from '@/stores/authStore';
-import { bucketUsage, dateInputValue, formatTokens, parseDateInput, rangeFor, rangeFromDates, summarize, USAGE_RANGE_PRESETS, type UsageRange, type UsageRangePreset } from '@/utils/usage';
+import { bucketUsage, dateInputValue, formatPercent, formatTokens, parseDateInput, rangeFor, rangeFromDates, summarize, USAGE_RANGE_PRESETS, type UsageRange, type UsageRangePreset } from '@/utils/usage';
 import { computed, defineAsyncComponent, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
@@ -134,6 +139,7 @@ const range = computed<UsageRange | undefined>(() => {
 });
 
 const summary = computed(() => summarize(rows.value));
+const cacheHitRate = computed(() => (summary.value.promptTokens === 0 ? 0 : summary.value.cachedTokens / summary.value.promptTokens));
 const buckets = computed(() => (range.value ? bucketUsage(rows.value, range.value) : []));
 
 const apiKeyNames = computed(() => [...new Set(apiKeys.value.map((key) => key.name).filter((name) => Boolean(name)))].sort());

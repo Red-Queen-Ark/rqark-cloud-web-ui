@@ -22,9 +22,9 @@ function localNoon(daysAgo: number): string {
 }
 
 const bossRows: MockUsageLog[] = [
-  { created_at: localNoon(1), prompt_tokens: 1000, completion_tokens: 200, api_key_name: 'laptop', user_id: boss.id },
+  { created_at: localNoon(1), prompt_tokens: 1000, completion_tokens: 200, cached_tokens: 600, api_key_name: 'laptop', user_id: boss.id },
   { created_at: localNoon(1), prompt_tokens: 500, completion_tokens: 100, api_key_name: 'phone', user_id: boss.id },
-  { created_at: localNoon(2), prompt_tokens: 300, completion_tokens: 50, api_key_name: 'laptop', user_id: boss.id },
+  { created_at: localNoon(2), prompt_tokens: 300, completion_tokens: 50, cached_tokens: 150, api_key_name: 'laptop', user_id: boss.id },
 ];
 
 test('sums the tokens and requests of the selected range', async ({ page }) => {
@@ -40,6 +40,8 @@ test('sums the tokens and requests of the selected range', async ({ page }) => {
   await expect(page.getByTestId('usage-requests')).toHaveText('3');
   await expect(page.getByTestId('usage-prompt-tokens')).toHaveText('1,800');
   await expect(page.getByTestId('usage-completion-tokens')).toHaveText('350');
+  await expect(page.getByTestId('usage-cached-tokens')).toHaveText('750');
+  await expect(page.getByTestId('usage-cache-hit-rate')).toContainText('41.7%');
   await expect(page.getByTestId('usage-chart')).toBeVisible();
 
   const painted = await page.getByTestId('usage-chart').evaluate((canvas: HTMLCanvasElement) => {
@@ -71,6 +73,7 @@ test('the API key filter narrows the totals', async ({ page }) => {
 
   await expect(page.getByTestId('usage-total-tokens')).toHaveText('1,550');
   await expect(page.getByTestId('usage-requests')).toHaveText('2');
+  await expect(page.getByTestId('usage-cached-tokens')).toHaveText('750');
 
   await page.getByTestId('usage-clear').click();
 

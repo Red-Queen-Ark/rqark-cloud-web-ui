@@ -1,6 +1,7 @@
 const FALLBACK: Record<string, string> = {
   primary: '#6366f1',
   secondary: '#22d3ee',
+  accent: '#f59e0b',
   'base-content': '#6b7280',
   'base-300': '#d4d4d8',
   'base-200': '#e5e7eb',
@@ -47,6 +48,7 @@ export function usageChartColors() {
   return {
     prompt: themeColor('primary'),
     completion: themeColor('secondary'),
+    cached: themeColor('accent'),
     grid: themeColor('base-content', 0.15),
     text: themeColor('base-content'),
     surface: themeColor('base-200'),

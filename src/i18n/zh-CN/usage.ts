@@ -13,8 +13,11 @@ export const usage = {
   tokens: 'Tokens',
   requests: 'API 请求次数',
   promptTokens: '输入 Tokens',
+  cachedTokens: '缓存 Tokens',
+  cacheHitRate: '命中率',
   completionTokens: '输出 Tokens',
   promptLabel: '输入',
+  cachedLabel: '缓存',
   completionLabel: '输出',
   chartTitle: 'Token 用量',
   range: {

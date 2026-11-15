@@ -14,6 +14,7 @@ export interface UsageBucket {
   label: string;
   promptTokens: number;
   completionTokens: number;
+  cachedTokens: number;
   totalTokens: number;
   requests: number;
 }
@@ -22,6 +23,7 @@ export interface UsageSummary {
   requests: number;
   promptTokens: number;
   completionTokens: number;
+  cachedTokens: number;
   totalTokens: number;
 }
 
@@ -67,10 +69,10 @@ export function dayLabel(date: Date): string {
   return `${date.getMonth() + 1}/${date.getDate()}`;
 }
 
-function tokensOf(row: ApiUsageLogDto): { prompt: number; completion: number; total: number } {
+function tokensOf(row: ApiUsageLogDto): { prompt: number; completion: number; cached: number; total: number } {
   const prompt = row.prompt_tokens ?? 0;
   const completion = row.completion_tokens ?? 0;
-  return { prompt, completion, total: row.total_tokens ?? prompt + completion };
+  return { prompt, completion, cached: row.cached_tokens ?? 0, total: row.total_tokens ?? prompt + completion };
 }
 
 export function bucketUsage(rows: ApiUsageLogDto[], range: UsageRange): UsageBucket[] {
@@ -83,6 +85,7 @@ export function bucketUsage(rows: ApiUsageLogDto[], range: UsageRange): UsageBuc
       label: dayLabel(cursor),
       promptTokens: 0,
       completionTokens: 0,
+      cachedTokens: 0,
       totalTokens: 0,
       requests: 0,
     });
@@ -104,6 +107,7 @@ export function bucketUsage(rows: ApiUsageLogDto[], range: UsageRange): UsageBuc
     const tokens = tokensOf(row);
     bucket.promptTokens += tokens.prompt;
     bucket.completionTokens += tokens.completion;
+    bucket.cachedTokens += tokens.cached;
     bucket.totalTokens += tokens.total;
     bucket.requests += 1;
   }
@@ -118,15 +122,20 @@ export function summarize(rows: ApiUsageLogDto[]): UsageSummary {
       summary.requests += 1;
       summary.promptTokens += tokens.prompt;
       summary.completionTokens += tokens.completion;
+      summary.cachedTokens += tokens.cached;
       summary.totalTokens += tokens.total;
       return summary;
     },
-    { requests: 0, promptTokens: 0, completionTokens: 0, totalTokens: 0 },
+    { requests: 0, promptTokens: 0, completionTokens: 0, cachedTokens: 0, totalTokens: 0 },
   );
 }
 
 export function formatTokens(value: number): string {
   return new Intl.NumberFormat('en-US').format(Math.round(value));
+}
+
+export function formatPercent(ratio: number): string {
+  return `${(ratio * 100).toFixed(1)}%`;
 }
 
 export function parseDateInput(value: string): Date | undefined {

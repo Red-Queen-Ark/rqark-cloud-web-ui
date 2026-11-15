@@ -226,6 +226,7 @@ export interface MockUsageLog {
   created_at: string;
   prompt_tokens?: number;
   completion_tokens?: number;
+  cached_tokens?: number;
   total_tokens?: number;
   api_key_name?: string | null;
   user_id?: string;
