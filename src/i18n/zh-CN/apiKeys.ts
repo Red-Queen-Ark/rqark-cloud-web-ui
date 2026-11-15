@@ -43,4 +43,5 @@ export const apiKeys = {
   next: '下一页',
   loadError: '无法加载 API 密钥',
   saveError: '无法保存 API 密钥',
+  expiresAtNone: '永不过期',
 };

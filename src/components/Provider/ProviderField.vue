@@ -27,6 +27,7 @@
       @keyup.enter="emit('submit')"
     />
     <input v-else :id="controlId" v-model="model" :type="field.control" class="input w-full" :required="field.required === true" :autocomplete="field.control === 'password' ? 'new-password' : 'off'" @keyup.enter="emit('submit')" />
+    <span v-if="hint" class="text-base-content/60 text-xs">{{ hint }}</span>
   </label>
 </template>
 
@@ -34,7 +35,7 @@
 import type { ProviderFieldSpec, ProviderFieldValue } from '@/config/providers';
 import { computed } from 'vue';
 
-const props = defineProps<{ field: ProviderFieldSpec; label: string }>();
+const props = defineProps<{ field: ProviderFieldSpec; label: string; hint?: string }>();
 
 /** The form value for the field; the parent owns the object it lives in. */
 const model = defineModel<ProviderFieldValue>({ required: true });

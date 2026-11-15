@@ -61,6 +61,7 @@ import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '@/stores/authStore';
 import { useChatStore } from '@/stores/chatStore';
 import { siderItemFor } from '@/config/siderbar';
+import { manageSiderItemFor } from '@/config/manageSiderbar';
 
 const props = withDefaults(
   defineProps<{
@@ -85,7 +86,7 @@ const initials = computed(() => {
 
 // The header names the page the user is on, taking both texts from the same
 // navigation entry that renders the sidebar.
-const navItem = computed(() => siderItemFor(route.name as string));
+const navItem = computed(() => manageSiderItemFor(route.name as string) ?? siderItemFor(route.name as string));
 
 // A chat is not a navigation entry, so the header names the session the route
 // points at instead. The sidebar owns the session list and publishes its

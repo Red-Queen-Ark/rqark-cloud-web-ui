@@ -1,27 +1,38 @@
 import { describe, expect, it } from 'vitest';
-import { PROVIDER_FIELDS, firstMissingRequiredField, providerDisplayName, providerFields, providerPriorityWrites, sortProvidersByPriority, toProviderFormValues, toProviderRequestBody } from './providers';
+import {
+  PROVIDER_FIELDS,
+  firstMissingRequiredField,
+  providerDisplayName,
+  providerField,
+  providerFields,
+  providerPriorityWrite,
+  providerPriorityWrites,
+  sortProvidersByPriority,
+  toProviderFormValues,
+  toProviderRequestBody,
+} from './providers';
 
 describe('provider form', () => {
   it('marks exactly the fields validateNewProvider requires', () => {
-    // rqark-data-cloud rejects a create without these four; `name` is optional
-    // and falls back to model_name.
     expect(PROVIDER_FIELDS.filter((field) => field.required).map((field) => field.key)).toEqual(['model_name', 'api_base', 'api_key', 'priority']);
   });
 
   it('shows the required fields up front and hides the rest behind the disclosure', () => {
-    // The two halves partition the form: nothing optional escapes the
-    // disclosure except `name`, which stays up front because it labels the
-    // provider; and nothing required is ever buried in it.
-    expect(providerFields(false).map((field) => field.key)).toEqual(['name', 'model_name', 'api_base', 'api_key', 'priority']);
-    expect(providerFields(true).map((field) => field.key)).toEqual(['temperature', 'top_p', 'presence_penalty', 'frequency_penalty', 'seed', 'reasoning_effort', 'thinking', 'combine']);
-    expect([...providerFields(false), ...providerFields(true)]).toEqual(PROVIDER_FIELDS);
-    expect(providerFields(true).every((field) => field.required !== true)).toBe(true);
-    // `name` is the only visible field the API does not insist on.
+    expect(providerFields(false, true).map((field) => field.key)).toEqual(['name', 'model_name', 'api_base', 'api_key', 'priority', 'is_public']);
+    expect(providerFields(true, true).map((field) => field.key)).toEqual(['temperature', 'top_p', 'presence_penalty', 'frequency_penalty', 'seed', 'reasoning_effort', 'thinking', 'combine']);
+    expect([...providerFields(false, true), ...providerFields(true, true)]).toEqual(PROVIDER_FIELDS);
+    expect(providerFields(true, true).every((field) => field.required !== true)).toBe(true);
     expect(
-      providerFields(false)
+      providerFields(false, true)
         .filter((field) => field.required !== true)
         .map((field) => field.key),
-    ).toEqual(['name']);
+    ).toEqual(['name', 'is_public']);
+  });
+
+  it('drops the admin-only fields from a non-superuser form', () => {
+    expect(providerFields(false).map((field) => field.key)).toEqual(['name', 'model_name', 'api_base', 'api_key', 'priority']);
+    expect(providerFields(true).map((field) => field.key)).toEqual(['temperature', 'top_p', 'presence_penalty', 'frequency_penalty', 'seed', 'reasoning_effort', 'thinking', 'combine']);
+    expect(providerFields(false, false).every((field) => field.adminOnly !== true)).toBe(true);
   });
 
   it('reads a provider back into controls, including the switches', () => {
@@ -38,13 +49,9 @@ describe('provider form', () => {
     });
 
     expect(values.temperature).toBe(0.7);
-    // A value the provider carries wins over the form default.
     expect(values.reasoning_effort).toBe('low');
-    // The two switches hold booleans; only the request body spells them out.
     expect(values.thinking).toBe(true);
     expect(values.combine).toBe(true);
-    // `api_key` is write-only: the DTO never carries it, so the control is blank
-    // whatever key the provider stores.
     expect(values.api_key).toBe('');
   });
 
@@ -52,7 +59,6 @@ describe('provider form', () => {
     const values = toProviderFormValues({ id: 'provider-1', model_name: 'kimi-k3' });
 
     expect(values.temperature).toBe('');
-    // The select has no empty option, so it falls back to its default instead.
     expect(values.reasoning_effort).toBe('high');
     expect(values.thinking).toBe(false);
     expect(values.combine).toBe(false);
@@ -64,6 +70,18 @@ describe('provider form', () => {
 
     const on = toProviderRequestBody(toProviderFormValues({ model_name: 'kimi-k3', thinking: 'enabled' }));
     expect(on.thinking).toBe('enabled');
+  });
+
+  it('reads the public flag back as a switch', () => {
+    expect(toProviderFormValues({ model_name: 'kimi-k3', is_public: true }).is_public).toBe(true);
+    expect(toProviderFormValues({ model_name: 'kimi-k3' }).is_public).toBe(false);
+  });
+
+  it('only sends the public flag for a superuser', () => {
+    const shared = toProviderFormValues({ model_name: 'kimi-k3', api_base: 'https://api.moonshot.cn/v1', priority: 1, is_public: true });
+    shared.api_key = 'sk-x';
+    expect(toProviderRequestBody(shared, true).is_public).toBe(true);
+    expect(toProviderRequestBody(shared, false).is_public).toBeUndefined();
   });
 
   it('omits empty parameters but keeps the required ones, the switches and the defaulted select', () => {
@@ -87,7 +105,6 @@ describe('provider form', () => {
     expect(firstMissingRequiredField(blank)?.key).toBe('model_name');
 
     const zero = toProviderFormValues({ model_name: 'kimi-k3', api_base: 'https://api.moonshot.cn/v1', priority: 0 });
-    // A create has to name the key; an edit cannot, so the same form passes.
     expect(firstMissingRequiredField(zero)?.key).toBe('api_key');
     zero.api_key = 'sk-x';
     expect(firstMissingRequiredField(zero)).toBeUndefined();
@@ -97,14 +114,11 @@ describe('provider form', () => {
   it('stops requiring the write-only key once the dialog edits a provider', () => {
     const editing = toProviderFormValues({ model_name: 'kimi-k3', api_base: 'https://api.moonshot.cn/v1', priority: 1 });
 
-    // The control is still rendered — a caller may rotate the key — but on an
-    // edit it reads back blank and is no longer flagged as required.
-    const key = providerFields(false, false).find((field) => field.key === 'api_key');
+    const key = providerFields(false, false, false).find((field) => field.key === 'api_key');
     expect(key?.writeOnly).toBe(true);
     expect(key?.required).not.toBe(true);
-    expect(providerFields(false, true).find((field) => field.key === 'api_key')?.required).toBe(true);
-    // A blank key stays out of the body, which the API reads as "keep it".
-    expect(toProviderRequestBody(editing).api_key).toBeUndefined();
+    expect(providerFields(false, false, true).find((field) => field.key === 'api_key')?.required).toBe(true);
+    expect(toProviderRequestBody(editing, false).api_key).toBeUndefined();
   });
 
   it('falls back to model_name when a provider has no name', () => {
@@ -114,9 +128,9 @@ describe('provider form', () => {
 });
 
 describe('provider priority order', () => {
-  const first = { id: 'provider-1', name: 'first', priority: 1 };
-  const second = { id: 'provider-2', name: 'second', priority: 2 };
-  const third = { id: 'provider-3', name: 'third', priority: 3 };
+  const first = { id: 'provider-1', name: 'first', priority: 1, owned: true };
+  const second = { id: 'provider-2', name: 'second', priority: 2, owned: true };
+  const third = { id: 'provider-3', name: 'third', priority: 3, owned: true };
 
   it('sorts lowest priority first and treats a missing one as zero', () => {
     const order = sortProvidersByPriority([third, first, { id: 'provider-0', name: 'unset' }, second]);
@@ -125,12 +139,12 @@ describe('provider priority order', () => {
 
   it('swaps the two priorities when a row trades places with its neighbour', () => {
     expect(providerPriorityWrites([first, second, third], 2, -1)).toEqual([
-      { id: 'provider-3', priority: 2 },
-      { id: 'provider-2', priority: 3 },
+      { id: 'provider-3', priority: 2, owned: true },
+      { id: 'provider-2', priority: 3, owned: true },
     ]);
     expect(providerPriorityWrites([first, second, third], 0, 1)).toEqual([
-      { id: 'provider-1', priority: 2 },
-      { id: 'provider-2', priority: 1 },
+      { id: 'provider-1', priority: 2, owned: true },
+      { id: 'provider-2', priority: 1, owned: true },
     ]);
   });
 
@@ -140,21 +154,49 @@ describe('provider priority order', () => {
   });
 
   it('renumbers when the neighbours share a priority, so the move still happens', () => {
-    // A swap between equal values would change nothing, so the whole list is
-    // renumbered 1..n in the swapped order instead.
     const tied = [
-      { id: 'provider-1', name: 'first', priority: 1 },
-      { id: 'provider-2', name: 'second', priority: 1 },
-      { id: 'provider-3', name: 'third', priority: 2 },
+      { id: 'provider-1', name: 'first', priority: 1, owned: true },
+      { id: 'provider-2', name: 'second', priority: 1, owned: true },
+      { id: 'provider-3', name: 'third', priority: 2, owned: true },
     ];
 
     expect(providerPriorityWrites(tied, 1, -1)).toEqual([
-      { id: 'provider-1', priority: 2 },
-      { id: 'provider-3', priority: 3 },
+      { id: 'provider-1', priority: 2, owned: true },
+      { id: 'provider-3', priority: 3, owned: true },
+    ]);
+  });
+
+  it('orders a shared row through the caller own override, not the owners field', () => {
+    const mine = { id: 'provider-1', name: 'mine', priority: 1, owned: true };
+    const shared = { id: 'provider-2', name: 'shared', priority: 2, owned: false };
+
+    expect(providerPriorityWrites([mine, shared], 1, -1)).toEqual([
+      { id: 'provider-2', priority: 1, owned: false },
+      { id: 'provider-1', priority: 2, owned: true },
     ]);
   });
 
   it('writes nothing when a row has no id to address', () => {
     expect(providerPriorityWrites([{ name: 'first', priority: 1 }, second], 0, 1)).toEqual([]);
+  });
+
+  it('reaches the same endpoint when one number is typed instead of traded', () => {
+    expect(providerPriorityWrite({ id: 'provider-1', owned: true }, 4)).toEqual({ id: 'provider-1', priority: 4, owned: true });
+    expect(providerPriorityWrite({ id: 'provider-2', owned: false }, 4)).toEqual({ id: 'provider-2', priority: 4, owned: false });
+    expect(providerPriorityWrite({ owned: true }, 4)).toBeUndefined();
+  });
+
+  it('reads one field spec by key for the dialog that edits a single value', () => {
+    expect(providerField('priority')).toEqual({ key: 'priority', control: 'integer', required: true });
+    expect(providerFields(false, false).map((field) => field.key)).toContain(providerField('priority').key);
+  });
+
+  it('checks a single-field dialog against only the fields it edits', () => {
+    const values = toProviderFormValues();
+    expect(firstMissingRequiredField(values)?.key).toBe('model_name');
+    expect(firstMissingRequiredField(values, [providerField('priority')])?.key).toBe('priority');
+
+    values.priority = 0;
+    expect(firstMissingRequiredField(values, [providerField('priority')])).toBeUndefined();
   });
 });

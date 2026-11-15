@@ -15,7 +15,7 @@
 
       <div class="modal-action">
         <button class="btn btn-ghost" @click="emit('cancel')">{{ cancelLabel }}</button>
-        <button class="btn" :class="confirmClass" :disabled="saving" @click="emit('confirm')">
+        <button v-if="!readonly" class="btn" :class="confirmClass" :disabled="saving" @click="emit('confirm')">
           <span v-if="saving" class="loading loading-spinner loading-sm"></span>
           {{ confirmLabel }}
         </button>
@@ -29,7 +29,7 @@ withDefaults(
   defineProps<{
     title: string;
     description?: string;
-    confirmLabel: string;
+    confirmLabel?: string;
     cancelLabel: string;
     /** Styles the confirm action, e.g. btn-error for a destructive dialog. */
     confirmClass?: string;
@@ -40,8 +40,9 @@ withDefaults(
      * out in columns and would be cramped at the default width.
      */
     boxClass?: string;
+    readonly?: boolean;
   }>(),
-  { description: '', confirmClass: 'btn-primary', saving: false, wide: false, boxClass: '' },
+  { description: '', confirmLabel: '', confirmClass: 'btn-primary', saving: false, wide: false, boxClass: '', readonly: false },
 );
 
 const emit = defineEmits<{

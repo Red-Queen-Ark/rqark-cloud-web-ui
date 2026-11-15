@@ -45,12 +45,12 @@
           </li> -->
         </ul>
 
-        <div v-if="manageItems.length > 0" class="border-base-300 shrink-0 border-t p-2">
+        <div v-if="manageItem" class="border-base-300 shrink-0 border-t p-2">
           <ul class="menu menu-md w-full flex-nowrap gap-1 p-0">
-            <li v-for="item in manageItems" :key="item.pageId">
-              <RouterLink :to="{ name: item.pageId, params: { lang: route.params.lang as string } }" :class="{ 'menu-active': isActive(item) }" :data-testid="`sidebar-${item.pageId}-link`">
-                <component :is="item.icon" class="h-4 w-4" />
-                {{ t(item.i18nKey) }}
+            <li>
+              <RouterLink :to="{ name: manageItem.pageId, params: { lang: route.params.lang as string } }" :class="{ 'menu-active': isActive(manageItem) }" data-testid="sidebar-manage-link">
+                <component :is="manageItem.icon" class="h-4 w-4" />
+                {{ t(manageItem.i18nKey) }}
               </RouterLink>
             </li>
           </ul>
@@ -73,7 +73,7 @@ import BoltIcon from '@/components/svg/BoltIcon.vue';
 import ListIcon from '@/components/svg/ListIcon.vue';
 import { useAuthStore } from '@/stores/authStore';
 import type { SiderItem } from '@/config/siderbar';
-import { siderItemsFor, siderItemFor } from '@/config/siderbar';
+import { siderItemFor } from '@/config/siderbar';
 import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
@@ -92,8 +92,10 @@ const { t } = useI18n();
 const drawerToggle = ref<HTMLInputElement | null>(null);
 const drawerId = computed(() => `${props.buttonLabel}-drawer`);
 const appName = import.meta.env.VITE_APP_NAME || 'App';
-const manageItems = computed(() => siderItemsFor('manage').filter((item) => !item.superuserOnly || authStore.user?.is_superuser === true));
-// const visibleItems = computed(() => props.items.filter((item) => !item.superuserOnly || authStore.user?.is_superuser === true));
+const manageItem = computed(() => {
+  const item = siderItemFor('manage');
+  return item && (!item.superuserOnly || authStore.user?.is_superuser === true) ? item : undefined;
+});
 
 // The drawer overlays the page on small screens, so navigating has to dismiss
 // it. The checkbox is uncontrolled: the hamburger label toggles it natively.

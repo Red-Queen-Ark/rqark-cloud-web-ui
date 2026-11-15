@@ -36,5 +36,11 @@ export const providers = {
     reasoning_effort: '推理強度',
     thinking: '思考模式',
     combine: '合併',
+    api_keyKeep: '留空即保留原本個密鑰',
+    is_public: '公用',
   },
+  public: '公用',
+  publicHint: '公用供應商個個用戶都用得，但淨係你可以改佢啲欄位。',
+  setOrder: '設定次序',
+  setOrderHint: '設定 {name} 喺你自己 list 嘅位置。只會改你揀 provider 嘅次序，provider 本身仍然係擁有者嘅。',
 };

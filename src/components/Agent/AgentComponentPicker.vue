@@ -4,8 +4,8 @@
 
     <ul class="space-y-1">
       <li v-for="row in rows" :key="row.name">
-        <label class="flex cursor-pointer items-center gap-2">
-          <input :id="`${idPrefix}-${row.name}`" data-testid="agent-component-toggle" type="checkbox" class="checkbox checkbox-sm" :checked="row.checked" @change="toggle(row.name, $event)" />
+        <label class="flex items-center gap-2" :class="readonly ? 'cursor-default' : 'cursor-pointer'">
+          <input :id="`${idPrefix}-${row.name}`" data-testid="agent-component-toggle" type="checkbox" class="checkbox checkbox-sm" :checked="row.checked" :disabled="readonly" @change="toggle(row.name, $event)" />
           <span class="font-medium">{{ row.name }}</span>
           <span v-if="!row.spec" class="badge badge-ghost badge-xs">{{ t('agents.unknownComponent') }}</span>
         </label>
@@ -15,8 +15,24 @@
           <div v-if="row.spec && row.spec.params.length > 0" class="mt-2 ml-6 space-y-2">
             <label v-for="param in row.spec.params" :key="param.key" class="fieldset">
               <span class="fieldset-legend">{{ param.key }}</span>
-              <textarea v-if="param.multiline" :id="`${idPrefix}-${row.name}-${param.key}`" :value="paramValue(row.name, param.key)" class="textarea w-full" rows="3" @input="setParam(row.name, param.key, $event)"></textarea>
-              <input v-else :id="`${idPrefix}-${row.name}-${param.key}`" :type="param.secret ? 'password' : 'text'" class="input w-full" :value="paramValue(row.name, param.key)" @input="setParam(row.name, param.key, $event)" />
+              <textarea
+                v-if="param.multiline"
+                :id="`${idPrefix}-${row.name}-${param.key}`"
+                :value="paramValue(row.name, param.key)"
+                class="textarea w-full"
+                rows="3"
+                :disabled="readonly"
+                @input="setParam(row.name, param.key, $event)"
+              ></textarea>
+              <input
+                v-else
+                :id="`${idPrefix}-${row.name}-${param.key}`"
+                :type="param.secret ? 'password' : 'text'"
+                class="input w-full"
+                :value="paramValue(row.name, param.key)"
+                :disabled="readonly"
+                @input="setParam(row.name, param.key, $event)"
+              />
             </label>
           </div>
 
@@ -27,9 +43,17 @@
               kind="prompts"
               :label="t('agents.nestedPrompts')"
               :id-prefix="`${idPrefix}-${row.name}-prompts`"
+              :readonly="readonly"
               @update:model-value="updateNested(row.name, 'prompts', $event)"
             />
-            <AgentComponentPicker :model-value="nestedRefs(row.name, 'tools')" kind="tools" :label="t('agents.nestedTools')" :id-prefix="`${idPrefix}-${row.name}-tools`" @update:model-value="updateNested(row.name, 'tools', $event)" />
+            <AgentComponentPicker
+              :model-value="nestedRefs(row.name, 'tools')"
+              kind="tools"
+              :label="t('agents.nestedTools')"
+              :id-prefix="`${idPrefix}-${row.name}-tools`"
+              :readonly="readonly"
+              @update:model-value="updateNested(row.name, 'tools', $event)"
+            />
           </div>
 
           <!-- Unknown entry: keep the params opaque so a newer engine's config survives. -->
@@ -46,13 +70,17 @@ import { agentCatalogue, createAgentComponentRef, findAgentComponent } from '@/c
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 
-const props = defineProps<{
-  modelValue: AgentComponentRef[];
-  kind: AgentComponentKind;
-  label: string;
-  /** Namespaces the control ids so nested pickers stay unique on the page. */
-  idPrefix: string;
-}>();
+const props = withDefaults(
+  defineProps<{
+    modelValue: AgentComponentRef[];
+    kind: AgentComponentKind;
+    label: string;
+    /** Namespaces the control ids so nested pickers stay unique on the page. */
+    idPrefix: string;
+    readonly?: boolean;
+  }>(),
+  { readonly: false },
+);
 
 const emit = defineEmits<{
   'update:model-value': [value: AgentComponentRef[]];

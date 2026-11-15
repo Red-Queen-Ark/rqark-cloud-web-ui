@@ -30,4 +30,8 @@ export const agents = {
   nameRequired: '请输入智能助理名称',
   loadError: '无法加载智能助理',
   saveError: '无法保存智能助理',
+  view: '查看',
+  public: '公用',
+  publicHint: '公用智能助理所有用户都能使用，但只有你可以修改它的字段。',
+  close: '关闭',
 };

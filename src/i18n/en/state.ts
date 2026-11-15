@@ -1,0 +1,51 @@
+export const agentState = {
+  title: 'Agent State',
+  subtitle: 'The board each agent carries into its next turn.',
+  hint: 'Pick an agent to read the board it was last given. It is overwritten in full every turn, so this is what the agent knows right now, not a history.',
+  autoUpdate: 'Update every turn',
+  autoUpdateHint: 'Off: the agent stops rewriting the board after each turn, so it keeps what it already holds.',
+  toggleError: 'Could not change the setting',
+
+  loading: 'Loading',
+  loadError: 'Could not load agents',
+  empty: 'No agents found.',
+  emptyDesc: 'A board appears once an agent has one and is assigned to it.',
+
+  agent: 'Agent',
+  description: 'Description',
+  created: 'Created',
+  actions: 'Actions',
+  view: 'State',
+
+  pickAgent: 'Pick an agent to read its board.',
+  pickAgentDesc: 'The board is what the agent is told at the start of every turn.',
+
+  boardLoading: 'Loading the state board',
+  boardError: 'Could not load the state board',
+  noState: 'This agent has no state board yet.',
+  noStateDesc: 'The first turn that changes something writes one, or you can write one here.',
+
+  version: 'Version {version}',
+  source: 'Source',
+  updatedAt: 'Updated',
+
+  edit: 'Edit',
+  editTitle: 'Edit the state board',
+  editDescription: 'Written in full, replacing what is there. The agent reads it at the start of every turn.',
+  content: 'Board',
+  contentPlaceholder: '## Now\n\n- What is being worked on\n- What is still open',
+  charCount: '{count} / {max}',
+  contentRequired: 'The board cannot be empty. Delete it instead.',
+  contentTooLong: 'The board is at most {max} characters.',
+  save: 'Save',
+  cancel: 'Cancel',
+  saved: 'State board saved',
+  saveError: 'Could not save the state board',
+  conflict: 'Another writer changed the board first, so this edit was not saved. The newer board is shown.',
+
+  delete: 'Delete',
+  deleteTitle: 'Delete the state board',
+  deleteConfirm: 'The agent starts the next turn with no board. Nothing brings the old one back.',
+  deleteError: 'Could not delete the state board',
+  deleted: 'State board deleted',
+};

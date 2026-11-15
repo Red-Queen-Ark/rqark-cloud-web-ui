@@ -9,8 +9,8 @@ test('a superuser reaches the manage page from the sidebar', async ({ page }) =>
   await page.getByTestId('sidebar-manage-link').click();
 
   await expect(page).toHaveURL(/\/en\/manage$/);
-  await expect(page.getByTestId('manage-page')).toBeVisible();
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Manage');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Dashboard');
+  await expect(page.getByTestId('manage-sidebar-agents-link')).toBeVisible();
 });
 
 test('a plain user does not see the manage link', async ({ page }) => {

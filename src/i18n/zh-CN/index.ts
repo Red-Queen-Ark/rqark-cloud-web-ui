@@ -23,6 +23,10 @@ import { workspace } from './workspace';
 import { tasks } from './tasks';
 import { todos } from './todos';
 import { manage } from './manage';
+import { agentDefaults } from './agentDefaults';
+import { memory } from './memory';
+import { agentState } from './state';
+import { sops } from './sops';
 
 export const basis = {
   common,
@@ -50,4 +54,8 @@ export const basis = {
   tasks,
   todos,
   manage,
+  agentDefaults,
+  memory,
+  agentState,
+  sops,
 };

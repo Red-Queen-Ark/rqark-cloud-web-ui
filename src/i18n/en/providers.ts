@@ -36,5 +36,11 @@ export const providers = {
     reasoning_effort: 'Reasoning effort',
     thinking: 'Thinking',
     combine: 'Combine',
+    api_keyKeep: 'Leave blank to keep the stored key',
+    is_public: 'Public',
   },
+  public: 'Public',
+  publicHint: 'A public provider can be used by every user, but only you can change its fields.',
+  setOrder: 'Set order',
+  setOrderHint: 'The place {name} takes in your own list. Only the order you use providers in changes; the provider itself stays with its owner.',
 };

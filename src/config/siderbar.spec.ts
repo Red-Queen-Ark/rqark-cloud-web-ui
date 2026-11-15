@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { siderItemsFor, siderItemFor } from './siderbar';
+import { manageSiderItemFor, manageSiderItems } from './manageSiderbar';
+import { siderItemFor } from './siderbar';
 
 describe('siderItemFor', () => {
   it('matches a page by its own route name', () => {
@@ -17,19 +18,29 @@ describe('siderItemFor', () => {
   });
 });
 
-describe('siderItemsFor', () => {
-  it('keeps the console entry in its own block', () => {
-    const manage = siderItemsFor('manage');
+describe('manageSiderItems', () => {
+  it('lists the console pages once each', () => {
+    const ids = manageSiderItems.map((item) => item.pageId);
 
-    expect(manage.map((item) => item.pageId)).toEqual(['manage']);
-    expect(manage[0].superuserOnly).toBe(true);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(ids).toContain('agents');
+    expect(ids).toContain('manageSettings');
   });
 
-  it('treats an entry without a section as a main entry', () => {
-    const main = siderItemsFor('main').map((item) => item.pageId);
+  it('keeps the account pages to superusers', () => {
+    expect(manageSiderItems.find((item) => item.pageId === 'users')?.superuserOnly).toBe(true);
+    expect(manageSiderItems.find((item) => item.pageId === 'groups')?.superuserOnly).toBe(true);
+    expect(manageSiderItems.find((item) => item.pageId === 'agents')?.superuserOnly).toBeUndefined();
+  });
+});
 
-    expect(main).toContain('workspace');
-    expect(main).toContain('settings');
-    expect(main).not.toContain('manage');
+describe('manageSiderItemFor', () => {
+  it('names the list a detail page was opened from', () => {
+    expect(manageSiderItemFor('sessionDetail')?.pageId).toBe('sessions');
+    expect(manageSiderItemFor('memoryDetail')?.pageId).toBe('memory');
+  });
+
+  it('leaves the main navigation alone', () => {
+    expect(manageSiderItemFor('tasks')).toBeUndefined();
   });
 });

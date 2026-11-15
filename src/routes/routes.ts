@@ -17,7 +17,20 @@ import TaskPage from '@/pages/TaskPage.vue';
 import TaskDetailPage from '@/pages/TaskDetailPage.vue';
 import TaskSessionPage from '@/pages/TaskSessionPage.vue';
 import TodoPage from '@/pages/TodoPage.vue';
-import ManagePage from '@/pages/ManagePage.vue';
+import ManageHomePage from '@/pages/manage/HomePage.vue';
+import ManageAgentPage from '@/pages/manage/AgentPage.vue';
+import ManageAgentDefaultPage from '@/pages/manage/AgentDefaultPage.vue';
+import ManageProviderPage from '@/pages/manage/ProviderPage.vue';
+import ManageSessionPage from '@/pages/manage/SessionPage.vue';
+import ManageSessionDetailPage from '@/pages/manage/SessionDetailPage.vue';
+import ManageMemoryPage from '@/pages/manage/MemoryPage.vue';
+import ManageMemoryDetailPage from '@/pages/manage/MemoryDetailPage.vue';
+import ManageAgentStatePage from '@/pages/manage/AgentStatePage.vue';
+import ManageSopPage from '@/pages/manage/SopPage.vue';
+import ManageApiKeysPage from '@/pages/manage/ApiKeysPage.vue';
+import ManageUsersPage from '@/pages/manage/UsersPage.vue';
+import ManageGroupsPage from '@/pages/manage/GroupsPage.vue';
+import ManageSettingsPage from '@/pages/manage/SettingsPage.vue';
 
 const routes = [
   {
@@ -91,7 +104,22 @@ const routes = [
       {
         path: '',
         component: LangLayout,
-        children: [{ path: '', component: ManagePage, name: 'manage', meta: { superuserOnly: true } }],
+        children: [
+          { path: '', component: ManageHomePage, name: 'manage', meta: { superuserOnly: true } },
+          { path: 'agents', component: ManageAgentPage, name: 'agents' },
+          { path: 'agent-defaults', component: ManageAgentDefaultPage, name: 'agentDefaults' },
+          { path: 'providers', component: ManageProviderPage, name: 'providers' },
+          { path: 'sessions', component: ManageSessionPage, name: 'sessions' },
+          { path: 'sessions/:uuid', component: ManageSessionDetailPage, name: 'sessionDetail' },
+          { path: 'memory', component: ManageMemoryPage, name: 'memory' },
+          { path: 'memory/:uuid', component: ManageMemoryDetailPage, name: 'memoryDetail' },
+          { path: 'agent-state', component: ManageAgentStatePage, name: 'agentState' },
+          { path: 'sops', component: ManageSopPage, name: 'sops' },
+          { path: 'api-keys', component: ManageApiKeysPage, name: 'apiKeys' },
+          { path: 'users', component: ManageUsersPage, name: 'users', meta: { superuserOnly: true } },
+          { path: 'groups', component: ManageGroupsPage, name: 'groups', meta: { superuserOnly: true } },
+          { path: 'settings', component: ManageSettingsPage, name: 'manageSettings' },
+        ],
       },
     ],
   },

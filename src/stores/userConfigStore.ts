@@ -6,6 +6,8 @@ import { defineStore } from 'pinia';
 
 export const THEME_CONFIG_KEY = 'theme';
 export const LANGUAGE_CONFIG_KEY = 'language';
+export const EVENT_LOG_CONFIG_KEY = 'memory.event_log';
+export const STATE_UPDATE_CONFIG_KEY = 'memory.state_update';
 
 export interface ThemePreference {
   family: ThemeFamily;
@@ -44,10 +46,16 @@ export function parseLanguagePreference(value: unknown): string | undefined {
   return value;
 }
 
+export function parseSwitch(value: unknown): boolean {
+  return value !== false;
+}
+
 export const useUserConfigStore = defineStore('userConfigStore', {
   state: () => ({
     theme: undefined as ThemePreference | undefined,
     language: undefined as string | undefined,
+    eventLog: true,
+    stateUpdate: true,
     projectOrder: undefined as string[] | undefined,
     projectOrderSaving: false,
     loaded: false,
@@ -62,6 +70,8 @@ export const useUserConfigStore = defineStore('userConfigStore', {
 
       this.theme = parseThemePreference(data.find((entry) => entry.key === THEME_CONFIG_KEY)?.value);
       this.language = parseLanguagePreference(data.find((entry) => entry.key === LANGUAGE_CONFIG_KEY)?.value);
+      this.eventLog = parseSwitch(data.find((entry) => entry.key === EVENT_LOG_CONFIG_KEY)?.value);
+      this.stateUpdate = parseSwitch(data.find((entry) => entry.key === STATE_UPDATE_CONFIG_KEY)?.value);
       if (!this.projectOrderSaving) {
         this.projectOrder = parseProjectOrder(data.find((entry) => entry.key === PROJECT_ORDER_CONFIG_KEY)?.value);
       }
@@ -87,6 +97,23 @@ export const useUserConfigStore = defineStore('userConfigStore', {
     async saveLanguage(language: string): Promise<void> {
       this.language = language;
       await putUserConfigByKey({ path: { key: LANGUAGE_CONFIG_KEY }, body: { value: toConfigValue(language) } });
+    },
+
+    async saveEventLog(enabled: boolean): Promise<unknown> {
+      return this.saveSwitch(EVENT_LOG_CONFIG_KEY, 'eventLog', enabled);
+    },
+
+    async saveStateUpdate(enabled: boolean): Promise<unknown> {
+      return this.saveSwitch(STATE_UPDATE_CONFIG_KEY, 'stateUpdate', enabled);
+    },
+
+    async saveSwitch(key: string, field: 'eventLog' | 'stateUpdate', enabled: boolean): Promise<unknown> {
+      this[field] = enabled;
+      const { error } = await putUserConfigByKey({ path: { key }, body: { value: toConfigValue(enabled) } });
+      if (error) {
+        this[field] = !enabled;
+      }
+      return error;
     },
 
     async saveProjectOrder(order: readonly string[]): Promise<boolean> {
