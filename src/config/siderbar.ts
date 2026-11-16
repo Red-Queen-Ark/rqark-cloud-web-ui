@@ -12,6 +12,8 @@ export interface SiderItem {
   icon: Component;
   /** Hides the entry from callers that are not superusers. */
   superuserOnly?: boolean;
+  /** Key of the heading the entry is listed under, see `SiderGroup`. */
+  group?: string;
   /**
    * Route names that belong to this entry without being its own page.
    *
@@ -20,6 +22,12 @@ export interface SiderItem {
    * the sidebar. Without this the two only match on the exact route name.
    */
   aliases?: string[];
+}
+
+/** A heading in a sidebar, with the entries it collects. */
+export interface SiderGroup {
+  key: string;
+  i18nKey: string;
 }
 
 export const siderItems: SiderItem[] = [

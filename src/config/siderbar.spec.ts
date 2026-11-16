@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { manageSiderItemFor, manageSiderItems } from './manageSiderbar';
+import { groupManageSiderItems, manageSiderGroups, manageSiderItemFor, manageSiderItems } from './manageSiderbar';
 import { siderItemFor } from './siderbar';
 
 describe('siderItemFor', () => {
@@ -42,5 +42,29 @@ describe('manageSiderItemFor', () => {
 
   it('leaves the main navigation alone', () => {
     expect(manageSiderItemFor('tasks')).toBeUndefined();
+  });
+});
+
+describe('groupManageSiderItems', () => {
+  it('files every entry under a declared heading', () => {
+    const keys = manageSiderGroups.map((group) => group.key);
+
+    for (const item of manageSiderItems) {
+      expect(keys).toContain(item.group);
+    }
+  });
+
+  it('keeps the declared heading order and the entry order inside it', () => {
+    const sections = groupManageSiderItems(manageSiderItems);
+
+    expect(sections.map((section) => section.group.key)).toEqual(['overview', 'agents', 'memory', 'operations', 'access', 'system']);
+    expect(sections.find((section) => section.group.key === 'memory')?.items.map((item) => item.pageId)).toEqual(['memory', 'agentState']);
+  });
+
+  it('drops a heading whose entries were all filtered out', () => {
+    const withoutAccounts = manageSiderItems.filter((item) => item.superuserOnly !== true);
+    const keys = groupManageSiderItems(withoutAccounts).map((section) => section.group.key);
+
+    expect(keys).not.toContain('access');
   });
 });

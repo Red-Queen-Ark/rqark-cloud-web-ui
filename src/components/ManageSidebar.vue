@@ -13,14 +13,19 @@
           <span class="truncate text-lg font-bold tracking-tight">{{ appName }}</span>
         </div>
 
-        <ul class="menu menu-md w-full flex-nowrap scrollbar-thin flex-1 gap-1 overflow-x-hidden overflow-y-auto p-2">
-          <li v-for="item in visibleItems" :key="item.pageId">
-            <RouterLink :to="{ name: item.pageId, params: { lang: route.params.lang as string } }" :class="{ 'menu-active': isActive(item) }" :data-testid="`manage-sidebar-${item.pageId}-link`">
-              <component :is="item.icon" class="h-4 w-4" />
-              {{ t(item.i18nKey) }}
-            </RouterLink>
-          </li>
-        </ul>
+        <div class="scrollbar-thin flex flex-1 flex-col gap-3 overflow-x-hidden overflow-y-auto p-2">
+          <div v-for="section in sections" :key="section.group.key" :data-testid="`manage-sidebar-group-${section.group.key}`">
+            <p class="px-2 pb-1 text-xs font-semibold tracking-wide uppercase opacity-60">{{ t(section.group.i18nKey) }}</p>
+            <ul class="menu menu-md w-full flex-nowrap gap-1 p-0">
+              <li v-for="item in section.items" :key="item.pageId">
+                <RouterLink :to="{ name: item.pageId, params: { lang: route.params.lang as string } }" :class="{ 'menu-active': isActive(item) }" :data-testid="`manage-sidebar-${item.pageId}-link`">
+                  <component :is="item.icon" class="h-4 w-4" />
+                  {{ t(item.i18nKey) }}
+                </RouterLink>
+              </li>
+            </ul>
+          </div>
+        </div>
 
         <div class="border-base-300 shrink-0 border-t p-2">
           <ul class="menu menu-md w-full flex-nowrap gap-1 p-0">
@@ -47,7 +52,7 @@
 import ChatIcon from '@/components/svg/ChatIcon.vue';
 import LogoutIcon from '@/components/svg/LogoutIcon.vue';
 import type { SiderItem } from '@/config/siderbar';
-import { manageSiderItemFor, manageSiderItems } from '@/config/manageSiderbar';
+import { groupManageSiderItems, manageSiderItemFor, manageSiderItems } from '@/config/manageSiderbar';
 import { useAuthStore } from '@/stores/authStore';
 import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
@@ -65,6 +70,7 @@ const drawerId = computed(() => `${props.buttonLabel}-drawer`);
 const appName = import.meta.env.VITE_APP_NAME || 'App';
 
 const visibleItems = computed(() => manageSiderItems.filter((item) => !item.superuserOnly || authStore.user?.is_superuser === true));
+const sections = computed(() => groupManageSiderItems(visibleItems.value));
 
 watch(
   () => route.fullPath,
