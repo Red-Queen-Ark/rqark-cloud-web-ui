@@ -7,6 +7,8 @@ export const usage = {
   to: '至',
   apiKey: 'API Key',
   apiKeyAll: '全部',
+  source: '來源',
+  sourceAll: '全部來源',
   user: '用戶',
   userAll: '全部用戶',
   clear: '清除篩選條件',

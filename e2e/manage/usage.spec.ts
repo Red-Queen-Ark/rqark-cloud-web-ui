@@ -22,9 +22,9 @@ function localNoon(daysAgo: number): string {
 }
 
 const bossRows: MockUsageLog[] = [
-  { created_at: localNoon(1), prompt_tokens: 1000, completion_tokens: 200, cached_tokens: 600, api_key_name: 'laptop', user_id: boss.id },
-  { created_at: localNoon(1), prompt_tokens: 500, completion_tokens: 100, api_key_name: 'phone', user_id: boss.id },
-  { created_at: localNoon(2), prompt_tokens: 300, completion_tokens: 50, cached_tokens: 150, api_key_name: 'laptop', user_id: boss.id },
+  { created_at: localNoon(1), prompt_tokens: 1000, completion_tokens: 200, cached_tokens: 600, api_key_name: 'laptop', source: 'AGENT_CLOUD', user_id: boss.id },
+  { created_at: localNoon(1), prompt_tokens: 500, completion_tokens: 100, api_key_name: 'phone', source: 'TUI', user_id: boss.id },
+  { created_at: localNoon(2), prompt_tokens: 300, completion_tokens: 50, cached_tokens: 150, api_key_name: 'laptop', source: 'TASK', user_id: boss.id },
 ];
 
 test('sums the tokens and requests of the selected range', async ({ page }) => {
@@ -79,6 +79,27 @@ test('the API key filter narrows the totals', async ({ page }) => {
 
   await expect(page.getByTestId('usage-total-tokens')).toHaveText('2,150');
   await expect(page.getByTestId('usage-api-key')).toHaveValue('');
+});
+
+test('the source filter narrows the totals and clear resets it', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await mockBackend(page, { session: boss, apiKeys: [laptopKey], usage: bossRows });
+  await seedSession(page);
+
+  await page.goto('/en/manage/usage');
+  await waitForShellStyles(page);
+
+  await expect(page.getByTestId('usage-source').locator('option')).toHaveText(['All sources', 'AGENT_CLOUD', 'TUI', 'TASK', 'DESKTOP']);
+
+  await page.getByTestId('usage-source').selectOption('TUI');
+
+  await expect(page.getByTestId('usage-total-tokens')).toHaveText('600');
+  await expect(page.getByTestId('usage-requests')).toHaveText('1');
+
+  await page.getByTestId('usage-clear').click();
+
+  await expect(page.getByTestId('usage-source')).toHaveValue('');
+  await expect(page.getByTestId('usage-total-tokens')).toHaveText('2,150');
 });
 
 test('the user filter is only offered to a superuser and defaults to the caller', async ({ page }) => {

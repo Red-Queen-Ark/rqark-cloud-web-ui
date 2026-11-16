@@ -30,6 +30,14 @@
         </select>
       </label>
 
+      <label class="fieldset">
+        <span class="fieldset-legend">{{ t('usage.source') }}</span>
+        <select id="usage-source" v-model="source" data-testid="usage-source" class="select select-sm" @change="load">
+          <option value="">{{ t('usage.sourceAll') }}</option>
+          <option v-for="name in USAGE_SOURCES" :key="name" :value="name">{{ name }}</option>
+        </select>
+      </label>
+
       <label v-if="isSuperuser" class="fieldset">
         <span class="fieldset-legend">{{ t('usage.user') }}</span>
         <select id="usage-user" v-model="userId" data-testid="usage-user" class="select select-sm" @change="load">
@@ -90,6 +98,7 @@ import { getApiKeys, getUsers, postUsage } from '@/api';
 import { useApiError } from '@/composables/useApiError';
 import { useAlertStore } from '@/stores/alertStore';
 import { useAuthStore } from '@/stores/authStore';
+import { USAGE_SOURCES } from '@/config/usageSources';
 import { bucketUsage, dateInputValue, formatPercent, formatTokens, parseDateInput, rangeFor, rangeFromDates, summarize, USAGE_RANGE_PRESETS, type UsageRange, type UsageRangePreset } from '@/utils/usage';
 import { computed, defineAsyncComponent, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -108,6 +117,7 @@ const rangePreset = ref<UsageRangePreset>('thisMonth');
 const customFrom = ref(dateInputValue(new Date(now.getFullYear(), now.getMonth(), 1)));
 const customTo = ref(dateInputValue(now));
 const apiKeyName = ref('');
+const source = ref('');
 const userId = ref('');
 
 const apiKeys = ref<{ name: string }[]>([]);
@@ -184,6 +194,9 @@ async function load() {
   if (apiKeyName.value) {
     body.api_key_name = apiKeyName.value;
   }
+  if (source.value) {
+    body.source = source.value;
+  }
   if (isSuperuser.value && userId.value) {
     body.user_id = userId.value;
   }
@@ -205,6 +218,7 @@ function clearFilters() {
   customFrom.value = dateInputValue(new Date(now.getFullYear(), now.getMonth(), 1));
   customTo.value = dateInputValue(now);
   apiKeyName.value = '';
+  source.value = '';
   userId.value = authStore.user?.id ?? '';
   userInitialised = true;
   void load();
