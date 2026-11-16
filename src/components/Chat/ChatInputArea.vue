@@ -179,6 +179,7 @@ import { useSpeechAvailability } from '@/composables/useSpeechAvailability';
 import { canRecord, useRecorder } from '@/composables/useRecorder';
 import { canStream, useVoiceStream } from '@/composables/useVoiceStream';
 import { useAlertStore } from '@/stores/alertStore';
+import { isTouchPrimaryInput } from '@/utils/pointer';
 import SlashCommandPanel from '@/components/Chat/SlashCommandPanel.vue';
 import FileMentionPanel from '@/components/Chat/FileMentionPanel.vue';
 import BoltIcon from '@/components/svg/BoltIcon.vue';
@@ -736,7 +737,9 @@ function handleKeydown(e: KeyboardEvent) {
     }
   }
 
-  if (e.key === 'Enter' && !e.shiftKey) {
+  // On a touch keyboard Enter is the only newline key there is, so it breaks the
+  // line and the send button sends; a hardware keyboard keeps Enter as send.
+  if (e.key === 'Enter' && !e.shiftKey && !isTouchPrimaryInput()) {
     e.preventDefault();
     submit();
   }

@@ -133,6 +133,48 @@ describe('ChatInputArea', () => {
     expect(wrapper.emitted('submit')?.[0]).toEqual([{ content: 'hello', agent: 'researcher', provider: 'openai', images: [], project: null }]);
   });
 
+  it('sends the turn on Enter from a hardware keyboard', async () => {
+    const wrapper = mountArea();
+    const input = wrapper.get('[data-testid="chat-input"]');
+
+    input.element.textContent = 'hello';
+    await input.trigger('input');
+    await input.trigger('keydown', { key: 'Enter' });
+
+    expect(wrapper.emitted('submit')?.[0]).toEqual([{ content: 'hello', agent: 'researcher', provider: 'openai', images: [], project: null }]);
+  });
+
+  it('leaves Enter as a newline on a touch keyboard', async () => {
+    vi.stubGlobal(
+      'matchMedia',
+      (query: string) =>
+        ({
+          matches: query === '(pointer: coarse)',
+          media: query,
+          onchange: null,
+          addListener: vi.fn(),
+          removeListener: vi.fn(),
+          addEventListener: vi.fn(),
+          removeEventListener: vi.fn(),
+          dispatchEvent: vi.fn(),
+        }) as unknown as MediaQueryList,
+    );
+    try {
+      const wrapper = mountArea();
+      const input = wrapper.get('[data-testid="chat-input"]');
+
+      input.element.textContent = 'hello';
+      await input.trigger('input');
+      const event = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true });
+      input.element.dispatchEvent(event);
+
+      expect(event.defaultPrevented).toBe(false);
+      expect(wrapper.emitted('submit')).toBeUndefined();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   async function attach(wrapper: ReturnType<typeof mountArea>, files: File[]) {
     const input = wrapper.get('[data-testid="chat-image-input"]');
     Object.defineProperty(input.element, 'files', { value: files, configurable: true });
