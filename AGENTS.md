@@ -1,5 +1,8 @@
 # AGENTS.md
 
+## Contributing
+> Issue、commit、PR、release、版本號一律跟 `CONTRIBUTING.md`。
+
 ## General Rules
 
 - 你寫代碼不要寫注解，AI Agent 寫注解太丑，如果發現有注解都是主人寫的。
