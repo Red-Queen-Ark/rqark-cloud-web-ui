@@ -1,0 +1,7 @@
+import { AGENT_CLOUD_SOURCE, TUI_SOURCE } from '@/config/sessionSources';
+
+export const TASK_USAGE_SOURCE = 'TASK';
+
+export const DESKTOP_USAGE_SOURCE = 'DESKTOP';
+
+export const USAGE_SOURCES = [AGENT_CLOUD_SOURCE, TUI_SOURCE, TASK_USAGE_SOURCE, DESKTOP_USAGE_SOURCE] as const;
