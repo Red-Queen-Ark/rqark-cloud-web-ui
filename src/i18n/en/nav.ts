@@ -4,4 +4,12 @@ export const nav = {
   switchLanguage: 'Switch language',
   language: 'Language',
   account: 'Account menu',
+  group: {
+    overview: 'Overview',
+    agents: 'Agents',
+    memory: 'Memory',
+    operations: 'Operations',
+    access: 'Access',
+    system: 'System',
+  },
 };
