@@ -165,6 +165,7 @@ export type ApiCreateProviderRequest = {
 };
 
 export type ApiCreateSessionRequest = {
+    agent_id?: string;
     plan_items?: Array<RepositorySessionPlanItem>;
     project_id?: string;
     source?: string;
@@ -374,6 +375,7 @@ export type ApiSearchMemoryRequest = {
 };
 
 export type ApiSessionDto = {
+    agent_id?: string;
     created_at?: string;
     id?: string;
     plan_items?: Array<RepositorySessionPlanItem>;
@@ -526,6 +528,7 @@ export type ApiUpdateProviderRequest = {
 };
 
 export type ApiUpdateSessionRequest = {
+    agent_id?: string;
     history?: Array<{
         [key: string]: unknown;
     }>;

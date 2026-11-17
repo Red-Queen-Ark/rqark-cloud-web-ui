@@ -13,7 +13,7 @@
       <ChatInputArea
         ref="inputArea"
         :agents="chatSocket.agentNames"
-        :initial-agent="chatStore.agentFor(sessionId)"
+        :initial-agent="chatStore.agentFor(sessionId) ?? chatSocket.sessionAgentName"
         :default-agent="chatSocket.defaultAgent"
         :providers="chatSocket.providers"
         :projects="projectStore.sorted"

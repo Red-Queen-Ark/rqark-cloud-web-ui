@@ -330,6 +330,36 @@ describe('useChatSocket', () => {
     expect(chatSocket.planItems).toEqual([{ id: 'p1', content: 'Draft the plan', status: 'completed' }]);
   });
 
+  it('resolves the agent the session was talked to with to its name', async () => {
+    (api.getSessionsByUuid as Mock).mockResolvedValue({ data: { id: 'session-a', plan_items: [], agent_id: 'agent-1' } });
+
+    const chatSocket = openChat(ref('session-a'));
+    await chatSocket.load();
+
+    expect(chatSocket.sessionAgentName).toBe('researcher');
+  });
+
+  it('holds no session agent when the session names one the listing lost', async () => {
+    (api.getSessionsByUuid as Mock).mockResolvedValue({ data: { id: 'session-a', plan_items: [], agent_id: 'agent-gone' } });
+
+    const chatSocket = openChat(ref('session-a'));
+    await chatSocket.load();
+
+    expect(chatSocket.sessionAgentName).toBe('');
+  });
+
+  it('forgets the session agent when there is no session', async () => {
+    const sessionId = ref<string | undefined>('session-a');
+    (api.getSessionsByUuid as Mock).mockResolvedValue({ data: { id: 'session-a', plan_items: [], agent_id: 'agent-1' } });
+    const chatSocket = openChat(sessionId);
+    await chatSocket.load();
+
+    sessionId.value = undefined;
+    await flushPromises();
+
+    expect(chatSocket.sessionAgentName).toBe('');
+  });
+
   it('replaces the plan when the engine pushes a new one', async () => {
     const chatSocket = openChat(ref('session-a'));
     await chatSocket.load();
