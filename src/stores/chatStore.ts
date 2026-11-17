@@ -29,9 +29,10 @@ export const useChatStore = defineStore('chatStore', {
      * The agent each chat was last sent to, keyed by session id.
      *
      * The picker lives in a component that is remounted on every navigation
-     * (starting a chat from the home page lands on a new one), and nothing on
-     * the wire says which agent a session belongs to, so without this the
-     * picker falls back to the first agent the moment a turn is submitted.
+     * (starting a chat from the home page lands on a new one), so a turn sent
+     * during this page load is recorded here to bring the picker back to the
+     * agent it used. A session this page load has not talked to yet comes up on
+     * the agent the cloud stored for it, which the chat socket reads.
      */
     sessionAgents: {} as Record<string, string>,
     /**

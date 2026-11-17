@@ -45,6 +45,8 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
   // The agent the user picked as the default for this source, by name, or '' when
   // the source holds none that can still be used.
   const defaultAgent = ref('');
+  const sessionAgentId = ref('');
+  const sessionAgentName = computed(() => agentNameById(agents.value, sessionAgentId.value || undefined));
   const providers = ref<ApiProviderSummaryDto[]>([]);
   const ws = shallowRef<WebSocket>();
   const status = ref<ChatStatus>('idle');
@@ -172,15 +174,18 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
     if (!id) {
       replace([]);
       planItems.value = [];
+      sessionAgentId.value = '';
       return;
     }
     // Two endpoints by design: the messages endpoint answers with nothing else,
-    // and the session endpoint is where the plan is kept. Neither is optional.
+    // and the session endpoint is where the plan and the agent are kept. Neither
+    // is optional.
     const [messagesResult, sessionResult] = await Promise.all([getSessionsByUuidMessages({ path: { uuid: id } }), getSessionsByUuid({ path: { uuid: id } })]);
     if (messagesResult.data) {
       replace(messagesResult.data as unknown as ChatHistoryEntry[]);
     }
     planItems.value = planItemsFrom(sessionResult.data?.plan_items);
+    sessionAgentId.value = sessionResult.data?.agent_id ?? '';
   }
 
   function replace(messages: ChatHistoryEntry[]) {
@@ -521,6 +526,7 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
     agents,
     agentNames,
     defaultAgent,
+    sessionAgentName,
     providers,
     status,
     loading,

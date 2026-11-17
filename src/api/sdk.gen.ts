@@ -1591,7 +1591,7 @@ export const postUsage = <ThrowOnError extends boolean = false>(options?: Option
 /**
  * List user config
  *
- * Returns all of the caller's config entries, ordered by key. Not paginated: the app treats them as one local config file and syncs the whole set at once.
+ * Returns all of the caller's config entries, ordered by key. Not paginated: the app treats them as one local config file and syncs the whole set at once. Entries the account has never set are stored with their default before the list is returned, so the memory switches come back explicitly off instead of missing.
  */
 export const getUserConfig = <ThrowOnError extends boolean = false>(options?: Options<GetUserConfigData, ThrowOnError>) => {
     return (options?.client ?? client).get<GetUserConfigResponses, GetUserConfigErrors, ThrowOnError>({
