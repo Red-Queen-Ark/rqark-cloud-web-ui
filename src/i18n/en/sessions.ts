@@ -18,6 +18,7 @@ export const sessions = {
     user: 'User',
     assistant: 'Assistant',
     tool: 'Tool',
+    summary: 'Summary',
   },
   title: 'Sessions',
   subtitle: 'Conversation sessions kept under your account.',
