@@ -51,6 +51,7 @@ export const chat = {
   toolCount: '{count} 個工具',
   details: '詳情',
   thinking: '思考',
+  summary: '壓縮摘要',
   toolRunning: '執行緊…',
   showAllLines: '顯示其餘 {count} 行',
   scrollToBottom: '去返最新',

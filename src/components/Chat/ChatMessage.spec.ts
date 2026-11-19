@@ -39,6 +39,10 @@ function assistant(seq: number, content: string): ChatHistoryEntry {
   return { seq, role: 'assistant', data: { role: 'assistant', content, created_at }, created_at };
 }
 
+function summary(seq: number, content: string): ChatHistoryEntry {
+  return { seq, role: 'summary', data: { role: 'summary', content }, created_at: null };
+}
+
 function revertibleFlags(wrapper: ReturnType<typeof mountMessages>): (boolean | undefined)[] {
   return wrapper.findAllComponents({ name: 'UserMessage' }).map((component) => (component.props() as { revertible?: boolean }).revertible);
 }
@@ -150,6 +154,40 @@ describe('ChatMessage', () => {
     await wrapper.setProps({ messages: [user(0, 'one', 'm1'), user(2, 'two again', 'm2')] });
 
     expect(dialog()).not.toBeNull();
+  });
+});
+
+describe('ChatMessage summary', () => {
+  it('renders a summary with a label and its content', () => {
+    const wrapper = mountMessages([user(0, 'hi', 'm1'), assistant(1, 'hello'), summary(2, 'The early turns were folded away')]);
+
+    const row = wrapper.get('[data-testid="summary-message"]');
+    expect(row.get('[data-testid="summary-label"]').text()).toContain(i18n.global.t('chat.summary'));
+    expect(row.text()).toContain('The early turns were folded away');
+  });
+
+  it('keeps a summary where it stands between turns', () => {
+    const wrapper = mountMessages([user(0, 'one', 'm1'), assistant(1, 'first'), summary(2, 'folded'), user(3, 'two', 'm2'), assistant(4, 'second')]);
+
+    const order = Array.from((wrapper.element as Element).querySelectorAll('[data-testid="user-message"], [data-testid="summary-message"], [data-testid="turn-answer"]')).map((node) => node.getAttribute('data-testid'));
+    expect(order).toEqual(['user-message', 'turn-answer', 'summary-message', 'user-message', 'turn-answer']);
+  });
+
+  it('starts a fresh turn after a summary instead of joining the one before it', () => {
+    // An assistant row after a summary with no user row before it cannot belong
+    // to the earlier turn, or the answer would be stitched across the boundary.
+    const wrapper = mountMessages([user(0, 'one', 'm1'), assistant(1, 'first'), summary(2, 'folded'), assistant(3, 'second')]);
+
+    expect(wrapper.findAllComponents({ name: 'TurnGroup' })).toHaveLength(2);
+    expect(wrapper.findAll('[data-testid="turn-answer"]').map((node) => node.text())).toEqual(['first', 'second']);
+  });
+
+  it('streams the last turn even when a summary follows it', () => {
+    const messages = [user(0, 'one', 'm1'), assistant(1, 'first'), summary(2, 'folded'), user(3, 'two', 'm2'), assistant(4, 'second')];
+    const wrapper = mount(ChatMessage, { props: { messages, busy: true, streamingFromSeq: undefined }, global: { plugins: [i18n] } });
+
+    const flags = wrapper.findAllComponents({ name: 'TurnGroup' }).map((component) => (component.props() as { streaming?: boolean }).streaming);
+    expect(flags).toEqual([false, true]);
   });
 });
 

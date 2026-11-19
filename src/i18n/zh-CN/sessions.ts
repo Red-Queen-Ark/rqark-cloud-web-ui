@@ -18,6 +18,7 @@ export const sessions = {
     user: '用户',
     assistant: '助手',
     tool: '工具',
+    summary: '摘要',
   },
   title: 'Sessions',
   subtitle: '存储在你账号下的对话 Session。',

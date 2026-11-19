@@ -51,6 +51,7 @@ export const chat = {
   toolCount: '{count} tools',
   details: 'Details',
   thinking: 'Thinking',
+  summary: 'Compressed summary',
   toolRunning: 'Running…',
   showAllLines: 'Show all {count} more lines',
   scrollToBottom: 'Scroll to the latest',
