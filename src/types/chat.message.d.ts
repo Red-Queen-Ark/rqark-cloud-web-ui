@@ -23,7 +23,6 @@ interface ChatToolCallsChunk {
   type: 'tool_calls';
   content: ChatToolCall[];
 }
-/** Server asking the client to push a fresh data cloud token; control, not content. */
 interface ChatTokenRequiredChunk {
   type: 'token_required';
   content: string;

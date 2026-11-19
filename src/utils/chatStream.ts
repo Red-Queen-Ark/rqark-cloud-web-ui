@@ -18,7 +18,6 @@ export function chatPayloadError(payload: ChatPayload): string | null {
   return payload.content;
 }
 
-/** True for the frame that asks this client for a fresh data cloud token. */
 export function chatTokenRequired(payload: ChatPayload): boolean {
   return !Array.isArray(payload) && 'type' in payload && payload.type === 'token_required';
 }
