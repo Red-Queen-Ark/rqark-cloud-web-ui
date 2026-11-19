@@ -123,13 +123,6 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
     }
   }
 
-  /**
-   * The server was answered 401 by the data cloud and cannot rotate the pair
-   * itself: the refresh token lives here. Refreshing unconditionally is the
-   * point — the token the server rejects can still look valid on this clock,
-   * and passing the "is it near expiry" test would send the same token back and
-   * leave the running turn blocked until it gives up.
-   */
   async function answerTokenRequest(): Promise<void> {
     await renewAccessToken(true);
     pushToken();
@@ -484,10 +477,6 @@ export function useChatSocket(sessionId: MaybeRefOrGetter<ChatSessionId>) {
     () => load(),
   );
 
-  // A pair rotated by another tab, or by this one outside this socket's own
-  // timer, leaves the server holding the token the connection was opened with.
-  // Pushing it here is what stops a second session from running on a burned
-  // token until the server gives up on it.
   watch(
     () => authStore.accessToken,
     (token) => {
