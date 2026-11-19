@@ -2,7 +2,9 @@
   "name": "rqark-agent-cloud-web-ui",
   "private": true,
   "version": "0.26.1",
+  "description": "The web console for the RQArk Ecology System: chat, agents, tasks and workspaces, with a desktop shell",
   "license": "MIT",
+  "author": "RedQueenArk",
   "type": "module",
   "scripts": {
     "generate-assets": "mkdir -p public/apple-splash/v4/landscape public/apple-splash/v4/portrait && bunx pwa-assets-generator --config pwa-assets.config.js && node scripts/ios-splash-links.mjs",
