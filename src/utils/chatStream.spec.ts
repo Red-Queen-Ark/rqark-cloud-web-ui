@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyChatPayload, chatPayloadError, chatPlanItems, chatTurnDone, openChatStream } from './chatStream';
+import { applyChatPayload, chatPayloadError, chatPlanItems, chatTokenRequired, chatTurnDone, openChatStream } from './chatStream';
 
 const at = '2026-05-06T07:08:09Z';
 
@@ -20,6 +20,19 @@ describe('chatPayloadError', () => {
     expect(chatPayloadError({ type: 'content', content: 'hi' })).toBeNull();
     expect(chatPayloadError(tool)).toBeNull();
     expect(chatPayloadError([{ id: '1', content: 'step', status: 'pending', icon: ' ' }])).toBeNull();
+  });
+});
+
+describe('chatTokenRequired', () => {
+  it('recognises the frame that asks for a fresh token', () => {
+    expect(chatTokenRequired({ type: 'token_required', content: '' })).toBe(true);
+  });
+
+  it('leaves every other payload alone', () => {
+    expect(chatTokenRequired({ type: 'content', content: 'hi' })).toBe(false);
+    expect(chatTokenRequired({ type: 'error', content: 'boom' })).toBe(false);
+    expect(chatTokenRequired(tool)).toBe(false);
+    expect(chatTokenRequired([{ id: '1', content: 'step', status: 'pending', icon: ' ' }])).toBe(false);
   });
 });
 

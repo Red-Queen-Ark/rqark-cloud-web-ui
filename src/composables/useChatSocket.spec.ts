@@ -661,8 +661,50 @@ describe('useChatSocket', () => {
     expect(socket.sent).toEqual([JSON.stringify({ kind: 'token', token: useAuthStore().accessToken })]);
   });
 
-  it('renews the token when the socket rejects it', async () => {
-    vi.useFakeTimers();
+  it('renews and pushes the token when the server asks for one, even though this clock says it is valid', async () => {
+    useAuthStore().setTokens(validToken(), 'refresh-token');
+
+    const chatSocket = openChat(ref('session-a'));
+    await chatSocket.load();
+    const socket = FakeSocket.instances[0] as FakeSocket;
+    socket.open();
+    (refreshSession as Mock).mockClear();
+
+    socket.onmessage?.({ data: JSON.stringify(envelope({ type: 'token_required', content: '' })) });
+    await flushPromises();
+
+    // The server refuses a token this client still believes in: the "near
+    // expiry" test is not the trigger, the request is.
+    expect(refreshSession).toHaveBeenCalledTimes(1);
+    expect(socket.sent).toEqual([JSON.stringify({ kind: 'token', token: useAuthStore().accessToken })]);
+  });
+
+  it('keeps the token request out of the conversation', async () => {
+    const chatSocket = openChat(ref('session-a'));
+    await chatSocket.load();
+    const socket = FakeSocket.instances[0] as FakeSocket;
+    socket.open();
+
+    socket.onmessage?.({ data: JSON.stringify(envelope({ type: 'token_required', content: '' })) });
+    await flushPromises();
+
+    expect(chatSocket.history).toEqual([]);
+    expect(chatSocket.streaming).toBe(false);
+  });
+
+  it('pushes a pair another tab rotated without waiting for its own timer', async () => {
+    const chatSocket = openChat(ref('session-a'));
+    await chatSocket.load();
+    const socket = FakeSocket.instances[0] as FakeSocket;
+    socket.open();
+
+    useAuthStore().adoptTokens({ accessToken: 'other-tab-access', refreshToken: 'other-tab-refresh' });
+    await nextTick();
+
+    expect(socket.sent).toEqual([JSON.stringify({ kind: 'token', token: 'other-tab-access' })]);
+  });
+
+  it('renews the token when the socket rejects it', async () => {    vi.useFakeTimers();
     vi.spyOn(Math, 'random').mockReturnValue(0.5);
 
     const chatSocket = openChat(ref('session-a'));
