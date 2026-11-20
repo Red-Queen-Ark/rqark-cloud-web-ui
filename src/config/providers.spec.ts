@@ -4,8 +4,11 @@ import {
   firstMissingRequiredField,
   providerDisplayName,
   providerField,
+  PROVIDER_HEADERS_EXAMPLE,
+  invalidProviderHeaderVariable,
   parseProviderHeaders,
   providerFields,
+  providerHeaderVariableList,
   providerPriorityWrite,
   providerPriorityWrites,
   sortProvidersByPriority,
@@ -158,6 +161,22 @@ describe('provider form', () => {
     form.headers = '';
 
     expect(toProviderRequestBody(form, false).headers).toEqual({});
+  });
+
+  it('lists the values a header may interpolate', () => {
+    expect(providerHeaderVariableList()).toBe('${session_id}, ${agent_id}, ${user_id}, ${provider_id}, ${model}');
+    expect(PROVIDER_HEADERS_EXAMPLE).toBe('x-opencode-session: ${session_id}');
+  });
+
+  it('accepts a header value built from the known variables', () => {
+    expect(invalidProviderHeaderVariable({ 'x-opencode-session': '${session_id}' })).toBeUndefined();
+    expect(invalidProviderHeaderVariable({ 'X-Trace': 'rqark/${provider_id}/${model}' })).toBeUndefined();
+    expect(invalidProviderHeaderVariable({ 'X-Api-Version': '2024-06-01' })).toBeUndefined();
+  });
+
+  it('reports a placeholder the proxy cannot fill, and one left open', () => {
+    expect(invalidProviderHeaderVariable({ 'x-opencode-session': '${nope}' })).toEqual({ header: 'x-opencode-session', placeholder: '${nope}' });
+    expect(invalidProviderHeaderVariable({ 'x-opencode-session': '${session_id' })).toEqual({ header: 'x-opencode-session', placeholder: '${' });
   });
 
   it('falls back to model_name when a provider has no name', () => {

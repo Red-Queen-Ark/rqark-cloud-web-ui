@@ -3,6 +3,17 @@ import type { ApiCreateProviderRequest, ApiProviderDto } from '@/api';
 export const THINKING_VALUES = { on: 'enabled', off: 'disabled' } as const;
 
 export const REASONING_EFFORTS = ['low', 'high', 'max'] as const;
+/** Values a stored header may interpolate, mirroring the server. */
+export const PROVIDER_HEADER_VARIABLES = ['session_id', 'agent_id', 'user_id', 'provider_id', 'model'] as const;
+
+/** The variables as they are written in a header value, for a hint to list. */
+export function providerHeaderVariableList(): string {
+  return PROVIDER_HEADER_VARIABLES.map((name) => '${' + name + '}').join(', ');
+}
+
+/** An example line, so the placeholder shows the syntax rather than saying it. */
+export const PROVIDER_HEADERS_EXAMPLE = 'x-opencode-session: ${session_id}';
+
 export const REASONING_EFFORT_DEFAULT: (typeof REASONING_EFFORTS)[number] = 'high';
 
 export type ProviderFieldKey = keyof ApiCreateProviderRequest;
@@ -147,6 +158,27 @@ export function parseProviderHeaders(text: string): ParsedProviderHeaders {
   }
 
   return { headers, invalid };
+}
+
+export interface InvalidHeaderVariable {
+  header: string;
+  placeholder: string;
+}
+
+export function invalidProviderHeaderVariable(headers: Record<string, string>): InvalidHeaderVariable | undefined {
+  const known = new Set<string>(PROVIDER_HEADER_VARIABLES);
+
+  for (const [header, value] of Object.entries(headers)) {
+    for (const match of value.matchAll(/\$\{([^}]*)\}/g)) {
+      if (!known.has(match[1])) {
+        return { header, placeholder: match[0] };
+      }
+    }
+    if ((value.match(/\$\{/g) ?? []).length !== (value.match(/\$\{[^}]*\}/g) ?? []).length) {
+      return { header, placeholder: '${' };
+    }
+  }
+  return undefined;
 }
 
 export function providerDisplayName(provider: ApiProviderDto): string {
