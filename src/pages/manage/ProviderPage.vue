@@ -106,7 +106,16 @@
 
         <div class="border-base-300 border-t px-4 py-3">
           <div class="grid grid-cols-1 gap-x-6 gap-y-3 md:grid-cols-2">
-            <ProviderField v-for="field in providerFields(true, isSuperuser, creating)" :key="field.key" v-model="form[field.key]" :field="field" :label="t(`providers.field.${field.key}`)" :hint="fieldHint(field)" @submit="saveProvider" />
+            <ProviderField
+              v-for="field in providerFields(true, isSuperuser, creating)"
+              :key="field.key"
+              v-model="form[field.key]"
+              :field="field"
+              :label="t(`providers.field.${field.key}`)"
+              :hint="fieldHint(field)"
+              :placeholder="fieldPlaceholder(field)"
+              @submit="saveProvider"
+            />
           </div>
         </div>
       </details>
@@ -152,7 +161,11 @@ import { useApiError } from '@/composables/useApiError';
 import type { ProviderFieldSpec, ProviderFormValues, ProviderPriorityWrite } from '@/config/providers';
 import {
   PROVIDER_FIELDS,
+  PROVIDER_HEADERS_EXAMPLE,
   firstMissingRequiredField,
+  invalidProviderHeaderVariable,
+  providerHeaderVariableList,
+  parseProviderHeaders,
   providerDisplayName,
   providerField,
   providerFields,
@@ -186,7 +199,14 @@ const formModal = reactive({ open: false, mode: 'create' as 'create' | 'edit', u
 const creating = computed(() => formModal.mode === 'create');
 
 function fieldHint(field: ProviderFieldSpec): string {
+  if (field.control === 'headers') {
+    return t('providers.field.headersHint', { vars: providerHeaderVariableList() });
+  }
   return field.writeOnly === true && !creating.value ? t('providers.field.api_keyKeep') : '';
+}
+
+function fieldPlaceholder(field: ProviderFieldSpec): string {
+  return field.control === 'headers' ? PROVIDER_HEADERS_EXAMPLE : '';
 }
 const deleteTarget = ref<ApiProviderDto | null>(null);
 
@@ -230,6 +250,18 @@ async function saveProvider() {
   const missing = firstMissingRequiredField(form, PROVIDER_FIELDS, creating.value);
   if (missing) {
     alertStore.addItem({ level: 'warning', message: t('providers.required', { field: t(`providers.field.${missing.key}`) }) });
+    return;
+  }
+
+  const headers = parseProviderHeaders(String(form.headers ?? ''));
+  if (headers.invalid.length > 0) {
+    alertStore.addItem({ level: 'warning', message: t('providers.headersInvalid', { line: headers.invalid[0] }) });
+    return;
+  }
+
+  const badVariable = invalidProviderHeaderVariable(headers.headers);
+  if (badVariable) {
+    alertStore.addItem({ level: 'warning', message: t('providers.headersUnknownVariable', { header: badVariable.header, placeholder: badVariable.placeholder }) });
     return;
   }
 

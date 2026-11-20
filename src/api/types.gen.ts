@@ -152,6 +152,9 @@ export type ApiCreateProviderRequest = {
     api_key?: string;
     combine?: boolean;
     frequency_penalty?: number;
+    headers?: {
+        [key: string]: string;
+    };
     is_public?: boolean;
     model_name?: string;
     name?: string;
@@ -162,6 +165,7 @@ export type ApiCreateProviderRequest = {
     temperature?: number;
     thinking?: string;
     top_p?: number;
+    vendor?: string;
 };
 
 export type ApiCreateSessionRequest = {
@@ -300,6 +304,14 @@ export type ApiProviderDto = {
     combine?: boolean;
     created_at?: string;
     frequency_penalty?: number;
+    /**
+     * Headers are the extra request headers the upstream needs, null when the
+     * owner set none. They are only returned to the owner: a header value can
+     * carry a credential, and a shared provider is readable by other users.
+     */
+    headers?: {
+        [key: string]: string;
+    };
     id?: string;
     is_public?: boolean;
     model_name?: string;
@@ -319,6 +331,10 @@ export type ApiProviderDto = {
     thinking?: string;
     top_p?: number;
     updated_at?: string;
+    /**
+     * Vendor labels a known upstream and is null on a custom endpoint.
+     */
+    vendor?: string;
 };
 
 export type ApiProviderSummaryDto = {
@@ -515,6 +531,9 @@ export type ApiUpdateProviderRequest = {
     api_key?: string;
     combine?: boolean;
     frequency_penalty?: number;
+    headers?: {
+        [key: string]: string;
+    };
     is_public?: boolean;
     model_name?: string;
     name?: string;
@@ -525,6 +544,7 @@ export type ApiUpdateProviderRequest = {
     temperature?: number;
     thinking?: string;
     top_p?: number;
+    vendor?: string;
 };
 
 export type ApiUpdateSessionRequest = {

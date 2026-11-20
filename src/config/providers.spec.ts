@@ -4,7 +4,11 @@ import {
   firstMissingRequiredField,
   providerDisplayName,
   providerField,
+  PROVIDER_HEADERS_EXAMPLE,
+  invalidProviderHeaderVariable,
+  parseProviderHeaders,
   providerFields,
+  providerHeaderVariableList,
   providerPriorityWrite,
   providerPriorityWrites,
   sortProvidersByPriority,
@@ -18,20 +22,20 @@ describe('provider form', () => {
   });
 
   it('shows the required fields up front and hides the rest behind the disclosure', () => {
-    expect(providerFields(false, true).map((field) => field.key)).toEqual(['name', 'model_name', 'api_base', 'api_key', 'priority', 'is_public']);
-    expect(providerFields(true, true).map((field) => field.key)).toEqual(['temperature', 'top_p', 'presence_penalty', 'frequency_penalty', 'seed', 'reasoning_effort', 'thinking', 'combine']);
+    expect(providerFields(false, true).map((field) => field.key)).toEqual(['name', 'model_name', 'api_base', 'vendor', 'api_key', 'priority', 'is_public']);
+    expect(providerFields(true, true).map((field) => field.key)).toEqual(['temperature', 'top_p', 'presence_penalty', 'frequency_penalty', 'seed', 'reasoning_effort', 'thinking', 'combine', 'headers']);
     expect([...providerFields(false, true), ...providerFields(true, true)]).toEqual(PROVIDER_FIELDS);
     expect(providerFields(true, true).every((field) => field.required !== true)).toBe(true);
     expect(
       providerFields(false, true)
         .filter((field) => field.required !== true)
         .map((field) => field.key),
-    ).toEqual(['name', 'is_public']);
+    ).toEqual(['name', 'vendor', 'is_public']);
   });
 
   it('drops the admin-only fields from a non-superuser form', () => {
-    expect(providerFields(false).map((field) => field.key)).toEqual(['name', 'model_name', 'api_base', 'api_key', 'priority']);
-    expect(providerFields(true).map((field) => field.key)).toEqual(['temperature', 'top_p', 'presence_penalty', 'frequency_penalty', 'seed', 'reasoning_effort', 'thinking', 'combine']);
+    expect(providerFields(false).map((field) => field.key)).toEqual(['name', 'model_name', 'api_base', 'vendor', 'api_key', 'priority']);
+    expect(providerFields(true).map((field) => field.key)).toEqual(['temperature', 'top_p', 'presence_penalty', 'frequency_penalty', 'seed', 'reasoning_effort', 'thinking', 'combine', 'headers']);
     expect(providerFields(false, false).every((field) => field.adminOnly !== true)).toBe(true);
   });
 
@@ -97,6 +101,7 @@ describe('provider form', () => {
       reasoning_effort: 'high',
       thinking: 'disabled',
       combine: false,
+      headers: {},
     });
   });
 
@@ -119,6 +124,59 @@ describe('provider form', () => {
     expect(key?.required).not.toBe(true);
     expect(providerFields(false, false, true).find((field) => field.key === 'api_key')?.required).toBe(true);
     expect(toProviderRequestBody(editing, false).api_key).toBeUndefined();
+  });
+
+  it('reads the vendor label back and writes it unchanged', () => {
+    expect(toProviderFormValues({ model_name: 'kimi-k3', vendor: 'moonshot' }).vendor).toBe('moonshot');
+    expect(toProviderFormValues({ model_name: 'kimi-k3' }).vendor).toBe('');
+
+    const form = toProviderFormValues({ model_name: 'kimi-k3', api_base: 'https://api.moonshot.cn/v1', priority: 1 });
+    form.vendor = 'moonshot';
+    expect(toProviderRequestBody(form, false).vendor).toBe('moonshot');
+  });
+
+  it('edits headers as one Name: value per line', () => {
+    const values = toProviderFormValues({
+      model_name: 'kimi-k3',
+      headers: { 'X-Api-Version': '2024-06-01', 'X-Trace': 'on' },
+    });
+
+    expect(values.headers).toBe('X-Api-Version: 2024-06-01\nX-Trace: on');
+    expect(toProviderRequestBody(values, false).headers).toEqual({ 'X-Api-Version': '2024-06-01', 'X-Trace': 'on' });
+  });
+
+  it('keeps a header value that carries a colon', () => {
+    expect(parseProviderHeaders('Referer: https://example.invalid/a:b').headers).toEqual({ Referer: 'https://example.invalid/a:b' });
+  });
+
+  it('reports a header line that is not Name: value', () => {
+    const parsed = parseProviderHeaders('X-Ok: 1\nnot a header\n: blank name');
+    expect(parsed.headers).toEqual({ 'X-Ok': '1' });
+    expect(parsed.invalid).toEqual(['not a header', ': blank name']);
+  });
+
+  it('sends an empty header object so a cleared set is cleared, and nothing else', () => {
+    const form = toProviderFormValues({ model_name: 'kimi-k3', api_base: 'https://api.moonshot.cn/v1', priority: 1 });
+    form.api_key = 'sk-x';
+    form.headers = '';
+
+    expect(toProviderRequestBody(form, false).headers).toEqual({});
+  });
+
+  it('lists the values a header may interpolate', () => {
+    expect(providerHeaderVariableList()).toBe('${session_id}, ${agent_id}, ${user_id}, ${provider_id}, ${model}');
+    expect(PROVIDER_HEADERS_EXAMPLE).toBe('x-opencode-session: ${session_id}');
+  });
+
+  it('accepts a header value built from the known variables', () => {
+    expect(invalidProviderHeaderVariable({ 'x-opencode-session': '${session_id}' })).toBeUndefined();
+    expect(invalidProviderHeaderVariable({ 'X-Trace': 'rqark/${provider_id}/${model}' })).toBeUndefined();
+    expect(invalidProviderHeaderVariable({ 'X-Api-Version': '2024-06-01' })).toBeUndefined();
+  });
+
+  it('reports a placeholder the proxy cannot fill, and one left open', () => {
+    expect(invalidProviderHeaderVariable({ 'x-opencode-session': '${nope}' })).toEqual({ header: 'x-opencode-session', placeholder: '${nope}' });
+    expect(invalidProviderHeaderVariable({ 'x-opencode-session': '${session_id' })).toEqual({ header: 'x-opencode-session', placeholder: '${' });
   });
 
   it('falls back to model_name when a provider has no name', () => {

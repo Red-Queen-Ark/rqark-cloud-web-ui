@@ -1,5 +1,5 @@
 <template>
-  <label class="fieldset min-w-0">
+  <label class="fieldset min-w-0" :class="field.control === 'headers' ? 'md:col-span-2' : ''">
     <span class="fieldset-legend">
       {{ label }}
       <!-- Only the fields the API refuses to create a provider without. -->
@@ -14,6 +14,17 @@
     <select v-else-if="field.control === 'select'" :id="controlId" v-model="model" class="select w-full" :required="field.required === true" @keyup.enter="emit('submit')">
       <option v-for="choice in field.choices" :key="choice" :value="choice">{{ choice }}</option>
     </select>
+
+    <textarea
+      v-else-if="field.control === 'headers'"
+      :id="controlId"
+      :value="String(model)"
+      class="textarea h-24 w-full font-mono text-xs"
+      :placeholder="placeholder"
+      spellcheck="false"
+      @input="onTextInput"
+      @keyup.enter.meta="emit('submit')"
+    ></textarea>
 
     <input
       v-else-if="field.control === 'number' || field.control === 'integer'"
@@ -35,7 +46,7 @@
 import type { ProviderFieldSpec, ProviderFieldValue } from '@/config/providers';
 import { computed } from 'vue';
 
-const props = defineProps<{ field: ProviderFieldSpec; label: string; hint?: string }>();
+const props = defineProps<{ field: ProviderFieldSpec; label: string; hint?: string; placeholder?: string }>();
 
 /** The form value for the field; the parent owns the object it lives in. */
 const model = defineModel<ProviderFieldValue>({ required: true });
@@ -43,6 +54,10 @@ const model = defineModel<ProviderFieldValue>({ required: true });
 const emit = defineEmits<{ submit: [] }>();
 
 const controlId = computed(() => `provider-${props.field.key}`);
+
+function onTextInput(event: Event) {
+  model.value = (event.target as HTMLTextAreaElement).value;
+}
 
 function onNumberInput(event: Event) {
   const raw = (event.target as HTMLInputElement).value;

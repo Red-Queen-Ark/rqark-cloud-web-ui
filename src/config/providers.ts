@@ -3,11 +3,22 @@ import type { ApiCreateProviderRequest, ApiProviderDto } from '@/api';
 export const THINKING_VALUES = { on: 'enabled', off: 'disabled' } as const;
 
 export const REASONING_EFFORTS = ['low', 'high', 'max'] as const;
+/** Values a stored header may interpolate, mirroring the server. */
+export const PROVIDER_HEADER_VARIABLES = ['session_id', 'agent_id', 'user_id', 'provider_id', 'model'] as const;
+
+/** The variables as they are written in a header value, for a hint to list. */
+export function providerHeaderVariableList(): string {
+  return PROVIDER_HEADER_VARIABLES.map((name) => '${' + name + '}').join(', ');
+}
+
+/** An example line, so the placeholder shows the syntax rather than saying it. */
+export const PROVIDER_HEADERS_EXAMPLE = 'x-opencode-session: ${session_id}';
+
 export const REASONING_EFFORT_DEFAULT: (typeof REASONING_EFFORTS)[number] = 'high';
 
 export type ProviderFieldKey = keyof ApiCreateProviderRequest;
 
-export type ProviderFieldControl = 'text' | 'password' | 'number' | 'integer' | 'toggle' | 'select';
+export type ProviderFieldControl = 'text' | 'password' | 'number' | 'integer' | 'toggle' | 'select' | 'headers';
 
 export interface ProviderFieldSpec {
   key: ProviderFieldKey;
@@ -25,6 +36,7 @@ export const PROVIDER_FIELDS: ProviderFieldSpec[] = [
   { key: 'name', control: 'text' },
   { key: 'model_name', control: 'text', required: true },
   { key: 'api_base', control: 'text', required: true },
+  { key: 'vendor', control: 'text' },
   { key: 'api_key', control: 'password', required: true, writeOnly: true },
   { key: 'priority', control: 'integer', required: true },
   { key: 'is_public', control: 'toggle', adminOnly: true },
@@ -36,6 +48,7 @@ export const PROVIDER_FIELDS: ProviderFieldSpec[] = [
   { key: 'reasoning_effort', control: 'select', choices: REASONING_EFFORTS, defaultValue: REASONING_EFFORT_DEFAULT, advanced: true },
   { key: 'thinking', control: 'toggle', switchValues: THINKING_VALUES, advanced: true },
   { key: 'combine', control: 'toggle', advanced: true },
+  { key: 'headers', control: 'headers', advanced: true },
 ];
 
 export function providerFields(advanced: boolean, isSuperuser = false, creating = true): ProviderFieldSpec[] {
@@ -65,6 +78,11 @@ export function toProviderFormValues(provider?: ApiProviderDto): ProviderFormVal
   for (const field of PROVIDER_FIELDS) {
     const value = stored[field.key];
 
+    if (field.control === 'headers') {
+      values[field.key] = formatProviderHeaders(value as Record<string, string> | null | undefined);
+      continue;
+    }
+
     if (field.control !== 'toggle') {
       const unset = value === undefined || value === null || value === '';
       values[field.key] = unset ? (field.defaultValue ?? '') : (value as ProviderFieldValue);
@@ -92,6 +110,11 @@ export function toProviderRequestBody(values: ProviderFormValues, isSuperuser = 
       continue;
     }
 
+    if (field.control === 'headers') {
+      body[field.key] = parseProviderHeaders(String(value ?? '')).headers;
+      continue;
+    }
+
     if (value === '') {
       continue;
     }
@@ -99,6 +122,63 @@ export function toProviderRequestBody(values: ProviderFormValues, isSuperuser = 
   }
 
   return body as ApiCreateProviderRequest;
+}
+
+export function formatProviderHeaders(headers: Record<string, string> | null | undefined): string {
+  if (!headers) {
+    return '';
+  }
+  return Object.keys(headers)
+    .sort()
+    .map((name) => `${name}: ${headers[name]}`)
+    .join('\n');
+}
+
+export interface ParsedProviderHeaders {
+  headers: Record<string, string>;
+  invalid: string[];
+}
+
+export function parseProviderHeaders(text: string): ParsedProviderHeaders {
+  const headers: Record<string, string> = {};
+  const invalid: string[] = [];
+
+  for (const raw of text.split('\n')) {
+    const line = raw.trim();
+    if (line === '') {
+      continue;
+    }
+    const separator = line.indexOf(':');
+    const name = separator === -1 ? '' : line.slice(0, separator).trim();
+    if (separator === -1 || name === '') {
+      invalid.push(line);
+      continue;
+    }
+    headers[name] = line.slice(separator + 1).trim();
+  }
+
+  return { headers, invalid };
+}
+
+export interface InvalidHeaderVariable {
+  header: string;
+  placeholder: string;
+}
+
+export function invalidProviderHeaderVariable(headers: Record<string, string>): InvalidHeaderVariable | undefined {
+  const known = new Set<string>(PROVIDER_HEADER_VARIABLES);
+
+  for (const [header, value] of Object.entries(headers)) {
+    for (const match of value.matchAll(/\$\{([^}]*)\}/g)) {
+      if (!known.has(match[1])) {
+        return { header, placeholder: match[0] };
+      }
+    }
+    if ((value.match(/\$\{/g) ?? []).length !== (value.match(/\$\{[^}]*\}/g) ?? []).length) {
+      return { header, placeholder: '${' };
+    }
+  }
+  return undefined;
 }
 
 export function providerDisplayName(provider: ApiProviderDto): string {
