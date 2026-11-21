@@ -1,0 +1,129 @@
+name: Desktop
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to attach the builds to; leave empty for a generated desktop-<date>-<sha> tag'
+        required: false
+
+concurrency:
+  group: desktop-${{ github.sha }}
+  cancel-in-progress: false
+
+env:
+  BIN_NAME: rqark-cloud-desktop
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      tag: ${{ steps.release.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create the release
+        id: release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SHA: ${{ github.sha }}
+          TAG_INPUT: ${{ inputs.tag }}
+        run: |
+          set -eu
+          tag="${TAG_INPUT:-desktop-$(date -u +%Y%m%d%H%M)-$(echo "$SHA" | cut -c1-7)}"
+
+          if gh release view "$tag" >/dev/null 2>&1; then
+            # A re-run of the same dispatch must not fail on the release the
+            # first run already created; the assets are replaced below.
+            echo "release $tag already exists, reusing it"
+          else
+            # Only version tags are release ranges. A desktop tag is a build
+            # stamp, so it is never used as the base of the next range.
+            prev=$(git describe --tags --abbrev=0 --match 'v*' 2>/dev/null || true)
+            range="$SHA"
+            if [ -n "$prev" ]; then
+              range="$prev..$SHA"
+            fi
+            notes=$(git log --no-merges --pretty='- %s' "$range" | head -n 40 || true)
+            if [ -z "$notes" ]; then
+              notes="Release $tag."
+            fi
+            gh release create "$tag" \
+              --target "$SHA" \
+              --title "$tag" \
+              --prerelease \
+              --notes "$notes"
+          fi
+
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+  windows:
+    needs: prepare
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+          cache: true
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - run: bun install --frozen-lockfile
+
+      - run: DESKTOP_BUILD=true bun run build
+
+      - name: Build the executable
+        run: |
+          mkdir -p bin
+          CGO_ENABLED=0 GOOS=windows GOARCH=amd64 \
+            go build -trimpath -ldflags "-s -w -H windowsgui" \
+            -o "bin/$BIN_NAME.exe" .
+
+      - name: Attach it to the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.prepare.outputs.tag }}
+        run: gh release upload "$TAG" "bin/$BIN_NAME.exe" --clobber
+
+  macos:
+    needs: prepare
+    runs-on: macos-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+          cache: true
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - run: bun install --frozen-lockfile
+
+      # The runner is an arm64 machine, so package-app.sh takes its native
+      # branch: it builds, assembles the bundle and ad-hoc signs it.
+      - name: Build the app bundle
+        run: ./scripts/package-app.sh
+
+      - name: Archive it
+        run: tar -C bin -czf "bin/$BIN_NAME-macos-arm64.tar.gz" "RqArk Cloud Desktop.app"
+
+      - name: Attach it to the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.prepare.outputs.tag }}
+        run: gh release upload "$TAG" "bin/$BIN_NAME-macos-arm64.tar.gz" --clobber
