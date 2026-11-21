@@ -24,9 +24,17 @@ WORKDIR /www
 
 COPY --from=builder /app/dist/ .
 
-# Production build: the nginx config proxies /api to the backend by its compose
-# service name on the shared `rqark-project` network, so this image must be run
-# on that network next to the backend. See nginx.production.conf.
-COPY ./nginx.production.conf /etc/nginx/conf.d/default.conf
+# The nginx entrypoint runs envsubst over every file under /etc/nginx/templates
+# and writes the result to /etc/nginx/conf.d, so the two upstream addresses stay
+# out of the image: a deployment that reaches the backends at other names sets
+# DATA_CLOUD_URL and AGENT_CLOUD_URL and needs no rebuild.
+#
+# The defaults below are the compose service names in this project's own
+# production compose file. They are the values envsubst substitutes when the
+# variables are not set, so an unconfigured container still starts.
+ENV DATA_CLOUD_URL=http://server:7302 \
+    AGENT_CLOUD_URL=http://agent-cloud:8000
+
+COPY ./nginx.production.conf.template /etc/nginx/templates/default.conf.template
 
 EXPOSE 80

@@ -31,30 +31,29 @@ server {
     proxy_buffers 4 32k;
     proxy_busy_buffers_size 64k;
 
-    # API proxy. The backend runs in its own compose project and publishes no
-    # host port, so the only route to it is the shared Docker network
-    # `rqark-project`: this container resolves the backend by its compose
-    # service name, `server`, on that network. Do not switch this to
-    # host.docker.internal, that target only exists in the dev compose file.
+    # API proxy. The target comes from DATA_CLOUD_URL, substituted into this
+    # template by the nginx entrypoint before the server starts. The default in
+    # the image is host.docker.internal, which only exists on Docker Desktop and
+    # only makes sense when the backend runs on the host outside Docker.
     location /api/ {
-        proxy_pass http://server:7302;
+        proxy_pass ${DATA_CLOUD_URL};
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
-    # The chat session lives on the agent cloud, not on the
-    # data cloud above, so it gets its own prefix. The target has to be a name on
-    # the shared `rqark-project` network, the same way the data cloud is reached
-    # as `server`; `agent-cloud` is the service name in that project's dev compose
-    # file. Its container must join `rqark-project` for this to resolve.
-    #
-    # Unlike the data cloud, this one serves a WebSocket: nginx drops the
-    # hop-by-hop upgrade headers unless they are put back, and the default 90s
-    # read timeout would close a chat that is simply waiting for the other side.
+    # The agent cloud is a second service, running in
+    # its own compose project on port 8000. The chat session lives there, not on
+    # the data cloud, so it gets its own prefix instead of riding /api above.
+    # The prefix maps onto the agent cloud's own /api prefix, which keeps the
+    # socket same-origin: no extra port to open in the browser, and it upgrades
+    # to wss by itself when this server is put behind TLS.
     location /agent-api/ {
-        proxy_pass http://agent-cloud:8000/api/;
+        proxy_pass ${AGENT_CLOUD_URL}/api/;
+        # The chat session is a WebSocket: nginx drops the hop-by-hop upgrade
+        # headers unless they are put back, and the default 90s read timeout
+        # would close a chat that is simply waiting for the other side to type.
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
