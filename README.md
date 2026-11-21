@@ -104,9 +104,11 @@ The two `*_BASE_URL` values stay relative on purpose: the web build is proxied b
 
 Both compose files build the image from `docker/dockerfile*` and bake the app in; nginx then serves `dist/` and proxies the two prefixes.
 
-**Development** — `docker compose up -d`, image built from `docker/dockerfile` and `nginx.conf`. That config proxies to `host.docker.internal`, which only exists on Docker Desktop and only makes sense when the backends run on the host outside Docker. It is a development target, not a deployment one.
+The two upstream addresses are not baked into the image. Each dockerfile copies an `*.conf.template` into `/etc/nginx/templates`, and the nginx entrypoint renders it into `/etc/nginx/conf.d/default.conf` at container start. Set `DATA_CLOUD_URL` and `AGENT_CLOUD_URL` and the proxies follow; no rebuild is needed. When they are unset the dockerfile's `ENV` defaults apply — `host.docker.internal` for the development image, `server:7302` and `agent-cloud:8000` for the production one.
 
-**Production** — `docker compose -f docker-compose.production.yml up -d`, image built from `docker/dockerfile.production` and `nginx.production.conf`. This one joins the external network `rqark-project` and resolves the backends by their compose service names, `server` on `7302` and `agent-cloud` on `8000`. Both containers must be on that network; the network must already exist (`docker network create rqark-project`) and the agent cloud container must join it.
+**Development** — `docker compose up -d`, image built from `docker/dockerfile` and `nginx.conf.template`. Its defaults point at `host.docker.internal`, which only exists on Docker Desktop and only makes sense when the backends run on the host outside Docker. It is a development target, not a deployment one.
+
+**Production** — `docker compose -f docker-compose.production.yml up -d`, image built from `docker/dockerfile.production` and `nginx.production.conf.template`. Its defaults resolve the backends by their compose service names on the shared network `rqark-project`. Both containers must be on that network; the network must already exist (`docker network create rqark-project`) and the agent cloud container must join it. A deployment where the backends answer to other names sets the two variables instead of editing the template.
 
 Vite inlines `VITE_*` at build time, so a change needs a rebuild, not a restart. The image fixes `VITE_APP_NAME`, `VITE_APP_DESCRIPTION` and the two base paths itself, in `docker/dockerfile` and `docker/dockerfile.production`; the compose files pass no build arguments. Rename the app in both files and in `.env`, or a local build and the image will disagree.
 
