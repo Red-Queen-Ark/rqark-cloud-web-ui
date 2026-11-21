@@ -61,7 +61,7 @@ export default defineConfig(({ mode }) => {
   // otherwise leaves the literal text in the output, so a missing value used to
   // ship "%VITE_APP_NAME%" as the tab title. Fail the build instead.
   if (mode === 'production' && !appName) {
-    throw new Error('VITE_APP_NAME is not set. Put it in .env for a local build, or pass it as a build arg (see docker/dockerfile).');
+    throw new Error('VITE_APP_NAME is not set. Put it in .env for a local build; the docker images set their own copy (see docker/dockerfile).');
   }
 
   return {

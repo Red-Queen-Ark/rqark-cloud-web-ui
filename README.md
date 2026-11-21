@@ -75,7 +75,7 @@ Start those services first — the app boots to the login page and cannot list a
 
 | Variable                      | Default                                                         | Purpose                                                                                                                |
 | ----------------------------- | --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `VITE_APP_NAME`               | `RqArk Cloud`                                                   | Tab title, PWA manifest name, Apple web app title. Required for a production build.                                    |
+| `VITE_APP_NAME`               | `RqArk Cloud`                                                   | Tab title, PWA manifest name, Apple web app title. The image fixes its own copy; see Docker.                           |
 | `VITE_APP_DESCRIPTION`        | `Console for RQArk Cloud: chats, agents, tasks and workspaces.` | PWA manifest and `<meta name="description">`.                                                                          |
 | `VITE_API_BASE_URL`           | `/api`                                                          | Prefix the generated REST client uses. Keep it relative.                                                               |
 | `VITE_API_PROXY_TARGET`       | `http://localhost:7302`                                         | Dev-only target of the `/api` proxy.                                                                                   |
@@ -108,7 +108,7 @@ Both compose files build the image from `docker/dockerfile*` and bake the app in
 
 **Production** — `docker compose -f docker-compose.production.yml up -d`, image built from `docker/dockerfile.production` and `nginx.production.conf`. This one joins the external network `rqark-project` and resolves the backends by their compose service names, `server` on `7302` and `agent-cloud` on `8000`. Both containers must be on that network; the network must already exist (`docker network create rqark-project`) and the agent cloud container must join it.
 
-Vite inlines the `VITE_*` values, so they are build arguments rather than container environment. Compose reads them from `.env`; `.env` itself stays out of the build context.
+Vite inlines `VITE_*` at build time, so a change needs a rebuild, not a restart. The image fixes `VITE_APP_NAME`, `VITE_APP_DESCRIPTION` and the two base paths itself, in `docker/dockerfile` and `docker/dockerfile.production`; the compose files pass no build arguments. Rename the app in both files and in `.env`, or a local build and the image will disagree.
 
 ## Desktop
 

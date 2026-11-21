@@ -3,14 +3,6 @@ services:
     build:
       context: .
       dockerfile: ./docker/dockerfile
-      # Vite bakes these into index.html and the bundle at build time, so they
-      # are build inputs. Compose reads them from ./.env for the substitution
-      # below; .env never enters the build context (see .dockerignore).
-      args:
-        VITE_APP_NAME: ${VITE_APP_NAME:?VITE_APP_NAME is not set in .env}
-        VITE_APP_DESCRIPTION: ${VITE_APP_DESCRIPTION:-}
-        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-/api}
-        VITE_AGENT_API_BASE_URL: ${VITE_AGENT_API_BASE_URL:-/agent-api}
     container_name: ${PROJECT_NAME}-frontend
     ports:
       - 80:80

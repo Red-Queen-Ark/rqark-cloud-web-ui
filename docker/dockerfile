@@ -8,19 +8,14 @@ RUN bun install --frozen-lockfile
 RUN apt-get update && apt-get install -y --no-install-recommends nodejs && rm -rf /var/lib/apt/lists/*
 
 # Vite substitutes these into index.html and inlines them into the bundle, so
-# they are build inputs, not container environment. They sit after `bun install`
-# so that changing the app name does not invalidate the install layer. Pass them
-# with `--build-arg`, or let compose read them out of .env (docker-compose.yml).
-# .env itself stays out of the build context, which is why the build cannot just
-# read them from disk; see .dockerignore.
-ARG VITE_APP_NAME
-ARG VITE_APP_DESCRIPTION
-ARG VITE_API_BASE_URL
-ARG VITE_AGENT_API_BASE_URL
-ENV VITE_APP_NAME=$VITE_APP_NAME \
-    VITE_APP_DESCRIPTION=$VITE_APP_DESCRIPTION \
-    VITE_API_BASE_URL=$VITE_API_BASE_URL \
-    VITE_AGENT_API_BASE_URL=$VITE_AGENT_API_BASE_URL
+# they are build inputs rather than container environment. They are fixed here
+# rather than taken as build arguments: the image is built once and deployed
+# as-is, and a value the build does not receive is a build that should not
+# succeed. Change the name here and in .env together.
+ENV VITE_APP_NAME="RqArk Cloud" \
+    VITE_APP_DESCRIPTION="Console for RQArk Cloud: chats, agents, tasks and workspaces." \
+    VITE_API_BASE_URL=/api \
+    VITE_AGENT_API_BASE_URL=/agent-api
 RUN bun run build
 
 FROM nginx:1.23.1-alpine
