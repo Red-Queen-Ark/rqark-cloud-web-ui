@@ -1,5 +1,5 @@
 {
-  "name": "rqark-agent-cloud-web-ui",
+  "name": "rqark-cloud-web-ui",
   "private": true,
   "version": "0.27.0",
   "description": "The web console for the RQArk Ecology System: chat, agents, tasks and workspaces, with a desktop shell",

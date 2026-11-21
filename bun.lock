@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "rqark-agent-cloud-web-ui",
+      "name": "rqark-cloud-web-ui",
       "dependencies": {
         "@wailsio/runtime": "3.1.0",
         "chart.js": "^4.6.1",

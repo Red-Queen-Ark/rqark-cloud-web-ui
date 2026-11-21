@@ -1,8 +1,8 @@
-# rqark-agent-cloud-web-ui
+# rqark-cloud-web-ui
 
 The console for the RQArk Ecology System: chat, agents, tasks, todos, workspace and the management pages in one Vue app, which also builds as a desktop client.
 
-## Why rqark-agent-cloud-web-ui
+## Why rqark-cloud-web-ui
 
 `rqark-core` runs one conversation and `rqark-app` keeps it, but neither has a screen. This is that screen: a single page app that talks to two services over one origin, and a Wails shell that wraps the same bundle when a browser is not wanted.
 
@@ -18,7 +18,7 @@ The console for the RQArk Ecology System: chat, agents, tasks, todos, workspace 
 | [`rqark-app`](../rqark-app)                 | Sessions, providers and agents on top of `rqark-core`, with a data cloud for memory, todos and settings. | Nothing directly; it runs behind the agent cloud.                |
 | [`rqark-agent-cloud`](../rqark-agent-cloud) | The HTTP and WebSocket service over `rqark-app`: chats, ASR, voice.                                      | `/agent-api` — the chat socket, `/api/asr`, `/api/voice/ws`.     |
 | [`rqark-data-cloud`](../rqark-data-cloud)   | Accounts, groups, API keys and the stored data, in Go and Postgres.                                      | `/api` — auth, sessions, agents, tasks, todos, workspace, usage. |
-| `rqark-agent-cloud-web-ui`                  | This repository.                                                                                         | —                                                                |
+| `rqark-cloud-web-ui`                        | This repository.                                                                                         | —                                                                |
 
 ## Architecture
 
