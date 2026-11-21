@@ -6,8 +6,8 @@
 set -eu
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
-BIN_NAME="rqark-agent-cloud"
-APP_NAME="RqArk Agent Cloud"
+BIN_NAME="rqark-cloud-desktop"
+APP_NAME="RqArk Cloud Desktop"
 IMAGE=${WAILS_CROSS_IMAGE:-wails-cross}
 GOMOD_VOLUME=${WAILS_CROSS_GOMOD_VOLUME:-rqark-wails-gomod}
 

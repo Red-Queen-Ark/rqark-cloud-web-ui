@@ -17,8 +17,8 @@ func main() {
 	}
 
 	app := application.New(application.Options{
-		Name:        "RqArk Agent Cloud",
-		Description: "Desktop client for RqArk Agent Cloud: chats, agents, tasks and workspaces.",
+		Name:        "RqArk Cloud Desktop",
+		Description: "Desktop client for RQArk Cloud: chats, agents, tasks and workspaces.",
 		Services: []application.Service{
 			application.NewService(settings),
 		},
@@ -32,7 +32,7 @@ func main() {
 	})
 
 	app.Window.NewWithOptions(application.WebviewWindowOptions{
-		Title:            "RqArk Agent Cloud",
+		Title:            "RqArk Cloud Desktop",
 		Width:            1280,
 		Height:           840,
 		MinWidth:         900,

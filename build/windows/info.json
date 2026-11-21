@@ -6,9 +6,9 @@
     "0409": {
       "ProductVersion": "0.12.24",
       "CompanyName": "Carhyme",
-      "FileDescription": "Desktop client for RqArk Agent Cloud — chats, agents, tasks and workspaces.",
+      "FileDescription": "Desktop client for RQArk Cloud — chats, agents, tasks and workspaces.",
       "LegalCopyright": "(c) Carhyme",
-      "ProductName": "RqArk Agent Cloud",
+      "ProductName": "RqArk Cloud Desktop",
       "Comments": "Desktop client"
     }
   }

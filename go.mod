@@ -1,4 +1,4 @@
-module github.com/rqark/agent-cloud-desktop
+module gitea.carhyme.top/RedQueenArk/rqark-cloud-web-ui
 
 go 1.26.0
 

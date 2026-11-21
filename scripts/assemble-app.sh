@@ -7,8 +7,8 @@
 set -eu
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
-APP_NAME="RqArk Agent Cloud"
-BIN_NAME="rqark-agent-cloud"
+APP_NAME="RqArk Cloud Desktop"
+BIN_NAME="rqark-cloud-desktop"
 
 BIN=${1:-"$ROOT/bin/$BIN_NAME"}
 OUT=${2:-"$ROOT/bin/$APP_NAME.app"}

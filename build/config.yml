@@ -4,9 +4,9 @@ version: '3'
 # needs the version; the rest is picked up when a bundle is made.
 info:
   companyName: Carhyme
-  productName: RqArk Agent Cloud
-  productIdentifier: com.rqark.agentcloud
-  description: Desktop client for RqArk Agent Cloud — chats, agents, tasks and workspaces.
+  productName: RqArk Cloud Desktop
+  productIdentifier: com.rqark.clouddesktop
+  description: Desktop client for RQArk Cloud — chats, agents, tasks and workspaces.
   copyright: (c) Carhyme
   comments: Desktop client
   version: 0.12.24

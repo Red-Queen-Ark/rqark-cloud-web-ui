@@ -46,7 +46,7 @@ main.go, apiproxy.go, settings.go   the Wails desktop shell
 - **API** — `src/api` is generated from `VITE_API_SPEC_URL` by `@hey-api/openapi-ts` and must not be edited. `src/api-client` holds everything the generator cannot express: the base URL (relative, never pinned to a host), the `Authorization` header, the single-flight refresh, the ASR calls and the voice WebSocket.
 - **Chat** — `useChatSocket` opens `WS /agent-api/chat/ws/{session uuid}`, merges the replayed history with the streaming turn, and keeps the draft of a turn that has not landed yet.
 - **PWA** — a service worker precaches the shell. It is disabled in the desktop build, where a service worker cannot register.
-- **Desktop** — Wails 3 wraps the bundle and embeds it. `main.go` serves the assets, `apiproxy.go` proxies the two paths, and `settings.go` keeps the backend addresses in a JSON file under the user config directory (`rqark-agent-cloud/server.json`). A fresh install defaults to `http://localhost:7302/api` and `http://localhost:8000/api`.
+- **Desktop** — Wails 3 wraps the bundle and embeds it. `main.go` serves the assets, `apiproxy.go` proxies the two paths, and `settings.go` keeps the backend addresses in a JSON file under the user config directory (`rqark-cloud-desktop/server.json`). A fresh install defaults to `http://localhost:7302/api` and `http://localhost:8000/api`.
 
 ## Requirements
 
@@ -73,16 +73,16 @@ Start those services first — the app boots to the login page and cannot list a
 
 `.env` is committed and holds the values a local checkout needs. Vite inlines `VITE_*` at build time, so changing one needs a rebuild, not just a restart.
 
-| Variable                      | Default                                                                   | Purpose                                                                                                                |
-| ----------------------------- | ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `VITE_APP_NAME`               | `RqArk Agent Cloud`                                                       | Tab title, PWA manifest name, Apple web app title. Required for a production build.                                    |
-| `VITE_APP_DESCRIPTION`        | `Console for the RQArk Agent Cloud: chats, agents, tasks and workspaces.` | PWA manifest and `<meta name="description">`.                                                                          |
-| `VITE_API_BASE_URL`           | `/api`                                                                    | Prefix the generated REST client uses. Keep it relative.                                                               |
-| `VITE_API_PROXY_TARGET`       | `http://localhost:7302`                                                   | Dev-only target of the `/api` proxy.                                                                                   |
-| `VITE_AGENT_API_BASE_URL`     | `/agent-api`                                                              | Prefix for the chat socket and the other agent cloud routes.                                                           |
-| `VITE_AGENT_API_PROXY_TARGET` | `http://localhost:8000`                                                   | Dev-only target of the `/agent-api` proxy.                                                                             |
-| `VITE_API_SPEC_URL`           | `http://localhost:7302/api/swagger.json`                                  | Swagger document `bun run api-client` reads.                                                                           |
-| `DESKTOP_BUILD`               | —                                                                         | `true` makes the build relative-based, drops the service worker, and marks it as the Wails build. Set by the Taskfile. |
+| Variable                      | Default                                                         | Purpose                                                                                                                |
+| ----------------------------- | --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `VITE_APP_NAME`               | `RqArk Cloud`                                                   | Tab title, PWA manifest name, Apple web app title. Required for a production build.                                    |
+| `VITE_APP_DESCRIPTION`        | `Console for RQArk Cloud: chats, agents, tasks and workspaces.` | PWA manifest and `<meta name="description">`.                                                                          |
+| `VITE_API_BASE_URL`           | `/api`                                                          | Prefix the generated REST client uses. Keep it relative.                                                               |
+| `VITE_API_PROXY_TARGET`       | `http://localhost:7302`                                         | Dev-only target of the `/api` proxy.                                                                                   |
+| `VITE_AGENT_API_BASE_URL`     | `/agent-api`                                                    | Prefix for the chat socket and the other agent cloud routes.                                                           |
+| `VITE_AGENT_API_PROXY_TARGET` | `http://localhost:8000`                                         | Dev-only target of the `/agent-api` proxy.                                                                             |
+| `VITE_API_SPEC_URL`           | `http://localhost:7302/api/swagger.json`                        | Swagger document `bun run api-client` reads.                                                                           |
+| `DESKTOP_BUILD`               | —                                                               | `true` makes the build relative-based, drops the service worker, and marks it as the Wails build. Set by the Taskfile. |
 
 The two `*_BASE_URL` values stay relative on purpose: the web build is proxied by the server serving it, and the desktop build by the Go side. That is also why the generated client is configured with `baseUrl: false` — the address is applied at runtime from `src/config/runtime.ts`, so no build pins a host.
 

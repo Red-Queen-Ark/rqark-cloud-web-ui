@@ -8,7 +8,7 @@ on:
         required: false
 
 env:
-  BIN_NAME: rqark-agent-cloud
+  BIN_NAME: rqark-cloud-desktop
 
 jobs:
   prepare:
@@ -122,7 +122,7 @@ jobs:
       - name: Build the app bundle
         run: ./scripts/package-app.sh
       - name: Archive it
-        run: tar -C bin -czf bin/$BIN_NAME-macos-arm64.tar.gz "RqArk Agent Cloud.app"
+        run: tar -C bin -czf bin/$BIN_NAME-macos-arm64.tar.gz "RqArk Cloud Desktop.app"
       - name: Attach it to the release
         env:
           TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -3,7 +3,7 @@ version: '3'
 # The desktop app is built by the Wails CLI, which routes `wails3 build` to the
 # `build` task here so the frontend and the Go side are always built together.
 vars:
-  APP_NAME: rqark-agent-cloud
+  APP_NAME: rqark-cloud-desktop
   BIN_DIR: bin
   GOOS: '{{.GOOS | default OS}}'
   GOARCH: '{{.GOARCH | default ARCH}}'

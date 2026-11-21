@@ -13,7 +13,7 @@ import (
 const (
 	defaultAPIBaseURL      = "http://localhost:7302/api"
 	defaultAgentAPIBaseURL = "http://localhost:8000/api"
-	configDirName          = "rqark-agent-cloud"
+	configDirName          = "rqark-cloud-desktop"
 	configFileName         = "server.json"
 )
 
