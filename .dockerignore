@@ -1,9 +1,12 @@
 node_modules
 dist
 .git
+.github
+.gitea
 .env
 .DS_Store
 *.log
+bin
 .vscode
 .idea
 coverage
