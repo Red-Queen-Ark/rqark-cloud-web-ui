@@ -1,4 +1,4 @@
-module gitea.carhyme.top/RedQueenArk/rqark-cloud-web-ui
+module rqark-cloud-web-ui
 
 go 1.26.0
 
