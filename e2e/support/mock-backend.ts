@@ -272,8 +272,15 @@ export interface MockBackendOptions {
   apiKeys?: MockApiKey[];
   /** Replaces the seeded session list. */
   sessions?: MockSession[];
+  /** Replaces the seeded task list. */
   tasks?: MockTask[];
   taskRuns?: MockTaskRun[];
+  /**
+   * Answers `GET /system/config`, which the login page reads to decide whether
+   * to offer the "create one" link. Absent mirrors a deployment with
+   * self-registration off, and the link is hidden.
+   */
+  allowSelfRegistration?: boolean;
   todos?: MockTodo[];
   userConfig?: Record<string, unknown>;
   /** Seeds the stored default agent per session source, keyed by source. */
@@ -377,22 +384,24 @@ export async function mockSpeech(page_: Page, enabled = true): Promise<void> {
  */
 export async function mockBackend(page_: Page, options: MockBackendOptions = {}): Promise<MockBackend> {
   const session = options.session ?? boss;
+  // Every list is copied, because the write handlers edit a row in place and the
+  // specs share their fixtures between tests: a rename or a tick in one test must
+  // not be visible to the next.
+  const copyRows = <T extends object>(rows: T[] | undefined): T[] => (rows ?? []).map((item) => ({ ...item }));
   const state: MockBackend = {
-    users: options.users ?? [boss, plain, newComer],
-    groups: options.groups ?? [],
-    agents: options.agents ?? [],
-    providers: options.providers ?? [],
-    apiKeys: options.apiKeys ?? [],
-    // Copied, because the PUT handler renames the row in place and the specs
-    // share their session fixtures across tests.
-    sessions: (options.sessions ?? []).map((item) => ({ ...item })),
-    tasks: options.tasks ?? [],
-    taskRuns: options.taskRuns ?? [],
-    todos: options.todos ?? [],
+    users: options.users ? copyRows(options.users) : copyRows([boss, plain, newComer]),
+    groups: copyRows(options.groups),
+    agents: copyRows(options.agents),
+    providers: copyRows(options.providers),
+    apiKeys: copyRows(options.apiKeys),
+    sessions: copyRows(options.sessions),
+    tasks: copyRows(options.tasks),
+    taskRuns: copyRows(options.taskRuns),
+    todos: copyRows(options.todos),
     userConfig: options.userConfig ?? {},
     agentDefaults: normalizeAgentDefaults(options.agentDefaults),
-    sops: options.sops ?? [],
-    memories: options.memories ?? [],
+    sops: copyRows(options.sops),
+    memories: copyRows(options.memories),
     states: options.states ?? [],
     usage: options.usage ?? [],
     projects: options.projects ?? [],
@@ -412,6 +421,10 @@ export async function mockBackend(page_: Page, options: MockBackendOptions = {})
       state.requests.push(`${method} ${path}${url.search}`);
       if (body !== undefined) {
         state.writes.push({ method, path, body });
+      }
+
+      if (path === '/system/config' && method === 'GET') {
+        return json(route, 200, { allow_self_registration: options.allowSelfRegistration === true });
       }
 
       if (path === '/auth/login' && method === 'POST') {

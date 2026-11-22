@@ -180,8 +180,16 @@ describe('ChatInputArea', () => {
     Object.defineProperty(input.element, 'files', { value: files, configurable: true });
     await input.trigger('change');
     await flushPromises();
-    // FileReader resolves off the microtask queue, so give it a macrotask.
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    // A tile exists as soon as the file is picked, so waiting for the tile waits
+    // for nothing. FileReader settles off the microtask queue, so poll until no
+    // tile is still reading rather than betting on one fixed macrotask.
+    for (let attempt = 0; attempt < 100; attempt += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      await flushPromises();
+      if (wrapper.findAll('[data-testid="chat-image-reading"]').length === 0 && wrapper.findAll('[data-testid="chat-image"]').length >= files.length) {
+        return;
+      }
+    }
   }
 
   function imageFile(name = 'a.png', type = 'image/png', bytes = 4) {

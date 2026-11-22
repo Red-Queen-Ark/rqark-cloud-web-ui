@@ -72,8 +72,11 @@ async function scrollTo(page: Page, top: number) {
 function viewportTops(page: Page) {
   return page.evaluate(() => {
     const main = document.querySelector('#app-scroll') as HTMLElement;
+    const dock = document.querySelector('[data-testid="chat-plan-dock"]') as HTMLElement;
     const header = document.querySelector('[data-testid^="turn-activity-"] > summary') as HTMLElement;
-    return { main: main.getBoundingClientRect().top, header: header.getBoundingClientRect().top };
+    // The line holds clear of the plan dock rather than at the very top of the
+    // scroll container, so the dock's height is part of the expected position.
+    return { main: main.getBoundingClientRect().top, dock: dock.offsetHeight, header: header.getBoundingClientRect().top };
   });
 }
 
@@ -82,8 +85,8 @@ test('the worked-for line holds at the top of the chat while its turn is read', 
 
   await scrollTo(page, (await offsetInMain(page, '[data-testid^="turn-activity-"]', 'top')) + 200);
 
-  const { main, header } = await viewportTops(page);
-  expect(Math.abs(header - main)).toBeLessThanOrEqual(1);
+  const { main, dock, header } = await viewportTops(page);
+  expect(Math.abs(header - (main + dock))).toBeLessThanOrEqual(1);
 });
 
 test('the line leaves with its turn rather than hanging over the answer', async ({ page }) => {

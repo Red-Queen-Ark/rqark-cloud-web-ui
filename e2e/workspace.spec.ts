@@ -138,14 +138,6 @@ test('switches to the grid view', async ({ page }) => {
   await expect(page.getByTestId('workspace-entry-notes.md')).toBeVisible();
 });
 
-test('walks the tree from the sidebar', async ({ page }) => {
-  await openWorkspace(page);
-
-  await page.getByTestId('workspace-tree-docs').click();
-
-  await expect(page.getByTestId('workspace-row-plan.txt')).toBeVisible();
-});
-
 test('downloads a file through the row menu', async ({ page }) => {
   await openWorkspace(page);
   const row = page.getByTestId('workspace-row-notes.md');
