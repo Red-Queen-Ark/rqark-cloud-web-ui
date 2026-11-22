@@ -40,6 +40,17 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    - name: Set up Bun
+      uses: oven-sh/setup-bun@v2
+      with:
+        bun-version: 1.4.2
+
+    # main.go embeds all:dist, so the Go side only compiles once the frontend
+    # has been built. Building it here rather than faking the directory also
+    # proves the embed target exists.
+    - name: Build the frontend
+      run: bun install --frozen-lockfile && bun run build
+
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
