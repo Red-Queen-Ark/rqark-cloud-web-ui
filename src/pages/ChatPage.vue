@@ -69,11 +69,16 @@ const dockHeight = ref(160);
 const reverting = ref(false);
 const { pinned, scrollToBottom } = useStickyScroll(history);
 
-const historyStyle = computed<Record<string, string>>(() => ({
-  paddingTop: `${planHeight.value}px`,
-  paddingBottom: `${dockHeight.value}px`,
-  '--chat-sticky-top': `${planHeight.value}px`,
-}));
+const historyStyle = computed<Record<string, string>>(() => {
+  // The loading state is centred in the page, so the docks' padding is dropped:
+  // an uneven top and bottom padding would push the spinner off centre.
+  const style: Record<string, string> = { '--chat-sticky-top': `${planHeight.value}px` };
+  if (!chatSocket.loading) {
+    style.paddingTop = `${planHeight.value}px`;
+    style.paddingBottom = `${dockHeight.value}px`;
+  }
+  return style;
+});
 
 let planObserver: ResizeObserver | undefined;
 let dockObserver: ResizeObserver | undefined;

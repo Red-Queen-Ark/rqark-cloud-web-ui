@@ -88,14 +88,32 @@ describe('RowActionsMenu', () => {
     expect(menu()).toBeNull();
   });
 
-  it('closes when the list scrolls under it rather than hanging over the wrong row', async () => {
+  it('closes when the list scrolls the button under it, rather than hanging over the wrong row', async () => {
     const wrapper = mountMenu();
     await wrapper.get(BUTTON).trigger('click');
+
+    // The button moves with the list it sits in, so the menu anchored to where it
+    // used to be would point at the wrong row.
+    const button = wrapper.get(BUTTON).element as HTMLElement;
+    const rect = button.getBoundingClientRect();
+    button.getBoundingClientRect = () => ({ ...rect, top: rect.top - 40, y: rect.y - 40, toJSON: () => ({}) }) as DOMRect;
 
     window.dispatchEvent(new Event('scroll'));
     await wrapper.vm.$nextTick();
 
     expect(menu()).toBeNull();
+  });
+
+  it('stays open when something else on the page scrolls', async () => {
+    const wrapper = mountMenu();
+    await wrapper.get(BUTTON).trigger('click');
+
+    // The chat history filling in behind the sidebar moves nothing the menu is
+    // anchored to, so closing here would put the menu away for no reason.
+    window.dispatchEvent(new Event('scroll'));
+    await wrapper.vm.$nextTick();
+
+    expect(menu()).not.toBeNull();
   });
 
   it('stops listening once it is gone', async () => {

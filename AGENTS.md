@@ -15,6 +15,12 @@
 - **DaisyUI FIRST** — Use semantic classes (`btn btn-primary`) before raw Tailwind
 - **Styling:** DaisyUI first, Tailwind second（reference: https://daisyui.com/llms.txt）
 
+## Skills
+
+- 修 bug 前先讀 `skills/bug-fix/SKILL.md`，照佢七步行，唔好未重現就改。
+- 改到行為之後，用 `skills/verify-web-ui/SKILL.md` 嘅方式喺真 browser 驗一次，再貼證據落 PR 嘅 `## Verify`。
+- 驗證過新功能，就喺 `verify-web-ui` 嘅 Features 清單加一張卡，免得下一個 agent 重新摸一次。
+
 ## Commands
 
 ```bash

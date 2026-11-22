@@ -70,6 +70,8 @@ const open = ref(false);
 const trigger = ref<HTMLButtonElement | null>(null);
 const menu = ref<HTMLElement | null>(null);
 const box = ref({ top: 0, left: 0, ready: false });
+/** Where the button sat when the menu opened, to tell a move from noise. */
+const anchored = { top: 0, left: 0 };
 
 /**
  * Hangs the menu off the button: below it when that leaves room, above it
@@ -94,6 +96,8 @@ function place() {
     left: Math.max(EDGE, Math.min(button.right - panel.width, window.innerWidth - panel.width - EDGE)),
     ready: true,
   };
+  anchored.top = Math.round(button.top);
+  anchored.left = Math.round(button.left);
 }
 
 async function toggle() {
@@ -139,21 +143,36 @@ function onKeydown(event: KeyboardEvent) {
 }
 
 /**
- * The page scrolling under an open menu would leave it hanging over the wrong
- * row, so it closes instead of following: the list is the thing being read.
+ * A scroll that carries the button with it would leave the menu hanging over the
+ * wrong row, so that closes it. A scroll somewhere else, such as the chat history
+ * filling in behind the sidebar, leaves the button where it is and must not.
  */
+function onScroll() {
+  const button = trigger.value?.getBoundingClientRect();
+
+  if (!button) {
+    return;
+  }
+
+  if (Math.round(button.top) === Math.round(anchored.top) && Math.round(button.left) === Math.round(anchored.left)) {
+    return;
+  }
+
+  void close();
+}
+
 function listen(on: boolean) {
   if (on) {
     document.addEventListener('mousedown', onPointerDown, true);
     document.addEventListener('keydown', onKeydown, true);
-    window.addEventListener('scroll', close, true);
+    window.addEventListener('scroll', onScroll, true);
     window.addEventListener('resize', close, true);
     return;
   }
 
   document.removeEventListener('mousedown', onPointerDown, true);
   document.removeEventListener('keydown', onKeydown, true);
-  window.removeEventListener('scroll', close, true);
+  window.removeEventListener('scroll', onScroll, true);
   window.removeEventListener('resize', close, true);
 }
 

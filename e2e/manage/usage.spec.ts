@@ -143,7 +143,18 @@ test('a custom range with the start after the end is refused rather than queried
   await page.getByTestId('usage-to').fill('2026-11-01');
 
   await expect(page.getByTestId('usage-range-error')).toBeVisible();
-  expect(backend.writes.filter((write) => write.path === '/usage' && (write.body?.from as string | undefined)?.startsWith('2026-11-10'))).toHaveLength(0);
+  // Each field change reloads on its own, so an earlier, still valid pair may
+  // have been queried. What must never happen is a request whose start is after
+  // its end.
+  const inverted = backend.writes.filter((write) => {
+    if (write.path !== '/usage') {
+      return false;
+    }
+    const from = write.body?.from as string | undefined;
+    const to = write.body?.to as string | undefined;
+    return Boolean(from && to && from > to);
+  });
+  expect(inverted).toHaveLength(0);
 });
 
 test('an empty range says so instead of drawing an empty chart', async ({ page }) => {

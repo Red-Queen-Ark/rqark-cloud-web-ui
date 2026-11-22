@@ -640,7 +640,10 @@ test('renews the token before sending a turn the session aged out of', async ({ 
 
   await expect.poll(() => tokens.length).toBe(2);
   expect(tokens[1]).toBe('access-token-1');
-  await expect.poll(() => sent).toEqual([JSON.stringify({ content: 'hello there', provider: 'openai', agent: 'researcher' })]);
+  // The socket is told the renewed token before the turn is sent on it.
+  await expect
+    .poll(() => sent.filter((message) => !message.includes('"kind":"token"')))
+    .toEqual([JSON.stringify({ content: 'hello there', provider: 'openai', agent: 'researcher' })]);
   await expect(input).toBeEmpty();
 });
 

@@ -187,6 +187,9 @@ test('a pin the API refuses is put back rather than left showing', async ({ page
   // `check()` would wait for it to stay on.
   const pin = page.getByTestId('memory-card-pin-memory-1');
   await pin.click();
+  // The revert lands when the refusal does, so wait for the alert that reports
+  // it rather than for the switch: a slow round trip is not a wrong state.
+  await expect(page.getByRole('alert')).toBeVisible({ timeout: 15000 });
   await expect(pin).not.toBeChecked();
   expect(patches).toBe(1);
 });

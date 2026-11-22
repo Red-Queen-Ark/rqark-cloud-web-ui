@@ -21,6 +21,7 @@ test('wrong credentials keep the visitor on the login page', async ({ page }) =>
 });
 
 test('the login page links to register and password recovery', async ({ page }) => {
+  await mockBackend(page, { allowSelfRegistration: true });
   await page.goto('/en/login');
 
   await page.getByRole('link', { name: 'Create one' }).click();
