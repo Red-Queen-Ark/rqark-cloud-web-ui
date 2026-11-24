@@ -11,6 +11,8 @@ export interface PendingTurn {
   projectId?: string | null;
 }
 
+export const NEW_SESSION_DRAFT_KEY = 'new-session';
+
 export const useChatStore = defineStore('chatStore', {
   state: () => ({
     pendingTurn: null as PendingTurn | null,

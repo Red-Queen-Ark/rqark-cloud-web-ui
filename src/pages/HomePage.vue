@@ -17,6 +17,7 @@
         :project="presetProject"
         :status="pingStatus"
         @submit="handleSubmit"
+        @content-change="saveDraft"
       />
     </div>
   </div>
@@ -34,7 +35,7 @@ import { usePingStatus } from '@/composables/usePingStatus';
 import { useVisualViewportInsets } from '@/composables/useVisualViewportInsets';
 import { SESSION_SOURCE } from '@/config/sessionSource';
 import { useAlertStore } from '@/stores/alertStore';
-import { useChatStore } from '@/stores/chatStore';
+import { NEW_SESSION_DRAFT_KEY, useChatStore } from '@/stores/chatStore';
 import { useProjectStore } from '@/stores/projectStore';
 
 const { t } = useI18n();
@@ -66,6 +67,14 @@ const presetProject = computed(() => {
 const inputArea = ref<InstanceType<typeof ChatInputArea> | null>(null);
 const starting = ref(false);
 
+function saveDraft(text: string) {
+  chatStore.setDraft(NEW_SESSION_DRAFT_KEY, text);
+}
+
+function restoreDraft() {
+  inputArea.value?.setText(chatStore.sessionDrafts[NEW_SESSION_DRAFT_KEY] ?? '');
+}
+
 async function handleSubmit(payload: { content: string; agent: string; provider: string; images?: string[]; project?: string | null }) {
   if (starting.value) {
     return;
@@ -81,6 +90,7 @@ async function handleSubmit(payload: { content: string; agent: string; provider:
     }
     chatStore.setPendingTurn({ sessionId: data.id, ...payload });
     inputArea.value?.clear();
+    chatStore.clearDraft(NEW_SESSION_DRAFT_KEY);
     await router.push({ name: 'chat', params: { lang: route.params.lang as string, uuid: data.id } });
   } finally {
     starting.value = false;
@@ -88,6 +98,7 @@ async function handleSubmit(payload: { content: string; agent: string; provider:
 }
 
 onMounted(() => {
+  restoreDraft();
   chatSocket.load();
   // The picker above the input needs the list before the first message; a
   // failure here just leaves it offering only "no project".
