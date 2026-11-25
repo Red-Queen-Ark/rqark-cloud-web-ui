@@ -130,3 +130,34 @@ test('starts on the first agent when the source holds no default', async ({ page
 
   await expect(page.getByTestId('chat-agent-select')).toHaveAttribute('data-value', 'researcher');
 });
+
+test('keeps the draft on the start page when a chat is opened and closed', async ({ page }) => {
+  await mockBackend(page, {
+    session: boss,
+    sessions: [{ id: 'eeeeeeee-1111-4111-8111-eeeeeeeeeeee', title: 'A chat', created_at: '2026-04-05T06:07:08Z', updated_at: '2026-04-08T09:10:11Z' }],
+    agents: [{ id: 'agent-1', name: 'researcher', description: '', created_at: '2026-01-01T00:00:00Z' }],
+    providers: [{ id: 'provider-1', name: 'openai', model_name: 'gpt-5', created_at: '2026-01-01T00:00:00Z' }],
+  });
+  await seedSession(page);
+  await page.routeWebSocket(/\/agent-api\/chat\/ws\//, () => undefined);
+
+  await page.goto('/en');
+  const input = page.getByTestId('chat-input');
+  await expect(input).toBeEnabled();
+  await input.fill('half a thought');
+
+  await page.getByTestId('sidebar-chat-sessions').getByRole('link', { name: 'A chat' }).click();
+  await expect(page).toHaveURL(/\/en\/chat\//);
+  await page.getByTestId('sidebar-chat-new').click();
+  await expect(page).toHaveURL(/\/en$/);
+
+  await expect(input).toHaveText('half a thought');
+
+  await page.reload();
+  await expect(input).toHaveText('half a thought');
+
+  await page.getByTestId('chat-send').click();
+  await expect(page).toHaveURL(/\/en\/chat\//);
+  await page.getByTestId('sidebar-chat-new').click();
+  await expect(input).toBeEmpty();
+});

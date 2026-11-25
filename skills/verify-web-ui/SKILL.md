@@ -82,6 +82,15 @@ not rediscover it. Add to this list when you verify something new.
   `main.top`. The loading state drops that padding on purpose, to centre the
   spinner in the page.
 
+### Start page composer
+
+- **Sub-features:** the draft the new-session composer keeps.
+- **How to get to it (user POV):** sidebar → New Session (`sidebar-chat-new`).
+- **Driving it:** `e2e/home.spec.ts`, the "keeps the draft on the start page"
+  case. Type on `/en`, open a chat, click New Session, then reload.
+- **Gotchas:** the start page has no session id, so its draft is stored under
+  `NEW_SESSION_DRAFT_KEY` in the same `sessionDrafts` map the chats use.
+
 ### Workspace browser
 
 - **Sub-features:** the file list, the row actions menu, preview, upload, grid
