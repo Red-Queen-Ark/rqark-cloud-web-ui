@@ -619,6 +619,12 @@ export type ApiUsageQuery = {
      */
     from?: string;
     is_compaction?: boolean;
+    /**
+     * Model selects rows by the model the proxy reported. It is an exact match:
+     * the model string is stored as it arrived, so a caller filters by the same
+     * label the listing returns.
+     */
+    model?: string;
     provider_id?: string;
     /**
      * Source, AgentID, ProviderID and IsCompaction select the rows the proxy

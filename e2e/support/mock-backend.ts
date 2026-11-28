@@ -230,6 +230,7 @@ export interface MockUsageLog {
   total_tokens?: number;
   api_key_name?: string | null;
   source?: string;
+  model?: string;
   user_id?: string;
 }
 
@@ -839,12 +840,14 @@ export async function mockBackend(page_: Page, options: MockBackendOptions = {})
         const to = body?.to as string | undefined;
         const apiKeyName = body?.api_key_name as string | undefined;
         const sourceQuery = body?.source as string | undefined;
+        const modelQuery = body?.model as string | undefined;
         const userIdQuery = body?.user_id as string | undefined;
         const scopedUser = session.is_superuser ? userIdQuery : session.id;
         const rows = state.usage
           .filter((row) => (scopedUser ? row.user_id === undefined || row.user_id === scopedUser : true))
           .filter((row) => (apiKeyName ? row.api_key_name === apiKeyName : true))
           .filter((row) => (sourceQuery ? row.source === sourceQuery : true))
+          .filter((row) => (modelQuery ? row.model === modelQuery : true))
           .filter((row) => (from ? row.created_at >= from : true))
           .filter((row) => (to ? row.created_at < to : true))
           .sort((left, right) => right.created_at.localeCompare(left.created_at));

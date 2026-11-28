@@ -22,9 +22,9 @@ function localNoon(daysAgo: number): string {
 }
 
 const bossRows: MockUsageLog[] = [
-  { created_at: localNoon(1), prompt_tokens: 1000, completion_tokens: 200, cached_tokens: 600, api_key_name: 'laptop', source: 'AGENT_CLOUD', user_id: boss.id },
-  { created_at: localNoon(1), prompt_tokens: 500, completion_tokens: 100, api_key_name: 'phone', source: 'TUI', user_id: boss.id },
-  { created_at: localNoon(2), prompt_tokens: 300, completion_tokens: 50, cached_tokens: 150, api_key_name: 'laptop', source: 'TASK', user_id: boss.id },
+  { created_at: localNoon(1), prompt_tokens: 1000, completion_tokens: 200, cached_tokens: 600, api_key_name: 'laptop', source: 'AGENT_CLOUD', model: 'deepseek-flash', user_id: boss.id },
+  { created_at: localNoon(1), prompt_tokens: 500, completion_tokens: 100, api_key_name: 'phone', source: 'TUI', model: 'gpt-5', user_id: boss.id },
+  { created_at: localNoon(2), prompt_tokens: 300, completion_tokens: 50, cached_tokens: 150, api_key_name: 'laptop', source: 'TASK', model: 'deepseek-flash', user_id: boss.id },
 ];
 
 test('sums the tokens and requests of the selected range', async ({ page }) => {
@@ -99,6 +99,26 @@ test('the source filter narrows the totals and clear resets it', async ({ page }
   await page.getByTestId('usage-clear').click();
 
   await expect(page.getByTestId('usage-source')).toHaveValue('');
+  await expect(page.getByTestId('usage-total-tokens')).toHaveText('2,150');
+});
+
+test('the model filter narrows the totals and clear resets it', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await mockBackend(page, { session: boss, apiKeys: [laptopKey], usage: bossRows });
+  await seedSession(page);
+
+  await page.goto('/en/manage/usage');
+  await waitForShellStyles(page);
+
+  await page.getByTestId('usage-model').fill('deepseek-flash');
+  await page.getByTestId('usage-model').dispatchEvent('change');
+
+  await expect(page.getByTestId('usage-total-tokens')).toHaveText('1,550');
+  await expect(page.getByTestId('usage-requests')).toHaveText('2');
+
+  await page.getByTestId('usage-clear').click();
+
+  await expect(page.getByTestId('usage-model')).toHaveValue('');
   await expect(page.getByTestId('usage-total-tokens')).toHaveText('2,150');
 });
 

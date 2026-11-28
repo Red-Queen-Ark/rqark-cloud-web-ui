@@ -114,8 +114,8 @@ not rediscover it. Add to this list when you verify something new.
 
 ### Usage
 
-- **Sub-features:** the range presets, the custom range, the API key, source and
-  user filters, the daily chart, the cache hit rate.
+- **Sub-features:** the range presets, the custom range, the API key, source,
+  model and user filters, the daily chart, the cache hit rate.
 - **How to get to it (user POV):** sidebar → Usage, superuser or not.
 - **Driving it:** `e2e/manage/usage.spec.ts`. Every filter change posts `/usage`
   on its own, so assert on the request bodies rather than on a request count.
