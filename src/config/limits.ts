@@ -1,1 +1,3 @@
-export const CONTENT_MAX_LENGTH = 2000;
+export const SOP_CONTENT_MAX_LENGTH = 2000;
+
+export const STATE_BOARD_MAX_LENGTH = 8000;

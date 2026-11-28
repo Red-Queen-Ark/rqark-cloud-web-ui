@@ -944,7 +944,7 @@ export async function mockBackend(page_: Page, options: MockBackendOptions = {})
           return json(route, 404, error(404, 'NOT_FOUND', 'Agent not found.').body);
         }
         const content = String(body?.content ?? '');
-        if (content.trim() === '' || [...content].length > 2000) {
+        if (content.trim() === '' || [...content].length > 8000) {
           return json(route, 400, error(400, 'INVALID_CONTENT', 'content is required.').body);
         }
         const existing = state.states.find((candidate) => candidate.agent_id === agentId);

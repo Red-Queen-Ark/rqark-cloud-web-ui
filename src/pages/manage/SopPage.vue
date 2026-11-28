@@ -77,7 +77,7 @@
       <label class="fieldset">
         <span class="fieldset-legend">{{ t('sops.content') }}</span>
         <textarea id="sop-content" v-model="editor.content" data-testid="sop-content-input" class="textarea h-64 w-full font-mono text-sm" :placeholder="t('sops.contentPlaceholder')"></textarea>
-        <span class="label" :class="tooLong ? 'text-error' : ''" data-testid="sop-char-count">{{ t('sops.charCount', { count: contentLength, max: CONTENT_MAX_LENGTH }) }}</span>
+        <span class="label" :class="tooLong ? 'text-error' : ''" data-testid="sop-char-count">{{ t('sops.charCount', { count: contentLength, max: SOP_CONTENT_MAX_LENGTH }) }}</span>
       </label>
     </FormModal>
 
@@ -104,7 +104,7 @@ import DataToolbar from '@/components/DataToolbar.vue';
 import FormModal from '@/components/FormModal.vue';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import { useApiError } from '@/composables/useApiError';
-import { CONTENT_MAX_LENGTH } from '@/config/limits';
+import { SOP_CONTENT_MAX_LENGTH } from '@/config/limits';
 import { useAlertStore } from '@/stores/alertStore';
 import { formatDateTime } from '@/utils/datetime';
 import { computed, onMounted, reactive, ref } from 'vue';
@@ -136,7 +136,7 @@ const deleteTarget = ref<ApiSopDto | null>(null);
 const editor = reactive<Editor>({ open: false, mode: 'create', original: '', slug: '', content: '' });
 
 const contentLength = computed(() => [...editor.content].length);
-const tooLong = computed(() => contentLength.value > CONTENT_MAX_LENGTH);
+const tooLong = computed(() => contentLength.value > SOP_CONTENT_MAX_LENGTH);
 
 function openCreate() {
   Object.assign(editor, { open: true, mode: 'create', original: '', slug: '', content: '' });
@@ -207,7 +207,7 @@ async function save() {
     return;
   }
   if (tooLong.value) {
-    alertStore.addItem({ level: 'warning', message: t('sops.contentTooLong', { max: CONTENT_MAX_LENGTH }) });
+    alertStore.addItem({ level: 'warning', message: t('sops.contentTooLong', { max: SOP_CONTENT_MAX_LENGTH }) });
     return;
   }
 
