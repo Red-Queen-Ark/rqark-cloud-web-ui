@@ -38,6 +38,14 @@
         </select>
       </label>
 
+      <label class="fieldset">
+        <span class="fieldset-legend">{{ t('usage.model') }}</span>
+        <input id="usage-model" v-model="model" data-testid="usage-model" type="text" list="usage-model-options" :placeholder="t('usage.modelAll')" class="input input-sm" @change="load" />
+        <datalist id="usage-model-options">
+          <option v-for="name in modelNames" :key="name" :value="name"></option>
+        </datalist>
+      </label>
+
       <label v-if="isSuperuser" class="fieldset">
         <span class="fieldset-legend">{{ t('usage.user') }}</span>
         <select id="usage-user" v-model="userId" data-testid="usage-user" class="select select-sm" @change="load">
@@ -94,7 +102,7 @@
 
 <script setup lang="ts">
 import type { ApiUsageLogDto, ApiUsageQuery, ApiUserDto } from '@/api';
-import { getApiKeys, getUsers, postUsage } from '@/api';
+import { getApiKeys, getProvidersModels, getUsers, postUsage } from '@/api';
 import { useApiError } from '@/composables/useApiError';
 import { useAlertStore } from '@/stores/alertStore';
 import { useAuthStore } from '@/stores/authStore';
@@ -118,9 +126,11 @@ const customFrom = ref(dateInputValue(new Date(now.getFullYear(), now.getMonth()
 const customTo = ref(dateInputValue(now));
 const apiKeyName = ref('');
 const source = ref('');
+const model = ref('');
 const userId = ref('');
 
 const apiKeys = ref<{ name: string }[]>([]);
+const providerModels = ref<string[]>([]);
 const users = ref<ApiUserDto[]>([]);
 const rows = ref<ApiUsageLogDto[]>([]);
 const loading = ref(false);
@@ -154,6 +164,8 @@ const buckets = computed(() => (range.value ? bucketUsage(rows.value, range.valu
 
 const apiKeyNames = computed(() => [...new Set(apiKeys.value.map((key) => key.name).filter((name) => Boolean(name)))].sort());
 
+const modelNames = computed(() => [...new Set([...providerModels.value, ...rows.value.map((row) => row.model).filter((name): name is string => Boolean(name))])].sort());
+
 function userLabel(user: ApiUserDto): string {
   return user.display_name || user.username || user.email || '';
 }
@@ -170,8 +182,9 @@ function ensureUserDefault() {
 }
 
 async function loadFilters() {
-  const { data } = await getApiKeys({ query: { limit: 100, offset: 0 } });
-  apiKeys.value = (data?.items ?? []) as { name: string }[];
+  const [keysResult, modelsResult] = await Promise.all([getApiKeys({ query: { limit: 100, offset: 0 } }), getProvidersModels()]);
+  apiKeys.value = (keysResult.data?.items ?? []) as { name: string }[];
+  providerModels.value = [...new Set((modelsResult.data ?? []).map((provider) => provider.model_name ?? '').filter((name) => Boolean(name)))];
 
   if (!isSuperuser.value) {
     return;
@@ -197,6 +210,9 @@ async function load() {
   if (source.value) {
     body.source = source.value;
   }
+  if (model.value) {
+    body.model = model.value;
+  }
   if (isSuperuser.value && userId.value) {
     body.user_id = userId.value;
   }
@@ -219,6 +235,7 @@ function clearFilters() {
   customTo.value = dateInputValue(now);
   apiKeyName.value = '';
   source.value = '';
+  model.value = '';
   userId.value = authStore.user?.id ?? '';
   userInitialised = true;
   void load();

@@ -1569,7 +1569,7 @@ export const putTodosByUuid = <ThrowOnError extends boolean = false>(options: Op
 /**
  * List usage records
  *
- * Returns every usage row that matches the body, newest first. It is not paginated and not aggregated: the client receives the rows and charts them itself. An empty body returns every row the caller may read. A plain caller reads its own rows only and may not send user_id; a superuser reads every user's rows, and may narrow them with user_id. api_key_name selects rows by the name of the key they were made with, and each row reports that name; a row made with an access token has none.
+ * Returns every usage row that matches the body, newest first. It is not paginated and not aggregated: the client receives the rows and charts them itself. An empty body returns every row the caller may read. A plain caller reads its own rows only and may not send user_id; a superuser reads every user's rows, and may narrow them with user_id. api_key_name selects rows by the name of the key they were made with, and each row reports that name; a row made with an access token has none. model selects rows by the exact model string the proxy reported.
  */
 export const postUsage = <ThrowOnError extends boolean = false>(options?: Options<PostUsageData, ThrowOnError>) => {
     return (options?.client ?? client).post<PostUsageResponses, PostUsageErrors, ThrowOnError>({

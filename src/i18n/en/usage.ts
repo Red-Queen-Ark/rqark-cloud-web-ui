@@ -9,6 +9,8 @@ export const usage = {
   apiKeyAll: 'All',
   source: 'Source',
   sourceAll: 'All sources',
+  model: 'Model',
+  modelAll: 'All models',
   user: 'User',
   userAll: 'All users',
   clear: 'Clear filters',

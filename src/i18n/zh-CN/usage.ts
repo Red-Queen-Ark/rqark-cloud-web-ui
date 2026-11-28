@@ -9,6 +9,8 @@ export const usage = {
   apiKeyAll: '全部',
   source: '来源',
   sourceAll: '全部来源',
+  model: '模型',
+  modelAll: '全部模型',
   user: '用户',
   userAll: '全部用户',
   clear: '清除筛选条件',
