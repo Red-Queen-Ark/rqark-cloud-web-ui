@@ -87,7 +87,7 @@
       <label class="fieldset">
         <span class="fieldset-legend">{{ t('agentState.content') }}</span>
         <textarea v-model="editor.content" data-testid="state-content-input" class="textarea h-64 w-full font-mono text-sm" :placeholder="t('agentState.contentPlaceholder')"></textarea>
-        <span class="label" :class="tooLong ? 'text-error' : ''" data-testid="state-char-count">{{ t('agentState.charCount', { count: contentLength, max: CONTENT_MAX_LENGTH }) }}</span>
+        <span class="label" :class="tooLong ? 'text-error' : ''" data-testid="state-char-count">{{ t('agentState.charCount', { count: contentLength, max: STATE_BOARD_MAX_LENGTH }) }}</span>
       </label>
     </FormModal>
 
@@ -114,7 +114,7 @@ import DataToolbar from '@/components/DataToolbar.vue';
 import TurnWriteToggle from '@/components/TurnWriteToggle.vue';
 import FormModal from '@/components/FormModal.vue';
 import { useApiError } from '@/composables/useApiError';
-import { CONTENT_MAX_LENGTH } from '@/config/limits';
+import { STATE_BOARD_MAX_LENGTH } from '@/config/limits';
 import { AGENT_CLOUD_SOURCE } from '@/config/sessionSources';
 import { useAlertStore } from '@/stores/alertStore';
 import { formatDateTime } from '@/utils/datetime';
@@ -144,7 +144,7 @@ const editor = reactive<Editor>({ open: false, content: '' });
 
 const boardHtml = computed(() => renderMarkdown(board.value?.content));
 const contentLength = computed(() => [...editor.content].length);
-const tooLong = computed(() => contentLength.value > CONTENT_MAX_LENGTH);
+const tooLong = computed(() => contentLength.value > STATE_BOARD_MAX_LENGTH);
 
 async function load() {
   loading.value = true;
@@ -209,7 +209,7 @@ async function save() {
     return;
   }
   if (tooLong.value) {
-    alertStore.addItem({ level: 'warning', message: t('agentState.contentTooLong', { max: CONTENT_MAX_LENGTH }) });
+    alertStore.addItem({ level: 'warning', message: t('agentState.contentTooLong', { max: STATE_BOARD_MAX_LENGTH }) });
     return;
   }
 

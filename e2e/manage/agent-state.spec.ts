@@ -145,6 +145,20 @@ test('a conflict is reported and the newer board is shown instead', async ({ pag
   await expect(page.getByTestId('state-board-content')).toContainText('另一個寫入者');
 });
 
+test('a board over the ceiling is refused before it reaches the API', async ({ page }) => {
+  const backend = await openState(page);
+  await page.getByTestId('state-agent-open-agent-1').click();
+  await page.getByTestId('state-edit-agent-1').click();
+
+  await page.getByTestId('state-content-input').fill('字'.repeat(8001));
+
+  await expect(page.getByTestId('state-char-count')).toContainText('8001 / 8000');
+  await page.getByTestId('form-modal').getByRole('button', { name: 'Save' }).click();
+
+  await expect(page.getByTestId('form-modal')).toBeVisible();
+  expect(backend.writes.filter((entry) => entry.method === 'PUT' && entry.path === '/memory/state')).toHaveLength(0);
+});
+
 test('deleting the board leaves the agent with the empty state', async ({ page }) => {
   const backend = await openState(page);
   await page.getByTestId('state-agent-open-agent-1').click();
